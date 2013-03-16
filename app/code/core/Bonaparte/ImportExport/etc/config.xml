@@ -1,0 +1,15 @@
+<?xml version="1.0"?>
+<config>
+    <modules>
+        <Bonaparte_Sintax>
+            <version>0.1.0</version>
+        </Bonaparte_Sintax>
+    </modules>
+    <global>
+        <helpers>
+            <ImportExport>
+                <class>Bonaparte_ImportExport_Helper</class>
+            </ImportExport>
+        </helpers>
+    </global>
+</config>
