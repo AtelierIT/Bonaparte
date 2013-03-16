@@ -6,7 +6,7 @@
 -- Generation Time: Mar 14, 2013 at 12:20 AM
 -- Server version: 5.5.24-log
 -- PHP Version: 5.4.3
-
+set foreign_key_checks=0;
 SET SQL_MODE="NO_AUTO_VALUE_ON_ZERO";
 SET time_zone = "+00:00";
 
