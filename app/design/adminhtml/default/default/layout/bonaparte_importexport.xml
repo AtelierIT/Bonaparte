@@ -1,0 +1,8 @@
+<?xml version="1.0"?>
+<layout version="0.1.0">
+    <adminhtml_bonaparte_importexport>
+        <reference name="content">
+            <block type="core/template" name="bonaparte_importexport_attributes" template="bonaparte_importexport/attributes.phtml"></block>
+        </reference>
+    </adminhtml_bonaparte_importexport>
+</layout>

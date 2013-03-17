@@ -2,13 +2,13 @@
 <!--
 * @category Bonaparte
 * @package  Bonaparte_ImportExport
-* @author   Atelier IT <office@atelierit.ro>
+* @author   Atelier IT Team <office@atelierit.ro>
 -->
 <config>
     <modules>
         <Bonaparte_ImportExport>
             <active>true</active>
-            <codePool>bonaparte</codePool>
+            <codePool>local</codePool>
             <depends>
                 <Mage_ImportExport />
             </depends>
