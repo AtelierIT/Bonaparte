@@ -344,9 +344,6 @@ class Mage_Core_Model_Design_Package
      */
     public function validateFile($file, array $params)
     {
-        if(strpos($file, 'phtml') !== false) {
-            $btrak = true;
-        }
         $fileName = $this->_renderFilename($file, $params);
         $testFile = (empty($params['_relative']) ? '' : Mage::getBaseDir('design') . DS) . $fileName;
         if (!file_exists($testFile)) {
