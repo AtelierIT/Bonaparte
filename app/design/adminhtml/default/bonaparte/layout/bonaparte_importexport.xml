@@ -1,0 +1,17 @@
+<layout>
+    <adminhtml_custom_attributes>
+        <reference name="content">
+            <block type="core/template" name="bonaparte_importexport_attributes" template="importexport/attributes.phtml"></block>
+        </reference>
+    </adminhtml_custom_attributes>
+    <adminhtml_custom_categories>
+        <reference name="content">
+            <block type="core/template" name="bonaparte_importexport_attributes" template="importexport/categories.phtml"></block>
+        </reference>
+    </adminhtml_custom_categories>
+    <adminhtml_custom_products>
+        <reference name="content">
+            <block type="core/template" name="bonaparte_importexport_attributes" template="importexport/products.phtml"></block>
+        </reference>
+    </adminhtml_custom_products>
+</layout>
