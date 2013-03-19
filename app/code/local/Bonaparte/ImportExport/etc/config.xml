@@ -16,6 +16,11 @@
                 <class>Bonaparte_ImportExport_Block</class>
             </Bonaparte_ImportExport>
         </blocks>
+        <models>
+            <Bonaparte_ImportExport>
+                <class>Bonaparte_ImportExport_Model</class>
+            </Bonaparte_ImportExport>
+        </models>
     </global>
 
     <admin>

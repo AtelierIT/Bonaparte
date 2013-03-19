@@ -19,6 +19,10 @@ class Bonaparte_ImportExport_Adminhtml_CustomController extends Mage_Adminhtml_C
         $this->loadLayout()->renderLayout();
     }
 
+    public function importCategoriesAction() {
+        var_dump(Mage::getModel('Bonaparte_ImportExport/custom_import_categories'));exit;
+    }
+
     public function productsAction()
     {
         $this->loadLayout()->renderLayout();

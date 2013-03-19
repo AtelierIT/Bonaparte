@@ -1,1 +1,4 @@
-<p>CATEGORIES IMPORT</p>
+<form action="<?php echo Mage::getBaseUrl(); ?>admin/custom/importcategories" method="post">
+    <input type="hidden" name="key" value="<? echo $this->getFormKey(); ?>" />
+    <button class="scalable" type="submit"><span>Import categories</span></button>
+</form>
