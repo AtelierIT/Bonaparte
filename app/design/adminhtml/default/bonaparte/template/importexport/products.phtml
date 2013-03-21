@@ -1,1 +1,63 @@
 <p>PRODUCTS IMPORT</p>
+
+<?
+$xmlPath = Mage::getBaseDir() . DS . 'xml/Cvl.xml';
+
+function get_node_CVL($xmlPath, $target_node)
+{
+
+    $xmlObj = simplexml_load_file($xmlPath);
+
+
+    foreach ($xmlObj->children() as $node) {
+
+        $atr_node_obj = $node->attributes();
+        $atr_node = (array)$atr_node_obj;
+        $atr_node = $atr_node ['@attributes']['id'];
+
+        if ($atr_node == $target_node) {
+            echo $target_node;
+            //echo "<pre>"; print_r($atr_node); echo "</pre>";
+            foreach ($node->children() as $nodes){
+
+                echo "<pre>"; print_r("*********************************************"); echo "</pre>";
+                $atr_nodes_obj = $nodes->attributes();
+                $atr_nodes = (array)$atr_nodes_obj;
+                $atr_id = $atr_nodes ['@attributes']['id'];
+                //$atr_value = $atr_nodes ['@attributes']['values'];
+                echo "<pre>"; print_r($atr_id); echo " - ";
+
+                foreach ($nodes->children() as $atr_value_node){
+                    //$atr_value_obj = $atr_value_node->attributes();
+                    $atr_value = (string) $atr_value_node->value[2];
+                   // $atr_value = $atr_nodes ['value']['2'];
+
+
+                     print_r($atr_value); echo "</pre>";
+                }
+
+            }
+
+
+
+
+
+
+
+
+
+
+
+
+
+        }
+
+
+    }
+
+}
+
+get_node_CVL($xmlPath, 'Program');
+
+
+?>

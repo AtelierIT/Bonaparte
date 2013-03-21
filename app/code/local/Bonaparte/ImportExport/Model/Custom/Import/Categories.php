@@ -6,14 +6,14 @@
  * Time: 22:55
  * To change this template use File | Settings | File Templates.
  */
-class Bonaparte_ImportExport_Model_Custom_Import_Categories extends Varien_Object {
+    class Bonaparte_ImportExport_Model_Custom_Import_Categories extends Varien_Object {
 
-    protected function _loadFiles() {
+        protected function _loadFiles() {
 
-    }
+        }
 
-    public function _construct() {
-        $this->_loadFiles();
-    }
+        public function _construct() {
+            $this->_loadFiles();
+        }
 
 }

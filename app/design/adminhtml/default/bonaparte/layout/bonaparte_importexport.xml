@@ -2,6 +2,7 @@
     <adminhtml_custom_attributes>
         <reference name="content">
             <block type="core/template" name="bonaparte_importexport_attributes" template="importexport/attributes.phtml"></block>
+            <block type="attibutes/adminhtml_attributes" name="bonaparte_attributes" />
         </reference>
     </adminhtml_custom_attributes>
     <adminhtml_custom_categories>
