@@ -20,7 +20,23 @@ class Bonaparte_ImportExport_Adminhtml_CustomController extends Mage_Adminhtml_C
     }
 
     public function importCategoriesAction() {
-        var_dump(Mage::getModel('Bonaparte_ImportExport/custom_import_categories'));exit;
+        try {
+            $importCategoriesModel = Mage::getModel('Bonaparte_ImportExport/Custom_Import_Categories');
+            $importCategoriesModel->start();
+        } catch(Exception $e) {
+            $break = true;
+            // handle
+        }
+    }
+
+    public function generateCategoryRelationsAction() {
+        try {
+            $importCategoriesModel = Mage::getModel('Bonaparte_ImportExport/Custom_Import_CategoryRelations');
+            $importCategoriesModel->start();
+        } catch(Exception $e) {
+            $break = true;
+            // handle
+        }
     }
 
     public function productsAction()
