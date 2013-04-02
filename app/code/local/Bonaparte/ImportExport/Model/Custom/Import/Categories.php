@@ -7,8 +7,6 @@
  */
 class Bonaparte_ImportExport_Model_Custom_Import_Categories extends Bonaparte_ImportExport_Model_Custom_Import_Abstract
 {
-    const CATEGORY_CODE_PARENT = 'ProductMainGroup';
-    const CATEGORY_CODE_CHILD = 'ProductGroup';
 
     /**
      * Construct import model

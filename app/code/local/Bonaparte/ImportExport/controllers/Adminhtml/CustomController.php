@@ -14,33 +14,27 @@ class Bonaparte_ImportExport_Adminhtml_CustomController extends Mage_Adminhtml_C
         $this->loadLayout()->renderLayout();
     }
 
+    public function importAttributesAction()
+    {
+        Mage::getModel('Bonaparte_ImportExport/Custom_Import_Attributes')->start();
+    }
+
     public function categoriesAction()
     {
         $this->loadLayout()->renderLayout();
     }
 
     public function importCategoriesAction() {
-        try {
-            $importCategoriesModel = Mage::getModel('Bonaparte_ImportExport/Custom_Import_Categories');
-            $importCategoriesModel->start();
-        } catch(Exception $e) {
-            $break = true;
-            // handle
-        }
-    }
-
-    public function generateCategoryRelationsAction() {
-        try {
-            $importCategoriesModel = Mage::getModel('Bonaparte_ImportExport/Custom_Import_CategoryRelations');
-            $importCategoriesModel->start();
-        } catch(Exception $e) {
-            $break = true;
-            // handle
-        }
+        Mage::getModel('Bonaparte_ImportExport/Custom_Import_Categories')->start();
     }
 
     public function productsAction()
     {
         $this->loadLayout()->renderLayout();
+    }
+
+    public function importProductsAction()
+    {
+        Mage::getModel('Bonaparte_ImportExport/Custom_Import_Products')->start();
     }
 }
