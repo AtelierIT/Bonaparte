@@ -6,6 +6,12 @@
 <!--</form>-->
 
 
+
+<form action="<?php echo $this->getUrl('*/*/importCategories') ?>" method="post">
+    <input name="form_key" type="hidden" value="<?php echo $this->getFormKey() ?>" />
+    <button class="scalable" type="submit"><span>Import categories</span></button>
+</form>
+
 <form action="<?php echo $this->getUrl('*/*/importAttributes') ?>" method="post">
     <input name="form_key" type="hidden" value="<?php echo $this->getFormKey() ?>" />
     <button class="scalable" type="submit"><span>Import attributes</span></button>
