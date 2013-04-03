@@ -2,7 +2,8 @@
 
 class Bonaparte_ImportExport_Block_Adminhtml_Attributes_Grid extends Mage_Adminhtml_Block_Widget_Grid
 {
-    public function __construct(){
+    public function __construct()
+    {
         parent::__construct();
         $this->setId('attributesGrid');
         $this->setDefaultSort('attribute_code');
@@ -10,13 +11,15 @@ class Bonaparte_ImportExport_Block_Adminhtml_Attributes_Grid extends Mage_Adminh
         $this->setSaveParametersInSession(true);
     }
 
-    protected function _prepareCollection(){
-        $collection = Mage::getModel('tests/tests')->getCollection();
+    protected function _prepareCollection()
+    {
+        $collection = Mage::getModel('Bonaparte_ImportExport/Attributes')->getCollection();
         $this->setCollection($collection);
         return parent::_prepareCollection();
     }
 
-    protected function _prepareColumns(){
+    protected function _prepareColumns()
+    {
 
         $this->addColumn('attribute_check', array(
             'header'  => Mage::helper('attributes')->__('Check'),

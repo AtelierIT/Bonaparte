@@ -13,7 +13,7 @@ class Bonaparte_ImportExport_Model_Custom_Import_Categories extends Bonaparte_Im
      */
     public function _construct()
     {
-        $this->_configurationFilePath = '/var/www/bonaparte/magento/dump_files/xml/structure.xml';
+        $this->_configurationFilePath = Mage::getBaseDir().'/dump_files/xml/structure.xml';
         $this->_initialize();
 
         $config = $this->getConfig();
