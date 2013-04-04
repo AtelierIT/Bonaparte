@@ -52,17 +52,29 @@ class Bonaparte_ImportExport_Model_Custom_Import_Attributes extends Bonaparte_Im
             }
             unset($attributeCollection);
 
+            $optionValues = array();
+            $optionIds = array();
+            $counter = 0;
+            foreach($attributeConfigData as $optionId => $optionValue) {
+                $optionValues['option' . $counter][0] = $optionValue;
+                $optionIds[] = $optionId;
+                $counter++;
+            }
+
             $attributeData = array(
                 'attribute_code' => $code,
                 'is_global' => '1',
-                'frontend_input' => 'boolean',
+                'frontend_input' => 'select',
                 'default_value_text' => '',
                 'default_value_yesno' => '0',
                 'default_value_date' => '',
                 'default_value_textarea' => '',
                 'is_unique' => '0',
+                'option' => array(
+                    'value' => $optionValues
+                ),
                 'is_required' => '0',
-                'apply_to' => array('simple'),
+                'apply_to' => array('simple', 'configurable'),
                 'is_configurable' => '0',
                 'is_searchable' => '0',
                 'is_visible_in_advanced_search' => '0',
@@ -73,6 +85,7 @@ class Bonaparte_ImportExport_Model_Custom_Import_Attributes extends Bonaparte_Im
                 'is_visible_on_front' => '0',
                 'used_in_product_listing' => '0',
                 'used_for_sort_by' => '0',
+                'external_id' => $attributeCode,
                 'frontend_label' => array('Bnp attribute ' . $attributeCode)
             );
 
@@ -89,10 +102,7 @@ class Bonaparte_ImportExport_Model_Custom_Import_Attributes extends Bonaparte_Im
             if (is_null($model->getIsUserDefined()) || $model->getIsUserDefined() != 0) {
                 $attributeData['backend_type'] = $model->getBackendTypeByInput($attributeData['frontend_input']);
             }
-            /*$defaultValueField = $model->getDefaultValueByInput($attributeData['frontend_input']);
-            if ($defaultValueField) {
-                $attributeData['default_value'] = $this->getRequest()->getParam($defaultValueField);
-            }*/
+
             $model->addData($attributeData);
             $model->setEntityTypeId(Mage::getModel('eav/entity')->setType('catalog_product')->getTypeId());
             $model->setIsUserDefined(1);
@@ -102,6 +112,25 @@ class Bonaparte_ImportExport_Model_Custom_Import_Attributes extends Bonaparte_Im
             } catch (Exception $e) {
                 echo '<p>Sorry, error occured while trying to save the attribute. Error: '.$e->getMessage().'</p>';
             }
+
+            $databaseOptions = $model->getSource()->getAllOptions(false);
+            $idOrderedDatabaseOptions = array();
+            foreach($databaseOptions as $option) {
+                $idOrderedDatabaseOptions[$option['value']] = $option['label'];
+            }
+            ksort($idOrderedDatabaseOptions);
+            $internalOptionIds = array_keys($idOrderedDatabaseOptions);
+
+            $collection = Mage::getModel('Bonaparte_ImportExport/External_Relation_Attribute_Option')->getCollection();
+            $collection->load();
+            foreach($internalOptionIds as $key => $internalOptionId) {
+                $model = Mage::getModel('Bonaparte_ImportExport/External_Relation_Attribute_Option');
+                $model->setType(Bonaparte_ImportExport_Model_External_Relation_Attribute_Option::TYPE_ATTRIBUTE_OPTION);
+                $model->setExternalId($optionIds[$key]);
+                $model->setInternalId($internalOptionId);
+                $collection->addItem($model);
+            }
+            $collection->save();
 
             $model = Mage::getModel('eav/entity_setup', 'core_setup');
             $attributeId = $model->getAttribute('catalog_product', $code);
