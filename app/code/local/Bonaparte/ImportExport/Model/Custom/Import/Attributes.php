@@ -1,31 +1,47 @@
 <?php
 
 /**
- * Stores the business logic for the custom category import
+ * Stores the business logic for the custom attribute import
  *
- * Class Bonaparte_ImportExport_Model_Custom_Import_Categories
+ * @category    Bonaparte
+ * @package     Bonaparte_ImportExport
+ * @author      Atelier IT Team <office@atelierit.ro>
  */
 class Bonaparte_ImportExport_Model_Custom_Import_Attributes extends Bonaparte_ImportExport_Model_Custom_Import_Abstract
 {
+    /**
+     * Path at which the category configuration is found
+     *
+     * @var string
+     */
+    const CONFIGURATION_FILE_PATH = '/dump_files/xml/Cvl.xml';
+
+    /**
+     * Prefix used to distinguish the Magento core attributes from the Bonaparte attributes
+     */
+    const ATTRIBUTE_PREFIX = 'bnp_';
 
     /**
      * Construct import model
      */
     public function _construct()
     {
-        $this->_configurationFilePath =  Mage::getBaseDir().'/dump_files/xml/Cvl.xml';
+        $this->_configurationFilePath = Mage::getBaseDir() . self::CONFIGURATION_FILE_PATH;
         $this->_initialize();
 
         $attributes = array();
         $attributesConfig = $this->getConfig()->getNode('group');
-        foreach($attributesConfig as $attribute) {
+        foreach ($attributesConfig as $attribute) {
             $attributeCode = $attribute->getAttribute('id');
             $attributes[$attributeCode] = array();
-            foreach($attribute->cvl as $attributeValue) {
-                if(!$attributeValue->values->value) {
+            foreach ($attribute->cvl as $attributeValue) {
+                if (!$attributeValue->values->value) {
                     $attributes[$attributeCode][$attributeValue->getAttribute('id')] = (string)$attributeValue->values;
                 } else {
-                    $attributes[$attributeCode][$attributeValue->getAttribute('id')] = (string)$attributeValue->values->value[2];
+                    $nrValues = count($attributeValue->values->value);
+                    for($i=0;$i<$nrValues;$i++) {
+                        $attributes[$attributeCode][$attributeValue->getAttribute('id')][] = (string)$attributeValue->values->value[$i];
+                    }
                 }
             }
             $break = true;
@@ -35,27 +51,42 @@ class Bonaparte_ImportExport_Model_Custom_Import_Attributes extends Bonaparte_Im
     }
 
     /**
+     * Remove previously imported attributes
+     */
+    private function _removeDuplicates() {
+        foreach ($this->_data as $attributeCode => $attributeConfigurationData) {
+            $code = self::ATTRIBUTE_PREFIX . strtolower($attributeCode);
+            $attributeCollection = Mage::getModel('eav/entity_attribute')->getCollection()
+                ->setModel('catalog/resource_eav_attribute')
+                ->addFieldToFilter('attribute_code', $code)
+                ->load();
+
+            foreach ($attributeCollection as $duplicateAttribute) {
+                $duplicateAttribute->delete();
+            }
+            unset($attributeCollection);
+        }
+    }
+
+    /**
      * Specific category functionality
      */
     public function start()
     {
-        foreach($this->_data as $attributeCode => $attributeConfigData) {
-            $code = 'bnp_' . strtolower($attributeCode);
+        $this->_removeDuplicates();
 
-            $attributeCollection = Mage::getModel('eav/entity_attribute')->getCollection();
-            $attributeCollection->setModel('catalog/resource_eav_attribute')
-                ->addFieldToFilter('attribute_code', $code)
-                ->load();
+        foreach ($this->_data as $attributeCode => $attributeConfigurationData) {
+            $code = self::ATTRIBUTE_PREFIX . strtolower($attributeCode);
 
-            foreach($attributeCollection as $duplicateAttribute) {
-                $duplicateAttribute->delete();
+            // for debugging purposes TODO: remove if statement
+            if($code != 'bnp_color') {
+                continue;
             }
-            unset($attributeCollection);
 
             $optionValues = array();
             $optionIds = array();
             $counter = 0;
-            foreach($attributeConfigData as $optionId => $optionValue) {
+            foreach ($attributeConfigurationData as $optionId => $optionValue) {
                 $optionValues['option' . $counter][0] = $optionValue;
                 $optionIds[] = $optionId;
                 $counter++;
@@ -110,12 +141,12 @@ class Bonaparte_ImportExport_Model_Custom_Import_Attributes extends Bonaparte_Im
             try {
                 $model->save();
             } catch (Exception $e) {
-                echo '<p>Sorry, error occured while trying to save the attribute. Error: '.$e->getMessage().'</p>';
+                echo '<p>Sorry, error occured while trying to save the attribute. Error: ' . $e->getMessage() . '</p>';
             }
 
             $databaseOptions = $model->getSource()->getAllOptions(false);
             $idOrderedDatabaseOptions = array();
-            foreach($databaseOptions as $option) {
+            foreach ($databaseOptions as $option) {
                 $idOrderedDatabaseOptions[$option['value']] = $option['label'];
             }
             ksort($idOrderedDatabaseOptions);
@@ -123,7 +154,7 @@ class Bonaparte_ImportExport_Model_Custom_Import_Attributes extends Bonaparte_Im
 
             $collection = Mage::getModel('Bonaparte_ImportExport/External_Relation_Attribute_Option')->getCollection();
             $collection->load();
-            foreach($internalOptionIds as $key => $internalOptionId) {
+            foreach ($internalOptionIds as $key => $internalOptionId) {
                 $model = Mage::getModel('Bonaparte_ImportExport/External_Relation_Attribute_Option');
                 $model->setType(Bonaparte_ImportExport_Model_External_Relation_Attribute_Option::TYPE_ATTRIBUTE_OPTION);
                 $model->setExternalId($optionIds[$key]);
@@ -134,7 +165,7 @@ class Bonaparte_ImportExport_Model_Custom_Import_Attributes extends Bonaparte_Im
 
             $model = Mage::getModel('eav/entity_setup', 'core_setup');
             $attributeId = $model->getAttribute('catalog_product', $code);
-            $attributeSetId = $model->getAttributeSetId('catalog_product','Default');
+            $attributeSetId = $model->getAttributeSetId('catalog_product', 'Default');
             $attributeGroupId = $model->getAttributeGroup('catalog_product', $attributeSetId, 'General');
 
             //add attribute to a set

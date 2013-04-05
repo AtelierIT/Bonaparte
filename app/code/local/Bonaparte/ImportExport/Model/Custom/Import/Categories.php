@@ -5,7 +5,7 @@
  *
  * @category    Bonaparte
  * @package     Bonaparte_ImportExport
- * @author     Atelier IT Team <office@atelierit.ro>
+ * @author      Atelier IT Team <office@atelierit.ro>
  */
 class Bonaparte_ImportExport_Model_Custom_Import_Categories extends Bonaparte_ImportExport_Model_Custom_Import_Abstract
 {
