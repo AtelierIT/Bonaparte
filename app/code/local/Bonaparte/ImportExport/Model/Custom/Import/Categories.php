@@ -7,7 +7,15 @@
  */
 class Bonaparte_ImportExport_Model_Custom_Import_Categories extends Bonaparte_ImportExport_Model_Custom_Import_Abstract
 {
-
+    private $language_index = 0;
+    private $rootCategoryName = array(
+        0  => "da",
+        1  => "ch",
+        2  => "en",
+        3  => "de",
+        4  => "nl",
+        5  => "sv",
+    );
     /**
      * Construct import model
      */
@@ -44,7 +52,7 @@ class Bonaparte_ImportExport_Model_Custom_Import_Categories extends Bonaparte_Im
             $attributeId = $node->getAttribute('groupId');
             $name = (array)$node->locale;
             $categoryStructure[$attributeId] = array(
-                'name' => $name['value'][0],
+                'name' => $name['value'][$this->language_index],
                 'children' => array()
             );
             $this->_extractNode($node, $categoryStructure[$attributeId]['children']);
@@ -108,12 +116,45 @@ class Bonaparte_ImportExport_Model_Custom_Import_Categories extends Bonaparte_Im
     public function start()
     {
         // importing parent categories
-        $parent = Mage::getModel('catalog/category')->load(
-            Mage::app()->getDefaultStoreView()->getRootCategoryId()
-        );
-        $this->_addCategory($parent, $this->_data);
+      //  $parent = Mage::getModel('catalog/category')->load(
+      //      Mage::app()->getDefaultStoreView()->getRootCategoryId()
+      //  );
+        foreach ($this->rootCategoryName as $currentParentLanguageIndex =>$currentParentName){
 
-        echo 'DONE';
+            $this->language_index = $currentParentLanguageIndex;
+
+            // Create category object
+            $category = Mage::getModel('catalog/category');
+            $category->setStoreId(0); // No store is assigned to this category.
+
+            $tempRootCategory['name'] = $currentParentName." root category";
+            $tempRootCategory['path'] = "1"; // this is the catgeory path - 1 for root category.
+            $tempRootCategory['description'] = "Category ".$currentParentName;
+            $tempRootCategory['meta_title'] = "Meta Title";
+            $tempRootCategory['meta_keywords'] = "Meta Keywords";
+            $tempRootCategory['meta_description'] = "Meta Description";
+            $tempRootCategory['display_mode'] = "PRODUCTS";
+            $tempRootCategory['is_active'] = 1;
+            $tempRootCategory['is_anchor'] = 1;
+
+            $category->addData($tempRootCategory);
+//            $category->save();
+            try {
+                $category->save();
+                $currentParent = $category->getId();
+            }
+            catch (Exception $e){
+                echo $e->getMessage();
+            }
+//            $currentParent = $category->getId();
+            $parenting = Mage::getModel('catalog/category')->load(
+                Mage::app()->getDefaultStoreView()->getRootCategoryId()
+            );
+
+            $this->_addCategory($category, $this->_data);
+            echo 'DONE '.$currentParentName;
+        }
+
     }
 
 }
