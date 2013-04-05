@@ -13,7 +13,7 @@ class Bonaparte_ImportExport_Model_Custom_Import_Attributes extends Bonaparte_Im
      */
     public function _construct()
     {
-        $this->_configurationFilePath = '/var/www/bonaparte/magento/dump_files/xml/Cvl.xml';
+        $this->_configurationFilePath =  Mage::getBaseDir().'/dump_files/xml/Cvl.xml';
         $this->_initialize();
 
         $attributes = array();
@@ -134,7 +134,7 @@ class Bonaparte_ImportExport_Model_Custom_Import_Attributes extends Bonaparte_Im
 
             $model = Mage::getModel('eav/entity_setup', 'core_setup');
             $attributeId = $model->getAttribute('catalog_product', $code);
-            $attributeSetId = $model->getAttributeSetId('catalog_product','Cell Phones');
+            $attributeSetId = $model->getAttributeSetId('catalog_product','Default');
             $attributeGroupId = $model->getAttributeGroup('catalog_product', $attributeSetId, 'General');
 
             //add attribute to a set
