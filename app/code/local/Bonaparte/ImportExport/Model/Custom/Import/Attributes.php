@@ -22,6 +22,11 @@ class Bonaparte_ImportExport_Model_Custom_Import_Attributes extends Bonaparte_Im
     const ATTRIBUTE_PREFIX = 'bnp_';
 
     /**
+     * Store ids
+     */
+    public $_STORE_IDS = array('13','11','16','12','14','15');
+
+    /**
      * Construct import model
      */
     public function _construct()
@@ -78,19 +83,34 @@ class Bonaparte_ImportExport_Model_Custom_Import_Attributes extends Bonaparte_Im
         foreach ($this->_data as $attributeCode => $attributeConfigurationData) {
             $code = self::ATTRIBUTE_PREFIX . strtolower($attributeCode);
 
-            // for debugging purposes TODO: remove if statement
-            if($code != 'bnp_color') {
-                continue;
-            }
+         // add the store id in the label value array
 
             $optionValues = array();
             $optionIds = array();
             $counter = 0;
             foreach ($attributeConfigurationData as $optionId => $optionValue) {
-                $optionValues['option' . $counter][0] = $optionValue;
+                if (is_array($optionValue)){
+                    $optionValues['option' . $counter][0] = $optionValue[2];
+                    $optionValues['option' . $counter][$this->_STORE_IDS[0]] = $optionValue[0];
+                    $optionValues['option' . $counter][$this->_STORE_IDS[1]] = $optionValue[1];
+                    $optionValues['option' . $counter][$this->_STORE_IDS[2]] = $optionValue[2];
+                    $optionValues['option' . $counter][$this->_STORE_IDS[3]] = $optionValue[3];
+                    $optionValues['option' . $counter][$this->_STORE_IDS[4]] = $optionValue[4];
+                    $optionValues['option' . $counter][$this->_STORE_IDS[5]] = $optionValue[5];
+                }else{
+                    $optionValues['option' . $counter][0] = $optionValue;
+                    $optionValues['option' . $counter][$this->_STORE_IDS[0]] = $optionValue;
+                    $optionValues['option' . $counter][$this->_STORE_IDS[1]] = $optionValue;
+                    $optionValues['option' . $counter][$this->_STORE_IDS[2]] = $optionValue;
+                    $optionValues['option' . $counter][$this->_STORE_IDS[3]] = $optionValue;
+                    $optionValues['option' . $counter][$this->_STORE_IDS[4]] = $optionValue;
+                    $optionValues['option' . $counter][$this->_STORE_IDS[5]] = $optionValue;
+                }
                 $optionIds[] = $optionId;
                 $counter++;
             }
+
+
 
             $attributeData = array(
                 'attribute_code' => $code,

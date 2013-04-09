@@ -28,7 +28,7 @@ class Bonaparte_ImportExport_Model_Custom_Import_Categories extends Bonaparte_Im
      *
      * @var array
      */
-    private $_languages = array('en', 'da', 'ch', 'de', 'nl', 'sv');
+    private $_languages = array('uk', 'dk', 'se', 'nl', 'de', 'ch');
 
     /**
      * Construct import model
