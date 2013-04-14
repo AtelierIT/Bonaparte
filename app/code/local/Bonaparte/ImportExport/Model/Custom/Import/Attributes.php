@@ -90,6 +90,7 @@ class Bonaparte_ImportExport_Model_Custom_Import_Attributes extends Bonaparte_Im
             $counter = 0;
             foreach ($attributeConfigurationData as $optionId => $optionValue) {
                 if (is_array($optionValue)){
+
                     $optionValues['option' . $counter][0] = $optionValue[2];
                     $optionValues['option' . $counter][$this->_STORE_IDS[0]] = $optionValue[0];
                     $optionValues['option' . $counter][$this->_STORE_IDS[1]] = $optionValue[1];
@@ -98,6 +99,8 @@ class Bonaparte_ImportExport_Model_Custom_Import_Attributes extends Bonaparte_Im
                     $optionValues['option' . $counter][$this->_STORE_IDS[4]] = $optionValue[4];
                     $optionValues['option' . $counter][$this->_STORE_IDS[5]] = $optionValue[5];
                 }else{
+                    //add option id to the label if label is smaller than 2 char
+                    if (strlen($optionValue)<=2){$optionValue=$optionId.'_'.$optionValue;}
                     $optionValues['option' . $counter][0] = $optionValue;
                     $optionValues['option' . $counter][$this->_STORE_IDS[0]] = $optionValue;
                     $optionValues['option' . $counter][$this->_STORE_IDS[1]] = $optionValue;
