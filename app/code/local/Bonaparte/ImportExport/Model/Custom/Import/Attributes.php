@@ -24,7 +24,7 @@ class Bonaparte_ImportExport_Model_Custom_Import_Attributes extends Bonaparte_Im
     /**
      * Store ids
      */
-    public $_STORE_IDS = array('13','11','16','12','14','15');
+    public $_STORE_IDS = array('13', '11', '16', '12', '14', '15');
 
     /**
      * Construct import model
@@ -44,7 +44,7 @@ class Bonaparte_ImportExport_Model_Custom_Import_Attributes extends Bonaparte_Im
                     $attributes[$attributeCode][$attributeValue->getAttribute('id')] = (string)$attributeValue->values;
                 } else {
                     $nrValues = count($attributeValue->values->value);
-                    for($i=0;$i<$nrValues;$i++) {
+                    for ($i = 0; $i < $nrValues; $i++) {
                         $attributes[$attributeCode][$attributeValue->getAttribute('id')][] = (string)$attributeValue->values->value[$i];
                     }
                 }
@@ -58,7 +58,8 @@ class Bonaparte_ImportExport_Model_Custom_Import_Attributes extends Bonaparte_Im
     /**
      * Remove previously imported attributes
      */
-    private function _removeDuplicates() {
+    private function _removeDuplicates()
+    {
         foreach ($this->_data as $attributeCode => $attributeConfigurationData) {
             $code = self::ATTRIBUTE_PREFIX . strtolower($attributeCode);
             $attributeCollection = Mage::getModel('eav/entity_attribute')->getCollection()
@@ -83,13 +84,13 @@ class Bonaparte_ImportExport_Model_Custom_Import_Attributes extends Bonaparte_Im
         foreach ($this->_data as $attributeCode => $attributeConfigurationData) {
             $code = self::ATTRIBUTE_PREFIX . strtolower($attributeCode);
 
-         // add the store id in the label value array
+            // add the store id in the label value array
 
             $optionValues = array();
             $optionIds = array();
             $counter = 0;
             foreach ($attributeConfigurationData as $optionId => $optionValue) {
-                if (is_array($optionValue)){
+                if (is_array($optionValue)) {
 
                     $optionValues['option' . $counter][0] = $optionValue[2];
                     $optionValues['option' . $counter][$this->_STORE_IDS[0]] = $optionValue[0];
@@ -98,9 +99,11 @@ class Bonaparte_ImportExport_Model_Custom_Import_Attributes extends Bonaparte_Im
                     $optionValues['option' . $counter][$this->_STORE_IDS[3]] = $optionValue[3];
                     $optionValues['option' . $counter][$this->_STORE_IDS[4]] = $optionValue[4];
                     $optionValues['option' . $counter][$this->_STORE_IDS[5]] = $optionValue[5];
-                }else{
+                } else {
                     //add option id to the label if label is smaller than 2 char
-                    if (strlen($optionValue)<=2){$optionValue=$optionId.'_'.$optionValue;}
+                    if (strlen($optionValue) <= 2) {
+                        $optionValue = $optionId . '_' . $optionValue;
+                    }
                     $optionValues['option' . $counter][0] = $optionValue;
                     $optionValues['option' . $counter][$this->_STORE_IDS[0]] = $optionValue;
                     $optionValues['option' . $counter][$this->_STORE_IDS[1]] = $optionValue;
@@ -114,11 +117,16 @@ class Bonaparte_ImportExport_Model_Custom_Import_Attributes extends Bonaparte_Im
             }
 
 
+            if(in_array($attributeCode, array('Catalogue', 'Season', 'WashIcon'))) {
+                $frontendInput = 'multiselect';
+            } else {
+                $frontendInput = 'select';
+            }
 
             $attributeData = array(
                 'attribute_code' => $code,
                 'is_global' => '1',
-                'frontend_input' => 'select',
+                'frontend_input' => $frontendInput,
                 'default_value_text' => '',
                 'default_value_yesno' => '0',
                 'default_value_date' => '',
