@@ -12,7 +12,7 @@ class Bonaparte_ImportExport_Model_Custom_Import_Products extends Bonaparte_Impo
     public function _construct()
     {
         $this->_configurationFilePath = array();
-        $configFilesPath = '/var/www/bonaparte/magento/dump_files/xml/last_product';
+        $configFilesPath = Mage::getBaseDir() . '/dump_files/xml/last_product';
         $files = scandir($configFilesPath);
 
         foreach($files as $fileName) {
@@ -46,8 +46,60 @@ class Bonaparte_ImportExport_Model_Custom_Import_Products extends Bonaparte_Impo
      * @param mixed (integer|Mage_Catalog_Model_Category) $parentId
      * @param array $children
      */
-    private function _addProduct($data) {
-        return;
+    private function _addProduct($productData) {
+            // for testing, to be removed
+        if ($productData['ProductGroup']['value'] == '4901'){
+
+            foreach ($productData['Items']['value'] as $productItem){
+
+
+                $productSizes = $productItem['Sizess']['value']['en'];
+
+                switch($productSizes) {
+                    case 'One size':
+
+
+                        $product = Mage::getModel('catalog/product');
+                        $product->setTypeId('simple');
+                        $product->setTaxClassId(0); //none
+                        $product->setWebsiteIds(array(1));  // store id
+                        $product->setAttributeSetId(9); //product Attribute Set
+                        $product->setSku($productItem['CinoNumber']['value'] . '_one_size');
+                        $product->setName($productData['HeaderWebs']['value']['en']);
+                        $product->setDescription($productData['DescriptionCatalogues']['value']['en']);
+                        $product->setPrice("1000.00");
+                        $product->setShortDescription($productData['DescriptionCatalogues']['value']['en']);
+                        $product->setWeight(0);
+                        $product->setStatus(1); //enabled
+                        $product->setVisibility(1); //nowhere
+                        $product->setMetaDescription('MetaDescription test');
+                        $product->setMetaTitle('MetaTitle test');
+                        $product->setMetaKeywords('MetaKeywords test');
+                        try{
+                            $product->save();
+                            $productId = $product->getId();
+                            echo $productId . ", " . $productData['HeaderWebs']['value']['en'] . " added\n";
+                        }
+                        catch (Exception $e){
+                            echo "item " . $productData['HeaderWebs']['value']['en'] . " not added\n";
+                            echo "exception:$e";
+                        }
+
+
+
+
+
+                        break;
+                }
+
+                echo "product add test";
+
+            }
+
+
+
+        }
+
     }
 
     private function _extractConfiguration($node, &$productData) {

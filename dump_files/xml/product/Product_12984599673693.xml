@@ -154,26 +154,6 @@
         <Assortment id="134555930013257370" order="32"/>
     </Assortments>
     <Resources>
-        <Resource id="131366432958877393_23906">
-            <Year cvl="Year"><![CDATA[2011]]></Year>
-            <PDMIdentifier/>
-            <CatalogAdcode cvl="CatalogAdcode">
-                <value><![CDATA[2011-Favorit-win]]></value>
-            </CatalogAdcode>
-            <ImageType cvl="ImageType"><![CDATA[packshots]]></ImageType>
-            <ResourceFileId><![CDATA[23906]]></ResourceFileId>
-            <MimeType><![CDATA[image/jpeg]]></MimeType>
-            <Season cvl="Season"><![CDATA[112]]></Season>
-            <AltTexts>
-                <AltText locale="da"/>
-                <AltText locale="de_CH"/>
-                <AltText locale="en"/>
-                <AltText locale="de"/>
-                <AltText locale="nl"/>
-                <AltText locale="sv"/>
-            </AltTexts>
-            <Filename>D:/inRiver/Publish/Production/Pics/131366432958877393_23906.jpg</Filename>
-        </Resource>
         <Resource id="131365973723415451_23025">
             <Year cvl="Year"><![CDATA[2011]]></Year>
             <PDMIdentifier/>
@@ -193,6 +173,26 @@
                 <AltText locale="sv"/>
             </AltTexts>
             <Filename>D:/inRiver/Publish/Production/Pics/131365973723415451_23025.jpg</Filename>
+        </Resource>
+        <Resource id="131366432958877393_23906">
+            <Year cvl="Year"><![CDATA[2011]]></Year>
+            <PDMIdentifier/>
+            <CatalogAdcode cvl="CatalogAdcode">
+                <value><![CDATA[2011-Favorit-win]]></value>
+            </CatalogAdcode>
+            <ImageType cvl="ImageType"><![CDATA[packshots]]></ImageType>
+            <ResourceFileId><![CDATA[23906]]></ResourceFileId>
+            <MimeType><![CDATA[image/jpeg]]></MimeType>
+            <Season cvl="Season"><![CDATA[112]]></Season>
+            <AltTexts>
+                <AltText locale="da"/>
+                <AltText locale="de_CH"/>
+                <AltText locale="en"/>
+                <AltText locale="de"/>
+                <AltText locale="nl"/>
+                <AltText locale="sv"/>
+            </AltTexts>
+            <Filename>D:/inRiver/Publish/Production/Pics/131366432958877393_23906.jpg</Filename>
         </Resource>
     </Resources>
 </Product>
