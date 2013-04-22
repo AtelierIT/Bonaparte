@@ -15,6 +15,7 @@ class Bonaparte_ImportExport_Model_Custom_Import_Attributes extends Bonaparte_Im
      * @var string
      */
     const CONFIGURATION_FILE_PATH = '/dump_files/xml/Cvl.xml';
+    const CONFIGURATION_FILE_PATH_SIZE = '/dump_files/xml/size.csv';
 
     /**
      * Prefix used to distinguish the Magento core attributes from the Bonaparte attributes
@@ -79,6 +80,20 @@ class Bonaparte_ImportExport_Model_Custom_Import_Attributes extends Bonaparte_Im
      */
     public function start()
     {
+        // add Size to attributes array
+        $data_size = array();
+        $data_csv = array();
+        $handle = fopen(Mage::getBaseDir() . self::CONFIGURATION_FILE_PATH_SIZE, 'r');
+
+        while ($data_csv = fgetcsv($handle,null,';','"')) {
+              $data_size[] = $data_csv[6];
+        }
+
+        $data_size = array_unique($data_size);
+        fclose($handle);
+
+        $this->_data['Size'] = $data_size;
+
         $this->_removeDuplicates();
 
         foreach ($this->_data as $attributeCode => $attributeConfigurationData) {
@@ -101,7 +116,7 @@ class Bonaparte_ImportExport_Model_Custom_Import_Attributes extends Bonaparte_Im
                     $optionValues['option' . $counter][$this->_STORE_IDS[5]] = $optionValue[5];
                 } else {
                     //add option id to the label if label is smaller than 2 char
-                    if (strlen($optionValue) <= 2) {
+                    if ((strlen($optionValue) <= 2) && ($attributeCode!='Size')) {
                         $optionValue = $optionId . '_' . $optionValue;
                     }
                     $optionValues['option' . $counter][0] = $optionValue;
