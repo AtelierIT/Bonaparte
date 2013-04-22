@@ -75,6 +75,41 @@ class Bonaparte_ImportExport_Model_Custom_Import_Attributes extends Bonaparte_Im
         }
     }
 
+    private function _addMissingAttributes() {
+        $missingAttributes = array(
+            'AnimalOrigin' => array( // bolean
+                0,
+                1
+            ),
+            'DisplayComposition' => array( // boolean
+                0,
+                1
+            ),
+            'StyleNbr' => array( // single value
+                4123,
+                5241
+            ),
+            'AdCodes' => array( // multiple values
+                'Catalogue 1',
+                'Catalogue 2'
+            ),
+            'ColorGroup' => array( // single value
+                0, 1, 2, 3, 4, 5, 6, 7, 8, 9
+            ),
+            'MeasurementChart' => array(), // text
+            'Length' => array( // single value
+                'length 1',
+                'length 2'
+            ),
+            'WashInstructions' => array( // single value
+                'wash instr 1',
+                'wash instr 2'
+            )
+        );
+
+        $this->_data = array_merge($this->_data, $missingAttributes);
+    }
+
     /**
      * Specific category functionality
      */
@@ -95,6 +130,7 @@ class Bonaparte_ImportExport_Model_Custom_Import_Attributes extends Bonaparte_Im
         $this->_data['Size'] = $data_size;
 
         $this->_removeDuplicates();
+        $this->_addMissingAttributes();
 
         foreach ($this->_data as $attributeCode => $attributeConfigurationData) {
             $code = self::ATTRIBUTE_PREFIX . strtolower($attributeCode);
@@ -132,8 +168,12 @@ class Bonaparte_ImportExport_Model_Custom_Import_Attributes extends Bonaparte_Im
             }
 
 
-            if(in_array($attributeCode, array('Catalogue', 'Season', 'WashIcon'))) {
+            if(in_array($attributeCode, array('Catalogue', 'Season', 'WashIcon', 'AdCodes'))) {
                 $frontendInput = 'multiselect';
+            } elseif(in_array($attributeCode, array('AnimalOrigin', 'DisplayComposition'))) {
+                $frontendInput = 'boolean';
+            } elseif(in_array($attributeCode, array('MeasurementChart'))) {
+                $frontendInput = 'text';
             } else {
                 $frontendInput = 'select';
             }
