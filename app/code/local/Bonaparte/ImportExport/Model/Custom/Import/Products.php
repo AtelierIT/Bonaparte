@@ -6,6 +6,7 @@
 class Bonaparte_ImportExport_Model_Custom_Import_Products extends Bonaparte_ImportExport_Model_Custom_Import_Abstract
 {
 
+    private $_bnpAttributes = array();
     /**
      * Construct import model
      */
@@ -40,6 +41,34 @@ class Bonaparte_ImportExport_Model_Custom_Import_Products extends Bonaparte_Impo
         }
     }
 
+
+    /**
+     * Construct array with attributes options ids
+     */
+    public function _getAttributeLabelId($attributeCode,$label)
+    {
+        if (isset($this->_bnpAttributes[$attributeCode])){
+            return $this->_bnpAttributes[$attributeCode][$label];
+        }
+
+        $productModel = Mage::getModel('catalog/product');
+        $attributeBnpCatalogue = $productModel->getResource()->getAttribute($attributeCode);
+
+        foreach ($attributeBnpCatalogue->getSource()->getAllOptions() as $option){
+            $this->_bnpAttributes[$attributeCode][$option['label']] = $option['value'];
+        }
+
+        return $this->_bnpAttributes[$attributeCode][$label];
+
+    }
+
+
+
+
+
+
+
+
     /**
      * Recursive method to add unknown levels of categories
      *
@@ -47,24 +76,21 @@ class Bonaparte_ImportExport_Model_Custom_Import_Products extends Bonaparte_Impo
      * @param array $children
      */
     private function _addProduct($productData) {
+        $_simpleProductsIds = array();
             // for testing, to be removed
         if ($productData['ProductGroup']['value'] == '4901'){
 
             foreach ($productData['Items']['value'] as $productItem){
-
-
-                $productSizes = $productItem['Sizess']['value']['en'];
-
-                switch($productSizes) {
-                    case 'One size':
-
+                $productSizes =  explode("-", $productItem['Sizess']['value']['en']);
+                    //create each simple product
+                foreach($productSizes as $productSize){
 
                         $product = Mage::getModel('catalog/product');
                         $product->setTypeId('simple');
                         $product->setTaxClassId(0); //none
                         $product->setWebsiteIds(array(1));  // store id
                         $product->setAttributeSetId(9); //product Attribute Set
-                        $product->setSku($productItem['CinoNumber']['value'] . '_one_size');
+                        $product->setSku($productItem['CinoNumber']['value'] . '_' . $productSize);
                         $product->setName($productData['HeaderWebs']['value']['en']);
                         $product->setDescription($productData['DescriptionCatalogues']['value']['en']);
                         $product->setPrice("1000.00");
@@ -75,10 +101,40 @@ class Bonaparte_ImportExport_Model_Custom_Import_Products extends Bonaparte_Impo
                         $product->setMetaDescription('MetaDescription test');
                         $product->setMetaTitle('MetaTitle test');
                         $product->setMetaKeywords('MetaKeywords test');
+
+                            foreach ($productData['Catalogue']['value'] as $label ){
+                                $bnpCatalogueLabelIds[]=$this->_getAttributeLabelId('bnp_catalogue',$label);
+                            }
+                            $product->setBnpCatalogue($bnpCatalogueLabelIds);
+                            foreach ($productData['Season']['value'] as $label ){
+                                $bnpCatalogueLabelIds[]=$this->_getAttributeLabelId('bnp_season',$label);
+                            }
+                            $product->setBnpSeason($bnpCatalogueLabelIds);
+                            foreach ($productData['WashIcon']['value'] as $label ){
+                                $bnpCatalogueLabelIds[]=$this->_getAttributeLabelId('bnp_washicon',$label);
+                            }
+                            $product->setWashicon($bnpCatalogueLabelIds);
+
+                            $product->setBnpFitting($this->_getAttributeLabelId('bnp_fitting',$productData['Fitting']['value']));
+                            $product->setColor($this->_getAttributeLabelId('bnp_color',$productData['Color']['value']));
+
+                        $category_ids = array();
+                        $category_idss = array();
+                        if ($productData['Program']['value']!='') $category_ids[]=$productData['Program']['value'];
+                        if ($$productData['ProductMainGroup']['value']!='') $category_ids[]=$productData['ProductMainGroup']['value'];
+                        if ($productData['ProductSubGroup']['value']!='') $category_ids[]=$productData['ProductSubGroup']['value'];
+                        foreach ($category_ids as $category_id){
+                            $category = Mage::getModel('catalog/category')->getCollection()->addAttributeToFilter('old_id', $category_id)->load();
+                            foreach ($category->getAllIds() as $idss) $category_idss []= $idss;
+
+                        }
+
+                        $product->setCategoryIds($category_idss);
+
                         try{
                             $product->save();
-                            $productId = $product->getId();
-                            echo $productId . ", " . $productData['HeaderWebs']['value']['en'] . " added\n";
+                            $_simpleProductsIds[$productItem['CinoNumber']['value'] . '_' . $productSize] = $product->getId();
+
                         }
                         catch (Exception $e){
                             echo "item " . $productData['HeaderWebs']['value']['en'] . " not added\n";
@@ -86,17 +142,94 @@ class Bonaparte_ImportExport_Model_Custom_Import_Products extends Bonaparte_Impo
                         }
 
 
-
-
-
-                        break;
                 }
 
-                echo "product add test";
+
+                // create the configurable product
+                $product = Mage::getModel('catalog/product');
+                $product->setTypeId('configurable');
+                $product->setTaxClassId(0); //none
+                $product->setWebsiteIds(array(1));  // store id
+                $product->setAttributeSetId(9); //product Attribute Set
+                $product->setSku($productItem['CinoNumber']['value']);
+                $product->setName($productData['HeaderWebs']['value']['en']);
+                $product->setDescription($productData['DescriptionCatalogues']['value']['en']);
+                $product->setPrice("1000.00");
+                $product->setShortDescription($productData['DescriptionCatalogues']['value']['en']);
+                $product->setWeight(0);
+                $product->setStatus(1); //enabled
+                $product->setVisibility(1); //nowhere
+                $product->setMetaDescription('MetaDescription test');
+                $product->setMetaTitle('MetaTitle test');
+                $product->setMetaKeywords('MetaKeywords test');
+                foreach ($productData['Catalogue']['value'] as $label ){
+                    $bnpCatalogueLabelIds[]=$this->_getAttributeLabelId('bnp_catalogue',$label);
+                }
+                $product->setBnpCatalogue($bnpCatalogueLabelIds);
+                foreach ($productData['Season']['value'] as $label ){
+                    $bnpCatalogueLabelIds[]=$this->_getAttributeLabelId('bnp_season',$label);
+                }
+                $product->setBnpSeason($bnpCatalogueLabelIds);
+                foreach ($productData['WashIcon']['value'] as $label ){
+                    $bnpCatalogueLabelIds[]=$this->_getAttributeLabelId('bnp_washicon',$label);
+                }
+                $product->setWashicon($bnpCatalogueLabelIds);
+
+                $product->setBnpFitting($this->_getAttributeLabelId('bnp_fitting',$productData['Fitting']['value']));
+                $product->setColor($this->_getAttributeLabelId('bnp_color',$productData['Color']['value']));
+
+                $category_ids = array();
+                $category_idss = array();
+                if ($productData['Program']['value']!='') $category_ids[]=$productData['Program']['value'];
+                if ($$productData['ProductMainGroup']['value']!='') $category_ids[]=$productData['ProductMainGroup']['value'];
+                if ($productData['ProductSubGroup']['value']!='') $category_ids[]=$productData['ProductSubGroup']['value'];
+                foreach ($category_ids as $category_id){
+                    $category = Mage::getModel('catalog/category')->getCollection()->addAttributeToFilter('old_id', $category_id)->load();
+                    foreach ($category->getAllIds() as $idss) $category_idss []= $idss;
+
+                }
+                $product->setCategoryIds($category_idss);
+
+                $dataArray = array();
+                foreach ($_simpleProductsIds as $simpleArray) {
+                    $dataArray[$simpleArray['id']] = array();
+                    foreach ($attributes_array as $attrArray) {
+                        array_push(
+                            $dataArray[$simpleArray['id']],
+                            array(
+                                "attribute_id" => $simpleArray['attr_id'],
+                                "label" => $simpleArray['label'],
+                                "is_percent" => false,
+                                "pricing_value" => $simpleArray['price']
+                            )
+                        );
+                    }
+                }
+
+
+
+
+
+                try{
+                    $product->save();
+
+                }
+                catch (Exception $e){
+                    echo "item " . $productData['HeaderWebs']['value']['en'] . " not added\n";
+                    echo "exception:$e";
+                }
+
+
+
+
+
+
+
+
+
+
 
             }
-
-
 
         }
 
@@ -113,7 +246,7 @@ class Bonaparte_ImportExport_Model_Custom_Import_Products extends Bonaparte_Impo
                     $stringXML = new Varien_Simplexml_Element('<general_bracket>' . $value . '</general_bracket>');//simplexml_load_string($value, null);
                     $value = array();
                     switch($key) {
-                        case 'SizeGroup';
+                        case 'SizeGroup':
                             $stringXML = $stringXML->SizeRange;
                             $value[$stringXML->getName()] = array(
                                 'name' => $stringXML->getAttribute('name'),
@@ -206,6 +339,8 @@ class Bonaparte_ImportExport_Model_Custom_Import_Products extends Bonaparte_Impo
      */
     public function start()
     {
+
+
         $products = array();
         foreach($this->_data as $productConfig) {
             $productData = array();

@@ -219,7 +219,9 @@ class Bonaparte_ImportExport_Model_Custom_Import_Attributes extends Bonaparte_Im
             if (is_null($model->getIsUserDefined()) || $model->getIsUserDefined() != 0) {
                 $attributeData['backend_type'] = $model->getBackendTypeByInput($attributeData['frontend_input']);
             }
-
+            if ($attributeData[$attributeCode]=='Size') {
+                $attributeData['is_configurable'] = 1;
+            }
             $model->addData($attributeData);
             $model->setEntityTypeId(Mage::getModel('eav/entity')->setType('catalog_product')->getTypeId());
             $model->setIsUserDefined(1);
