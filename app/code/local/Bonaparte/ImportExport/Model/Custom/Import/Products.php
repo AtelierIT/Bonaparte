@@ -76,64 +76,87 @@ class Bonaparte_ImportExport_Model_Custom_Import_Products extends Bonaparte_Impo
      * @param array $children
      */
     private function _addProduct($productData) {
-        $_simpleProductsIds = array();
+       // $_simpleProductsIds = array();
             // for testing, to be removed
+        $allWebsiteIDs = Mage::getModel('core/website')->getCollection()->getAllIds();
+
+
         if ($productData['ProductGroup']['value'] == '4901'){
 
             foreach ($productData['Items']['value'] as $productItem){
+                $dataArray = array();
+//                $attributesDataArray = array();
+
+                $product = Mage::getModel('catalog/product');
+                $product->setTaxClassId(0); //none
+                $product->setWebsiteIds($allWebsiteIDs);  // store id
+                $product->setAttributeSetId(9); //product Attribute Set
+                $product->setName($productData['HeaderWebs']['value']['en']);
+                $product->setDescription($productData['DescriptionCatalogues']['value']['en']);
+                $product->setPrice("1000.00");
+                $product->setShortDescription($productData['DescriptionCatalogues']['value']['en']);
+                $product->setWeight(1);
+                $product->setStatus(1); //enabled
+                $product->setStockData(array(
+                    'is_in_stock' => 1,
+                    'qty' => 99999
+                ));
+                $product->setMetaDescription('MetaDescription test');
+                $product->setMetaTitle('MetaTitle test');
+                $product->setMetaKeywords('MetaKeywords test');
+                foreach ($productData['Catalogue']['value'] as $label ){
+                    $bnpCatalogueLabelIds[]=$this->_getAttributeLabelId('bnp_catalogue',$label);
+                }
+                $product->setBnpCatalogue($bnpCatalogueLabelIds);
+                foreach ($productData['Season']['value'] as $label ){
+                    $bnpSeasonLabelIds[]=$this->_getAttributeLabelId('bnp_season',$label);
+                }
+                $product->setBnpSeason($bnpSeasonLabelIds);
+                foreach ($productData['WashIcon']['value'] as $label ){
+                    $bnpWashiconLabelIds[]=$this->_getAttributeLabelId('bnp_washicon',$label);
+                }
+                $product->setWashicon($bnpWashiconLabelIds);
+
+                $product->setBnpFitting($this->_getAttributeLabelId('bnp_fitting',$productData['Fitting']['value']));
+                $product->setColor($this->_getAttributeLabelId('bnp_color',$productData['Color']['value']));
+                $category_ids = array();
+                $category_idss = array();
+                if ($productData['Program']['value']!='') $category_ids[]=$productData['Program']['value'];
+                if ($$productData['ProductMainGroup']['value']!='') $category_ids[]=$productData['ProductMainGroup']['value'];
+                if ($productData['ProductSubGroup']['value']!='') $category_ids[]=$productData['ProductSubGroup']['value'];
+                foreach ($category_ids as $category_id){
+                    $category = Mage::getModel('catalog/category')->getCollection()->addAttributeToFilter('old_id', $category_id)->load();
+                    foreach ($category->getAllIds() as $idss) $category_idss []= $idss;
+
+                }
+
+                $product->setCategoryIds($category_idss);
+
+
                 $productSizes =  explode("-", $productItem['Sizess']['value']['en']);
+
                     //create each simple product
                 foreach($productSizes as $productSize){
 
-                        $product = Mage::getModel('catalog/product');
                         $product->setTypeId('simple');
-                        $product->setTaxClassId(0); //none
-                        $product->setWebsiteIds(array(1));  // store id
-                        $product->setAttributeSetId(9); //product Attribute Set
                         $product->setSku($productItem['CinoNumber']['value'] . '_' . $productSize);
-                        $product->setName($productData['HeaderWebs']['value']['en']);
-                        $product->setDescription($productData['DescriptionCatalogues']['value']['en']);
-                        $product->setPrice("1000.00");
-                        $product->setShortDescription($productData['DescriptionCatalogues']['value']['en']);
-                        $product->setWeight(0);
-                        $product->setStatus(1); //enabled
                         $product->setVisibility(1); //nowhere
-                        $product->setMetaDescription('MetaDescription test');
-                        $product->setMetaTitle('MetaTitle test');
-                        $product->setMetaKeywords('MetaKeywords test');
+                        $productSizeID = $this->_getAttributeLabelId('bnp_size',$productSize);
+                        $product->setSize($productSizeID);
 
-                            foreach ($productData['Catalogue']['value'] as $label ){
-                                $bnpCatalogueLabelIds[]=$this->_getAttributeLabelId('bnp_catalogue',$label);
-                            }
-                            $product->setBnpCatalogue($bnpCatalogueLabelIds);
-                            foreach ($productData['Season']['value'] as $label ){
-                                $bnpCatalogueLabelIds[]=$this->_getAttributeLabelId('bnp_season',$label);
-                            }
-                            $product->setBnpSeason($bnpCatalogueLabelIds);
-                            foreach ($productData['WashIcon']['value'] as $label ){
-                                $bnpCatalogueLabelIds[]=$this->_getAttributeLabelId('bnp_washicon',$label);
-                            }
-                            $product->setWashicon($bnpCatalogueLabelIds);
-
-                            $product->setBnpFitting($this->_getAttributeLabelId('bnp_fitting',$productData['Fitting']['value']));
-                            $product->setColor($this->_getAttributeLabelId('bnp_color',$productData['Color']['value']));
-
-                        $category_ids = array();
-                        $category_idss = array();
-                        if ($productData['Program']['value']!='') $category_ids[]=$productData['Program']['value'];
-                        if ($$productData['ProductMainGroup']['value']!='') $category_ids[]=$productData['ProductMainGroup']['value'];
-                        if ($productData['ProductSubGroup']['value']!='') $category_ids[]=$productData['ProductSubGroup']['value'];
-                        foreach ($category_ids as $category_id){
-                            $category = Mage::getModel('catalog/category')->getCollection()->addAttributeToFilter('old_id', $category_id)->load();
-                            foreach ($category->getAllIds() as $idss) $category_idss []= $idss;
-
-                        }
-
-                        $product->setCategoryIds($category_idss);
 
                         try{
                             $product->save();
-                            $_simpleProductsIds[$productItem['CinoNumber']['value'] . '_' . $productSize] = $product->getId();
+//                            $_simpleProductsIds[$productItem['CinoNumber']['value'] . '_' . $productSize] = $product->getId();
+
+                            // saving some data for configurable product creation
+                            $dataArray[$product->getId()]= array(
+                                'attribute_id' => '1074',
+                                'label' => $productSize,
+                                'value_index' => $productSizeID,
+                                'is_percent' => false,
+                                "pricing_value" => ''
+                            );
 
                         }
                         catch (Exception $e){
@@ -146,68 +169,41 @@ class Bonaparte_ImportExport_Model_Custom_Import_Products extends Bonaparte_Impo
 
 
                 // create the configurable product
-                $product = Mage::getModel('catalog/product');
                 $product->setTypeId('configurable');
-                $product->setTaxClassId(0); //none
-                $product->setWebsiteIds(array(1));  // store id
-                $product->setAttributeSetId(9); //product Attribute Set
                 $product->setSku($productItem['CinoNumber']['value']);
-                $product->setName($productData['HeaderWebs']['value']['en']);
-                $product->setDescription($productData['DescriptionCatalogues']['value']['en']);
-                $product->setPrice("1000.00");
-                $product->setShortDescription($productData['DescriptionCatalogues']['value']['en']);
-                $product->setWeight(0);
-                $product->setStatus(1); //enabled
-                $product->setVisibility(1); //nowhere
-                $product->setMetaDescription('MetaDescription test');
-                $product->setMetaTitle('MetaTitle test');
-                $product->setMetaKeywords('MetaKeywords test');
-                foreach ($productData['Catalogue']['value'] as $label ){
-                    $bnpCatalogueLabelIds[]=$this->_getAttributeLabelId('bnp_catalogue',$label);
-                }
-                $product->setBnpCatalogue($bnpCatalogueLabelIds);
-                foreach ($productData['Season']['value'] as $label ){
-                    $bnpCatalogueLabelIds[]=$this->_getAttributeLabelId('bnp_season',$label);
-                }
-                $product->setBnpSeason($bnpCatalogueLabelIds);
-                foreach ($productData['WashIcon']['value'] as $label ){
-                    $bnpCatalogueLabelIds[]=$this->_getAttributeLabelId('bnp_washicon',$label);
-                }
-                $product->setWashicon($bnpCatalogueLabelIds);
-
-                $product->setBnpFitting($this->_getAttributeLabelId('bnp_fitting',$productData['Fitting']['value']));
-                $product->setColor($this->_getAttributeLabelId('bnp_color',$productData['Color']['value']));
-
-                $category_ids = array();
-                $category_idss = array();
-                if ($productData['Program']['value']!='') $category_ids[]=$productData['Program']['value'];
-                if ($$productData['ProductMainGroup']['value']!='') $category_ids[]=$productData['ProductMainGroup']['value'];
-                if ($productData['ProductSubGroup']['value']!='') $category_ids[]=$productData['ProductSubGroup']['value'];
-                foreach ($category_ids as $category_id){
-                    $category = Mage::getModel('catalog/category')->getCollection()->addAttributeToFilter('old_id', $category_id)->load();
-                    foreach ($category->getAllIds() as $idss) $category_idss []= $idss;
-
-                }
-                $product->setCategoryIds($category_idss);
-
-                $dataArray = array();
-                foreach ($_simpleProductsIds as $simpleArray) {
-                    $dataArray[$simpleArray['id']] = array();
-                    foreach ($attributes_array as $attrArray) {
-                        array_push(
-                            $dataArray[$simpleArray['id']],
-                            array(
-                                "attribute_id" => $simpleArray['attr_id'],
-                                "label" => $simpleArray['label'],
-                                "is_percent" => false,
-                                "pricing_value" => $simpleArray['price']
-                            )
-                        );
-                    }
-                }
+                $product->setVisibility(4); //Catalog&Search
 
 
-
+//                $dataArray = array();
+//                foreach ($_simpleProductsIds as $simpleArray) {
+//                    $dataArray[$simpleArray['id']] = array();
+//                    foreach ($attributes_array as $attrArray) {
+//                        array_push(
+//                            $dataArray[$simpleArray['id']],
+//                            array(
+//                                "attribute_id" => $simpleArray['attr_id'],
+//                                "label" => $simpleArray['label'],
+//                                "is_percent" => false,
+//                                "pricing_value" => $simpleArray['price']
+//                            )
+//                        );
+//                    }
+//                }
+                $product->setConfigurableProductsData($dataArray);
+                $attributesDataArray = array(
+                    '0'	=> array(
+                        'id' 				=> NULL,
+                        'label'			=> '', //optional, will be replaced by the modified api.php
+                        'position'			=> NULL,
+                        'values'			=> $dataArray,
+                        'attribute_id' 		=> 1074, //get this value from attributes api call
+                        'attribute_code'	        => 'bnp_size', //get this value from attributes api call
+                        'frontend_label'	        => '', //optional, will be replaced by the modifed api.php
+                        'html_id'			=> 'config_super_product__attribute_0'
+                    )
+                );
+                $product->setConfigurableAttributesData($attributesDataArray);
+                $product->setCanSaveConfigurableAttributes(true);
 
 
                 try{
@@ -218,15 +214,6 @@ class Bonaparte_ImportExport_Model_Custom_Import_Products extends Bonaparte_Impo
                     echo "item " . $productData['HeaderWebs']['value']['en'] . " not added\n";
                     echo "exception:$e";
                 }
-
-
-
-
-
-
-
-
-
 
 
             }
