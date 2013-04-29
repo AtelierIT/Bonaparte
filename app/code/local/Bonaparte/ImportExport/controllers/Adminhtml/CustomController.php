@@ -39,6 +39,11 @@ class Bonaparte_ImportExport_Adminhtml_CustomController extends Mage_Adminhtml_C
         Mage::getModel('Bonaparte_ImportExport/Custom_Import_Products')->start();
     }
 
+    public function importPricesAction()
+    {
+        Mage::getModel('Bonaparte_ImportExport/Custom_Import_Prices')->start();
+    }
+
     public function resourcesAction()
     {
         $this->loadLayout()->renderLayout();

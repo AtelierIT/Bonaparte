@@ -17,6 +17,13 @@ class Bonaparte_ImportExport_Model_Custom_Import_Prices extends Bonaparte_Import
     const CONFIGURATION_FILE_PATH = '/dump_files/ARTIKLAR.TXT';
 
     /**
+     * Store current ad code for the sku
+     *
+     * @var array
+     */
+    private $_skuAdCodes = array();
+
+    /**
      * Construct import model
      */
     public function _construct()
@@ -57,8 +64,8 @@ class Bonaparte_ImportExport_Model_Custom_Import_Prices extends Bonaparte_Import
         $currentSKU = null;
         $temporaryData = array();
         while($line = fgets($fileHandler)) {
-            $this->_logMessage($row++);
-            $this->_logMemoryUsage();
+            $row++;
+            $this->_logMessage('Processing row ' . $row);
             $line = explode(';', $line);
             $priceData = array();
             foreach($dataKeys as $key => $value) {
@@ -67,13 +74,14 @@ class Bonaparte_ImportExport_Model_Custom_Import_Prices extends Bonaparte_Import
             unset($key, $value);
 
             $headArticleExploded = explode('-', $priceData['headarticle']);
-            $rowSKU = $headArticleExploded[1] . '-' . $priceData['size'];
+            $rowSKU = $headArticleExploded[1] . '-' . $priceData['size'] . '-' . $priceData['countrycode'];
             if($currentSKU != $rowSKU) {
                 if(count($temporaryData)) {
                     $lowestPrice = null;
                     foreach($temporaryData as $data) {
                         if(($data['price'] < $lowestPrice) || $lowestPrice === null) {
                             $lowestPrice = $data['price'];
+                            $this->_skuAdCodes[$currentSKU] = substr($data['articleno2'], 5, 1);
                         }
                     }
                     $this->_data[$currentSKU] = $lowestPrice;
@@ -86,26 +94,44 @@ class Bonaparte_ImportExport_Model_Custom_Import_Prices extends Bonaparte_Import
 
             $temporaryData[] = $priceData;
             unset($priceData);
-            if($row == '30000') {
-                break;
-            }
         }
         fclose($fileHandler);
-
-        foreach($this->_data as $sku => $price) {
-            $model = Mage::getModel('catalog/product')->loadByAttribute('sku', $sku);
-            $model->setPrice($price);
-            $model->save();
-            $model->clearInstance();
-        }
     }
 
     /**
      * Specific category functionality
      */
     public function start()
-    {
+    {var_dump($this->_skuAdCodes);exit;
         $this->_logMessage('Started importing prices' . "\n" );
+
+
+        $storeViews = array();
+        foreach(Mage::app()->getWebsites() as $website) {
+            $storeIds = $website->getStoreIds();
+            $storeViews[strtolower($website->getCode())] = array_pop($storeIds);
+        }
+
+        $row = 0;
+        foreach($this->_data as $sku => $price) {
+            $this->_logMemoryUsage();
+            $sku = explode('-', $sku);
+            $countryCode = strtolower($sku[2]);
+            $sku = $sku[0] . '-' . $sku[1];
+
+            $this->_logMessage('Sku: ' . $sku . "\n" );
+
+            $model = Mage::getModel('catalog/product')->loadByAttribute('sku', $sku);
+            if(empty($model)) {
+               continue;
+            }
+
+            $this->_logMessage('Price set on sku: ' . $sku . ' on store view ' . $countryCode . "\n" );
+            $model->setStoreId($storeViews[$countryCode])
+                    ->setPrice($price)
+                    ->save()
+                    ->clearInstance();
+        }
 
         $this->_logMessage('Finished importing prices' . "\n" );
     }
