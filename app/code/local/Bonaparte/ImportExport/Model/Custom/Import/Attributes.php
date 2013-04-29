@@ -32,6 +32,7 @@ class Bonaparte_ImportExport_Model_Custom_Import_Attributes extends Bonaparte_Im
      */
     public function _construct()
     {
+        $this->_logMessage('Reading configuration files');
         $this->_configurationFilePath = Mage::getBaseDir() . self::CONFIGURATION_FILE_PATH;
         $this->_initialize();
 
@@ -61,7 +62,11 @@ class Bonaparte_ImportExport_Model_Custom_Import_Attributes extends Bonaparte_Im
      */
     private function _removeDuplicates()
     {
+        $this->_logMessage('Started removing duplicate attributes');
+        $currentAttributeNumber = 0;
+        $attributesNumber = count($this->_data);
         foreach ($this->_data as $attributeCode => $attributeConfigurationData) {
+            $currentAttributeNumber++;
             $code = self::ATTRIBUTE_PREFIX . strtolower($attributeCode);
             $attributeCollection = Mage::getModel('eav/entity_attribute')->getCollection()
                 ->setModel('catalog/resource_eav_attribute')
@@ -69,13 +74,29 @@ class Bonaparte_ImportExport_Model_Custom_Import_Attributes extends Bonaparte_Im
                 ->load();
 
             foreach ($attributeCollection as $duplicateAttribute) {
+                $this->_logMessage(
+                    'Processing attribute '
+                        . $currentAttributeNumber
+                        . ' out of '
+                        . $attributesNumber
+                        . ' with the code '
+                        . '"'
+                        . $code
+                        . '"'
+                );
+                $this->_logMemoryUsage();
+
                 $duplicateAttribute->delete();
+                $duplicateAttribute->clearInstance();
             }
             unset($attributeCollection);
         }
+        $this->_logMessage('Finished removing duplicate attributes');
     }
 
     private function _addMissingAttributes() {
+        $this->_logMessage('Adding missing attributes');
+
         $missingAttributes = array(
             'AnimalOrigin' => array( // bolean
                 0,
@@ -116,31 +137,51 @@ class Bonaparte_ImportExport_Model_Custom_Import_Attributes extends Bonaparte_Im
     public function start()
     {
         // add Size to attributes array
+        $this->_logMessage('Custom file handling');
         $data_size = array();
         $data_csv = array();
         $handle = fopen(Mage::getBaseDir() . self::CONFIGURATION_FILE_PATH_SIZE, 'r');
-
         while ($data_csv = fgetcsv($handle,null,';','"')) {
               $data_size[] = $data_csv[6];
         }
 
         $data_size = array_unique($data_size);
         fclose($handle);
+        $this->_logMessage('Finished custom file handling');
+
+        $this->_logMessage('Finished reading configuration files');
 
         $this->_data['Size'] = $data_size;
 
-        $this->_removeDuplicates();
         $this->_addMissingAttributes();
+        $this->_removeDuplicates();
 
+        $this->_logMessage('Started importing all attributes');
+        $attributesNumber = count($this->_data);
+        $currentAttributeNumber = 0;
         foreach ($this->_data as $attributeCode => $attributeConfigurationData) {
             $code = self::ATTRIBUTE_PREFIX . strtolower($attributeCode);
+            $currentAttributeNumber++;
+            $this->_logMessage(
+                'Processing attribute '
+                    . $currentAttributeNumber
+                    . ' out of '
+                    . $attributesNumber
+                    . ' with the code '
+                    . '"'
+                    . $code
+                    . '"'
+            );
+            $this->_logMemoryUsage();
 
             // add the store id in the label value array
 
             $optionValues = array();
             $optionIds = array();
             $counter = 0;
+            $this->_logMessage('Adding attribute options(' . count($attributeConfigurationData) . ')');
             foreach ($attributeConfigurationData as $optionId => $optionValue) {
+                $this->_logMessage('.', false);
                 if (is_array($optionValue)) {
 
                     $optionValues['option' . $counter][0] = $optionValue[2];
@@ -227,9 +268,11 @@ class Bonaparte_ImportExport_Model_Custom_Import_Attributes extends Bonaparte_Im
             $model->setIsUserDefined(1);
 
             try {
+                $this->_logMessage('Saving attribute');
                 $model->save();
+                $this->_logMessage('Saved');
             } catch (Exception $e) {
-                echo '<p>Sorry, error occured while trying to save the attribute. Error: ' . $e->getMessage() . '</p>';
+                $this->_logMessage('Sorry, error occured while trying to save the attribute. Error: ' . $e->getMessage());
             }
 
             $databaseOptions = $model->getSource()->getAllOptions(false);
@@ -240,16 +283,19 @@ class Bonaparte_ImportExport_Model_Custom_Import_Attributes extends Bonaparte_Im
             ksort($idOrderedDatabaseOptions);
             $internalOptionIds = array_keys($idOrderedDatabaseOptions);
 
-            $collection = Mage::getModel('Bonaparte_ImportExport/External_Relation_Attribute_Option')->getCollection();
-            $collection->load();
+            $model->clearInstance();
+
+            $this->_logMessage('Relating external id of options to the internal id of options');
             foreach ($internalOptionIds as $key => $internalOptionId) {
                 $model = Mage::getModel('Bonaparte_ImportExport/External_Relation_Attribute_Option');
                 $model->setType(Bonaparte_ImportExport_Model_External_Relation_Attribute_Option::TYPE_ATTRIBUTE_OPTION);
                 $model->setExternalId($optionIds[$key]);
                 $model->setInternalId($internalOptionId);
-                $collection->addItem($model);
+                $model->save();
+                $model->clearInstance();
             }
-            $collection->save();
+            unset($collection);
+            $this->_logMessage('Finished relating external id of options to the internal id of options');
 
             $model = Mage::getModel('eav/entity_setup', 'core_setup');
             $attributeId = $model->getAttribute('catalog_product', $code);
@@ -257,10 +303,16 @@ class Bonaparte_ImportExport_Model_Custom_Import_Attributes extends Bonaparte_Im
             $attributeGroupId = $model->getAttributeGroup('catalog_product', $attributeSetId, 'General');
 
             //add attribute to a set
-            $model->addAttributeToSet('catalog_product', $attributeSetId, $attributeGroupId['attribute_group_id'], $attributeId['attribute_id']);
+            $model->addAttributeToSet(
+                'catalog_product',
+                $attributeSetId,
+                $attributeGroupId['attribute_group_id'],
+                $attributeId['attribute_id']
+            );
+            unset($model);
         }
 
-        echo 'DONE';
+        $this->_logMessage('Finished importing attributes' . "\n" );
     }
 
 }

@@ -44,6 +44,43 @@ abstract class Bonaparte_ImportExport_Model_Custom_Import_Abstract extends Mage_
     }
 
     /**
+     * Output message
+     *
+     * @param $message
+     */
+    protected function _logMessage($message, $addNewline = true) {
+        $date = '';
+        $newline = '';
+        if($addNewline) {
+            $date = '[' . date('d-m-Y H:i:s') . '] ';
+            $newline = "\n";
+        }
+
+        // turn object to string
+        if(is_object($message)) {
+            $message = serialize($message);
+        }
+
+        // turn array to string
+        if(is_array($message)) {
+            $message = json_encode($message);
+        }
+
+        echo $newline . $date . $message;
+    }
+
+    /**
+     * Log real memory usage in bytes
+     */
+    protected function _logMemoryUsage() {
+        $memoryUsageBytes = memory_get_usage(true);
+        $memoryUsageMB = number_format($memoryUsageBytes / 1048576, 2);
+        $memoryUsageGB = number_format($memoryUsageMB / 1024, 2);
+
+        $this->_logMessage($memoryUsageBytes . ' bytes (' . $memoryUsageMB . ' MB(' . $memoryUsageGB . ' GB))');
+    }
+
+    /**
      * Starts the import process
      *
      * @return mixed
