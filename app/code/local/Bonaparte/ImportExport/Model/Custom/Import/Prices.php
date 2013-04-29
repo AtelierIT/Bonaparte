@@ -54,7 +54,7 @@ class Bonaparte_ImportExport_Model_Custom_Import_Prices extends Bonaparte_Import
         );
 
         $row = 0;
-        $headArticle = null;
+        $currentSKU = null;
         $temporaryData = array();
         while($line = fgets($fileHandler)) {
             $this->_logMessage($row++);
@@ -66,29 +66,38 @@ class Bonaparte_ImportExport_Model_Custom_Import_Prices extends Bonaparte_Import
             }
             unset($key, $value);
 
-            if($headArticle != $priceData['headarticle']) {
-                if(count($temporaryData[$headArticle])) {
+            $headArticleExploded = explode('-', $priceData['headarticle']);
+            $rowSKU = $headArticleExploded[1] . '-' . $priceData['size'];
+            if($currentSKU != $rowSKU) {
+                if(count($temporaryData)) {
                     $lowestPrice = null;
-                    foreach($temporaryData[$headArticle] as $data) {
+                    foreach($temporaryData as $data) {
                         if(($data['price'] < $lowestPrice) || $lowestPrice === null) {
                             $lowestPrice = $data['price'];
                         }
                     }
-                    $this->_data[$headArticle] = $lowestPrice;
+                    $this->_data[$currentSKU] = $lowestPrice;
                     unset($data, $lowestPrice);
                 }
 
-                $headArticle = $priceData['headarticle'];
-                unset($temporaryData[$headArticle]);
+                $currentSKU = $rowSKU;
+                unset($temporaryData);
             }
 
-            $temporaryData[$headArticle][] = $priceData;
+            $temporaryData[] = $priceData;
             unset($priceData);
-            if($row == '50000') {
+            if($row == '30000') {
                 break;
             }
         }
         fclose($fileHandler);
+
+        foreach($this->_data as $sku => $price) {
+            $model = Mage::getModel('catalog/product')->loadByAttribute('sku', $sku);
+            $model->setPrice($price);
+            $model->save();
+            $model->clearInstance();
+        }
     }
 
     /**
