@@ -13,13 +13,18 @@ class Bonaparte_ImportExport_Model_Custom_Import_Products extends Bonaparte_Impo
     const CONFIGURATION_FILE_SIZE_TRANSLATION = '/dump_files/xml/SizeTranslation.csv';
     private $_customSizes = array();
     private $_bnpAttributes = array();
+    private $_attributeSetIdd = 0;
+    private $_attributeIdd = 0;
+    private $_allWebsiteIDs = array();
+
     /**
      * Construct import model
      */
     public function _construct()
     {
+        echo 'Start' . date("h:i:s a", time());
         $this->_configurationFilePath = array();
-        $configFilesPath = Mage::getBaseDir() . '/dump_files/xml/product';
+        $configFilesPath = Mage::getBaseDir() . '/dump_files/xml/test1';
         $files = scandir($configFilesPath);
 
         foreach($files as $fileName) {
@@ -67,6 +72,34 @@ class Bonaparte_ImportExport_Model_Custom_Import_Products extends Bonaparte_Impo
         return $this->_bnpAttributes[$attributeCode][$label];
 
     }
+    public function _getAttributeSetID($label)
+    {
+
+        $entityTypeId = Mage::getModel('eav/entity')->setType('catalog_product')->getTypeId();
+        $SetId = intval(Mage::getModel('eav/entity_attribute_set')->getCollection()->setEntityTypeFilter($entityTypeId)->addFieldToFilter('attribute_set_name', $label)->getFirstItem()->getAttributeSetId());
+        $this->_attributeSetIdd = $SetId ;
+    }
+
+    public function _getAttributeID($label)
+    {
+        $eavAttribute = new Mage_Eav_Model_Mysql4_Entity_Attribute();
+        $attr_id = $eavAttribute->getIdByCode('catalog_product', $label);
+        $this->_attributeIdd = $attr_id;
+    }
+
+    public function _getCustomSize()
+    {
+        // create Custom Sizes array
+        $customSize = array();
+        $data_csv = array();
+        $handle = fopen(Mage::getBaseDir() . self::CONFIGURATION_FILE_SIZE_TRANSLATION, 'r');
+
+        while ($data_csv = fgetcsv($handle,null,';','"')) {
+            $customSize[$data_csv[3]] = $data_csv[2];
+        }
+        fclose($handle);
+        return $customSize;
+    }
 
     public function addAttributeOption($arg_attribute, $arg_value)
     {
@@ -84,12 +117,8 @@ class Bonaparte_ImportExport_Model_Custom_Import_Products extends Bonaparte_Impo
         $attribute->setData('option',$result);
         $attribute->save();
 
-        return $this->getAttributeOptionValue($arg_attribute, $arg_value);
+        return $this->_getAttributeLabelId($arg_attribute, $arg_value);
     }
-
-
-
-
 
 
     /**
@@ -101,33 +130,42 @@ class Bonaparte_ImportExport_Model_Custom_Import_Products extends Bonaparte_Impo
     private function _addProduct($productData) {
 
         $configurable_attribute = "bnp_size";
-        $attr_id = 1074;
+        $attr_id = $this->_attributeIdd;
+
         $simpleProducts = array();
-        $allWebsiteIDs = Mage::getModel('core/website')->getCollection()->getAllIds();
+
 
            foreach ($productData['Items']['value'] as $productItem){
                 // first step is to check if the size is custom or not
-                if (!$this->_customSizes[$productItem['Sizess']['value']['en']]){
-                    $productSizes = array($this->_customSizes[$productItem['Sizess']['value']['en']]);
+                if (in_array($productItem['Sizess']['value']['en'],array('50X100','70X140','ne size','one size','One size','One Size','ONE SIZE','onesize','Onesize','ONESIZE'))){
+                    $productSizes = array('cst_'.$productItem['Sizess']['value']['en']);
+                }
+                elseif (!$this->_customSizes[$productItem['Sizess']['value']['en']]){
+                    $productSizes =  explode("-", $productItem['Sizess']['value']['en']);
                 }else{
-                $productSizes =  explode("-", $productItem['Sizess']['value']['en']);
+                $productSizes = array($this->_customSizes[$productItem['Sizess']['value']['en']]);
                 }
 
                 foreach($productSizes as $productSize){
 
-                    $attr_id = 1074; $attr_value = $productSize;
+                    $attr_value = $productSize;
                     $configurableAttributeOptionId = $this->_getAttributeLabelId($configurable_attribute,$productSize);
                     if (!$configurableAttributeOptionId) {
-                        $configurableAttributeOptionId = addAttributeOption($configurable_attribute, $attr_value);
+                        $configurableAttributeOptionId = $this->addAttributeOption($configurable_attribute, $attr_value);
                     }
 
                         //create each simple product
                     $category_ids = array();
                     $category_idss = array();
+                    $prefix_main_group = "";
+                    $prefix_sub_group = "";
                     if ($productData['Program']['value']!='') $category_ids[]=$productData['Program']['value'];
-                    if ($$productData['ProductMainGroup']['value']!='') $category_ids[]=$productData['ProductMainGroup']['value'];
-                    if ($productData['ProductSubGroup']['value']!='') $category_ids[]=$productData['ProductSubGroup']['value'];
-                    foreach ($category_ids as $category_id){
+                    if ($productData['ProductMainGroup']['value']!='') {
+                        $prefix_main_group = $productData['Program']['value']?$productData['Program']['value']."_":"";
+                        $category_ids[]= $prefix_main_group.$productData['ProductMainGroup']['value']; //tmunteanu add Program to product main group. Ex: M_001 where M = Program and 001 = Main Group
+                        $prefix_sub_group = $prefix_main_group.$productData['ProductMainGroup']['value']."_";
+                    }
+                    if ($productData['ProductSubGroup']['value']!='') $category_ids[]=  $prefix_sub_group.$productData['ProductSubGroup']['value'];foreach ($category_ids as $category_id){
                         $category = Mage::getModel('catalog/category')->getCollection()->addAttributeToFilter('old_id', $category_id)->load();
                         foreach ($category->getAllIds() as $idss) $category_idss []= $idss;
 
@@ -147,11 +185,11 @@ class Bonaparte_ImportExport_Model_Custom_Import_Products extends Bonaparte_Impo
                     $sProduct = Mage::getModel('catalog/product');
                     $sProduct
                         ->setTypeId(Mage_Catalog_Model_Product_Type::TYPE_SIMPLE)
-                        ->setWebsiteIds($allWebsiteIDs) // store id
+                        ->setWebsiteIds($this->_allWebsiteIDs)
                         ->setStatus(Mage_Catalog_Model_Product_Status::STATUS_ENABLED)
                         ->setVisibility(Mage_Catalog_Model_Product_Visibility::VISIBILITY_NOT_VISIBLE)
                         ->setTaxClassId(0) //none
-                        ->setAttributeSetId(9) //product Attribute Set
+                        ->setAttributeSetId($this->_attributeSetIdd)
                         ->setCategoryIds($category_idss)
                         ->setSku($productItem['CinoNumber']['value'] . '_' . $productSize)
                         ->setName($productData['HeaderWebs']['value']['en'])
@@ -207,9 +245,9 @@ class Bonaparte_ImportExport_Model_Custom_Import_Products extends Bonaparte_Impo
                     ->setTaxClassId(0)
                     ->setVisibility(Mage_Catalog_Model_Product_Visibility::VISIBILITY_BOTH)
                     ->setStatus(Mage_Catalog_Model_Product_Status::STATUS_ENABLED)
-                    ->setWebsiteIds($allWebsiteIDs)
+                    ->setWebsiteIds($this->_allWebsiteIDs)
                     ->setCategoryIds($category_idss)
-                    ->setAttributeSetId(9) // to be changed !!!
+                    ->setAttributeSetId($this->_attributeSetIdd)
                     ->setSku($productItem['CinoNumber']['value'])
                     ->setName($productData['HeaderWebs']['value']['en'])
                     ->setShortDescription($productShortDescription[0].'.')
@@ -380,27 +418,25 @@ class Bonaparte_ImportExport_Model_Custom_Import_Products extends Bonaparte_Impo
      */
     public function start()
     {
-        // create Custom Sizes array
-        $customSize = array();
-        $data_csv = array();
-        $handle = fopen(Mage::getBaseDir() . self::CONFIGURATION_FILE_SIZE_TRANSLATION, 'r');
-
-        while ($data_csv = fgetcsv($handle,null,';','"')) {
-            $customSize[$data_csv[3]] = $data_csv[2];
-        }
-
-        $this->_customSizes = $customSize;
-
-        fclose($handle);
-
+        $this->_customSizes = $this->_getCustomSize();
+        $this->_getAttributeSetID('Default');
+        $this->_getAttributeID('bnp_size');
+        $this->_allWebsiteIDs = Mage::getModel('core/website')->getCollection()->getAllIds();
 
         $products = array();
+        echo '<br>***************PRODUCT IMPORT';
+        $counter = 1;
         foreach($this->_data as $productConfig) {
+            echo '<br>' . date("h:i:s a", time()).' ';
             $productData = array();
             $this->_extractConfiguration($productConfig->getNode(), $productData);
+            echo $counter . ' '. $productData['Items']['value'][0]['id'];
+            $counter++;
             $this->_addProduct($productData);
             $products[] = $productData;
+
         }
+        echo '<br>' . date("h:i:s a", time());
 
         echo 'DONE';
     }
