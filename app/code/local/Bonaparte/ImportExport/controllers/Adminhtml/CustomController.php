@@ -28,6 +28,7 @@ class Bonaparte_ImportExport_Adminhtml_CustomController extends Mage_Adminhtml_C
         Mage::getModel('Bonaparte_ImportExport/Custom_Import_Categories')->start();
     }
 
+
     public function productsAction()
     {
         $this->loadLayout()->renderLayout();
@@ -36,5 +37,15 @@ class Bonaparte_ImportExport_Adminhtml_CustomController extends Mage_Adminhtml_C
     public function importProductsAction()
     {
         Mage::getModel('Bonaparte_ImportExport/Custom_Import_Products')->start();
+    }
+
+    public function resourcesAction()
+    {
+        $this->loadLayout()->renderLayout();
+    }
+
+    public function importResourcesAction()
+    {
+        Mage::getModel('Bonaparte_ImportExport/Custom_Import_Resources')->start();
     }
 }

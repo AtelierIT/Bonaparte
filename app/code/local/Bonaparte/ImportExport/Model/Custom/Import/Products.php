@@ -191,7 +191,7 @@ class Bonaparte_ImportExport_Model_Custom_Import_Products extends Bonaparte_Impo
                         ->setTaxClassId(0) //none
                         ->setAttributeSetId($this->_attributeSetIdd)
                         ->setCategoryIds($category_idss)
-                        ->setSku($productItem['CinoNumber']['value'] . '_' . $productSize)
+                        ->setSku($productItem['CinoNumber']['value'] . '-' . $productSize)
                         ->setName($productData['HeaderWebs']['value']['en'])
                         ->setShortDescription($productShortDescription[0].'.')
                         ->setDescription($productData['DescriptionCatalogues']['value']['en'])
@@ -226,6 +226,7 @@ class Bonaparte_ImportExport_Model_Custom_Import_Products extends Bonaparte_Impo
                                 "label" => $attr_value
                             )
                         );
+                        $sProduct->clearInstance();
 
                     }
                     catch (Exception $e){
@@ -302,6 +303,7 @@ class Bonaparte_ImportExport_Model_Custom_Import_Products extends Bonaparte_Impo
 
                 try{
                     $cProduct->save();
+                    $cProduct->clearInstance();
                 }
                 catch (Exception $e){
                     echo "item " . $productData['HeaderWebs']['value']['en'] . " not added\n";
@@ -423,17 +425,15 @@ class Bonaparte_ImportExport_Model_Custom_Import_Products extends Bonaparte_Impo
         $this->_getAttributeID('bnp_size');
         $this->_allWebsiteIDs = Mage::getModel('core/website')->getCollection()->getAllIds();
 
-        $products = array();
+        //$products = array();
         echo '<br>***************PRODUCT IMPORT';
         $counter = 1;
         foreach($this->_data as $productConfig) {
-            echo '<br>' . date("h:i:s a", time()).' ';
             $productData = array();
             $this->_extractConfiguration($productConfig->getNode(), $productData);
-            echo $counter . ' '. $productData['Items']['value'][0]['id'];
-            $counter++;
+            echo '<br>' . $counter++ . '. '. date("h:i:s a", time()) . ' ' . $productData['Items']['value'][0]['id'];
             $this->_addProduct($productData);
-            $products[] = $productData;
+          //  $products[] = $productData;
 
         }
         echo '<br>' . date("h:i:s a", time());

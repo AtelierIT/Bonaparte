@@ -61,6 +61,9 @@ class Bonaparte_ImportExport_Model_Custom_Import_Categories extends Bonaparte_Im
         }
 
         foreach ($folder as $node) {
+
+
+
             $attributeId = $node->getAttribute('groupId');
             $name = (array)$node->locale;
             $categoryStructure[$attributeId] = array(
