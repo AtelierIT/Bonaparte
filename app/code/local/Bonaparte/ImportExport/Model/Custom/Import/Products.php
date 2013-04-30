@@ -24,7 +24,7 @@ class Bonaparte_ImportExport_Model_Custom_Import_Products extends Bonaparte_Impo
     {
         echo 'Start' . date("h:i:s a", time());
         $this->_configurationFilePath = array();
-        $configFilesPath = Mage::getBaseDir() . '/dump_files/xml/test1';
+        $configFilesPath = Mage::getBaseDir() . '/dump_files/xml/test2';
         $files = scandir($configFilesPath);
 
         foreach($files as $fileName) {
@@ -133,6 +133,11 @@ class Bonaparte_ImportExport_Model_Custom_Import_Products extends Bonaparte_Impo
         $attr_id = $this->_attributeIdd;
 
         $simpleProducts = array();
+        $mediaAttributes = array (
+            'image',
+            'thumbnail',
+            'small_image'
+        );
 
 
            foreach ($productData['Items']['value'] as $productItem){
@@ -211,6 +216,15 @@ class Bonaparte_ImportExport_Model_Custom_Import_Products extends Bonaparte_Impo
                         'is_in_stock' => 1,
                         'qty' => 99999
                     ));
+
+                    // adding the images
+
+
+                    foreach ($productItem['Resources']['value'] as $resource){
+                        $picturePath = Mage::getBaseDir() . '/dump_files/pictures/' . $resource['OriginalFilename']['value'];
+                        if (file_exists($picturePath))
+                            $sProduct->addImageToMediaGallery($picturePath,$mediaAttributes, false, false);
+                    }
 
                     try{
                         $sProduct->save();
@@ -300,7 +314,14 @@ class Bonaparte_ImportExport_Model_Custom_Import_Products extends Bonaparte_Impo
                     'is_in_stock' => 1,
                     'is_salable' => 1
                 ));
+                // adding the images
 
+
+               foreach ($productItem['Resources']['value'] as $resource){
+                   $picturePath = Mage::getBaseDir() . '/dump_files/pictures/' . $resource['OriginalFilename']['value'];
+                   if (file_exists($picturePath))
+                       $sProduct->addImageToMediaGallery($picturePath,$mediaAttributes, false, false);
+               }
                 try{
                     $cProduct->save();
                     $cProduct->clearInstance();
