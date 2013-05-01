@@ -222,8 +222,15 @@ class Bonaparte_ImportExport_Model_Custom_Import_Products extends Bonaparte_Impo
 
                     foreach ($productItem['Resources']['value'] as $resource){
                         $picturePath = Mage::getBaseDir() . '/dump_files/pictures/' . $resource['OriginalFilename']['value'];
-                        if (file_exists($picturePath))
-                            $sProduct->addImageToMediaGallery($picturePath,$mediaAttributes, false, false);
+                        if (file_exists($picturePath) && ($resource['OriginalFilename']['value']!='')){
+                            try {
+                                $sProduct->addImageToMediaGallery($picturePath,$mediaAttributes, false, false);
+                            } catch (Exception $e) {
+                                echo $e->getMessage();
+                            }
+                        } else {
+                            echo "Product does not have an image or the path is incorrect. Path was: {$picturePath}<br/>\n";
+                        }
                     }
 
                     try{
@@ -319,8 +326,15 @@ class Bonaparte_ImportExport_Model_Custom_Import_Products extends Bonaparte_Impo
 
                foreach ($productItem['Resources']['value'] as $resource){
                    $picturePath = Mage::getBaseDir() . '/dump_files/pictures/' . $resource['OriginalFilename']['value'];
-                   if (file_exists($picturePath))
-                       $sProduct->addImageToMediaGallery($picturePath,$mediaAttributes, false, false);
+                   if (file_exists($picturePath) && ($resource['OriginalFilename']['value']!='')){
+                       try {
+                           $cProduct->addImageToMediaGallery($picturePath,$mediaAttributes, false, false);
+                       } catch (Exception $e) {
+                           echo $e->getMessage();
+                       }
+                   } else {
+                       echo "Product does not have an image or the path is incorrect. Path was: {$picturePath}<br/>\n";
+                   }
                }
                 try{
                     $cProduct->save();
@@ -452,7 +466,7 @@ class Bonaparte_ImportExport_Model_Custom_Import_Products extends Bonaparte_Impo
         foreach($this->_data as $productConfig) {
             $productData = array();
             $this->_extractConfiguration($productConfig->getNode(), $productData);
-            echo '<br>' . $counter++ . '. '. date("h:i:s a", time()) . ' ' . $productData['Items']['value'][0]['id'];
+            echo '<br>\n ' . $counter++ . '. '. date("h:i:s a", time()) . ' ' . $productData['Items']['value'][0]['id'];
             $this->_addProduct($productData);
           //  $products[] = $productData;
 
