@@ -170,7 +170,8 @@ class Bonaparte_ImportExport_Model_Custom_Import_Products extends Bonaparte_Impo
                         $category_ids[]= $prefix_main_group.$productData['ProductMainGroup']['value']; //tmunteanu add Program to product main group. Ex: M_001 where M = Program and 001 = Main Group
                         $prefix_sub_group = $prefix_main_group.$productData['ProductMainGroup']['value']."_";
                     }
-                    if ($productData['ProductSubGroup']['value']!='') $category_ids[]=  $prefix_sub_group.$productData['ProductSubGroup']['value'];foreach ($category_ids as $category_id){
+                    if ($productData['ProductGroup']['value']!='') $category_ids[]=  $prefix_sub_group.$productData['ProductGroup']['value'];
+                    foreach ($category_ids as $category_id){
                         $category = Mage::getModel('catalog/category')->getCollection()->addAttributeToFilter('old_id', $category_id)->load();
                         foreach ($category->getAllIds() as $idss) $category_idss []= $idss;
 
@@ -222,8 +223,15 @@ class Bonaparte_ImportExport_Model_Custom_Import_Products extends Bonaparte_Impo
 
                     foreach ($productItem['Resources']['value'] as $resource){
                         $picturePath = Mage::getBaseDir() . '/dump_files/pictures/' . $resource['OriginalFilename']['value'];
-                        if (file_exists($picturePath))
-                            $sProduct->addImageToMediaGallery($picturePath,$mediaAttributes, false, false);
+                        if (file_exists($picturePath) && ($resource['OriginalFilename']['value']!='')){
+                            try {
+                                $sProduct->addImageToMediaGallery($picturePath,$mediaAttributes, false, false);
+                            } catch (Exception $e) {
+                                echo $e->getMessage();
+                            }
+                        } else {
+                            echo "Product does not have an image or the path is incorrect. Path was: {$picturePath}<br/>\n";
+                        }
                     }
 
                     try{
@@ -319,8 +327,15 @@ class Bonaparte_ImportExport_Model_Custom_Import_Products extends Bonaparte_Impo
 
                foreach ($productItem['Resources']['value'] as $resource){
                    $picturePath = Mage::getBaseDir() . '/dump_files/pictures/' . $resource['OriginalFilename']['value'];
-                   if (file_exists($picturePath))
-                       $sProduct->addImageToMediaGallery($picturePath,$mediaAttributes, false, false);
+                   if (file_exists($picturePath) && ($resource['OriginalFilename']['value']!='')){
+                       try {
+                           $cProduct->addImageToMediaGallery($picturePath,$mediaAttributes, false, false);
+                       } catch (Exception $e) {
+                           echo $e->getMessage();
+                       }
+                   } else {
+                       echo "Product does not have an image or the path is incorrect. Path was: {$picturePath}<br/>\n";
+                   }
                }
                 try{
                     $cProduct->save();
@@ -452,7 +467,7 @@ class Bonaparte_ImportExport_Model_Custom_Import_Products extends Bonaparte_Impo
         foreach($this->_data as $productConfig) {
             $productData = array();
             $this->_extractConfiguration($productConfig->getNode(), $productData);
-            echo '<br>' . $counter++ . '. '. date("h:i:s a", time()) . ' ' . $productData['Items']['value'][0]['id'];
+            echo '<br>\n ' . $counter++ . '. '. date("h:i:s a", time()) . ' ' . $productData['Items']['value'][0]['id'];
             $this->_addProduct($productData);
           //  $products[] = $productData;
 

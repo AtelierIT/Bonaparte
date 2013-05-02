@@ -27,6 +27,9 @@ class Bonaparte_ImportExport_Model_Custom_Import_Attributes extends Bonaparte_Im
      */
     public $_STORE_IDS = array('13', '11', '16', '12', '14', '15');
 
+
+
+
     /**
      * Construct import model
      */
@@ -122,6 +125,7 @@ class Bonaparte_ImportExport_Model_Custom_Import_Attributes extends Bonaparte_Im
                 0, 1, 2, 3, 4, 5, 6, 7, 8, 9
             ),
             'MeasurementChart' => array(), // text
+            'MeasureChartAbrv' => array(), // text
             'Length' => array( // single value
                 'length 1',
                 'length 2'
@@ -172,6 +176,12 @@ class Bonaparte_ImportExport_Model_Custom_Import_Attributes extends Bonaparte_Im
         fclose($handle);
         $this->_logMessage('Finished custom file handling');
 
+        $storeViews = array();
+        foreach(Mage::app()->getWebsites() as $website) {
+            $storeIds = $website->getStoreIds();
+            $storeViews[strtolower($website->getCode())] = array_pop($storeIds);
+        }
+
         $this->_logMessage('Finished reading configuration files');
 
         $this->_data['Size'] = $data_size;
@@ -208,24 +218,24 @@ class Bonaparte_ImportExport_Model_Custom_Import_Attributes extends Bonaparte_Im
                 if (is_array($optionValue)) {
 
                     $optionValues['option' . $counter][0] = $optionValue[2];
-                    $optionValues['option' . $counter][$this->_STORE_IDS[0]] = $optionValue[0];
-                    $optionValues['option' . $counter][$this->_STORE_IDS[1]] = $optionValue[1];
-                    $optionValues['option' . $counter][$this->_STORE_IDS[2]] = $optionValue[2];
-                    $optionValues['option' . $counter][$this->_STORE_IDS[3]] = $optionValue[3];
-                    $optionValues['option' . $counter][$this->_STORE_IDS[4]] = $optionValue[4];
-                    $optionValues['option' . $counter][$this->_STORE_IDS[5]] = $optionValue[5];
+                    $optionValues['option' . $counter][$storeViews['dk']] = $optionValue[0];
+                    $optionValues['option' . $counter][$storeViews['ch']] = $optionValue[1];
+                    $optionValues['option' . $counter][$storeViews['uk']] = $optionValue[2];
+                    $optionValues['option' . $counter][$storeViews['de']] = $optionValue[3];
+                    $optionValues['option' . $counter][$storeViews['nl']] = $optionValue[4];
+                    $optionValues['option' . $counter][$storeViews['se']] = $optionValue[5];
                 } else {
                     //add option id to the label if label is smaller than 2 char
                     if ((strlen($optionValue) <= 2) && ($attributeCode!='Size')) {
                         $optionValue = $optionId . '_' . $optionValue;
                     }
                     $optionValues['option' . $counter][0] = $optionValue;
-                    $optionValues['option' . $counter][$this->_STORE_IDS[0]] = $optionValue;
-                    $optionValues['option' . $counter][$this->_STORE_IDS[1]] = $optionValue;
-                    $optionValues['option' . $counter][$this->_STORE_IDS[2]] = $optionValue;
-                    $optionValues['option' . $counter][$this->_STORE_IDS[3]] = $optionValue;
-                    $optionValues['option' . $counter][$this->_STORE_IDS[4]] = $optionValue;
-                    $optionValues['option' . $counter][$this->_STORE_IDS[5]] = $optionValue;
+                    $optionValues['option' . $counter][$storeViews['dk']] = $optionValue;
+                    $optionValues['option' . $counter][$storeViews['ch']] = $optionValue;
+                    $optionValues['option' . $counter][$storeViews['uk']] = $optionValue;
+                    $optionValues['option' . $counter][$storeViews['de']] = $optionValue;
+                    $optionValues['option' . $counter][$storeViews['nl']] = $optionValue;
+                    $optionValues['option' . $counter][$storeViews['se']] = $optionValue;
                 }
                 $optionIds[] = $optionId;
                 $counter++;
@@ -236,7 +246,7 @@ class Bonaparte_ImportExport_Model_Custom_Import_Attributes extends Bonaparte_Im
                 $frontendInput = 'multiselect';
             } elseif(in_array($attributeCode, array('AnimalOrigin', 'DisplayComposition'))) {
                 $frontendInput = 'boolean';
-            } elseif(in_array($attributeCode, array('MeasurementChart'))) {
+            } elseif(in_array($attributeCode, array('MeasurementChart','MeasureChartAbrv'))) {
                 $frontendInput = 'text';
             } else {
                 $frontendInput = 'select';
