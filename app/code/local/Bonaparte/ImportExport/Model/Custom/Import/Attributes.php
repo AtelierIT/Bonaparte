@@ -15,20 +15,18 @@ class Bonaparte_ImportExport_Model_Custom_Import_Attributes extends Bonaparte_Im
      * @var string
      */
     const CONFIGURATION_FILE_PATH = '/dump_files/xml/Cvl.xml';
+
+    /**
+     * Path at which the size attribute is found
+     *
+     * @var string
+     */
     const CONFIGURATION_FILE_PATH_SIZE = '/dump_files/xml/size.csv';
 
     /**
      * Prefix used to distinguish the Magento core attributes from the Bonaparte attributes
      */
     const ATTRIBUTE_PREFIX = 'bnp_';
-
-    /**
-     * Store ids
-     */
-    public $_STORE_IDS = array('13', '11', '16', '12', '14', '15');
-
-
-
 
     /**
      * Construct import model
@@ -54,10 +52,21 @@ class Bonaparte_ImportExport_Model_Custom_Import_Attributes extends Bonaparte_Im
                     }
                 }
             }
-            $break = true;
         }
 
         $this->_data = $attributes;
+
+        $sizes = array();
+        $handle = fopen(Mage::getBaseDir() . self::CONFIGURATION_FILE_PATH_SIZE, 'r');
+        while ($row = fgetcsv($handle,null,';','"')) {
+            $row[] = $sizes[6];
+        }
+        $sizes = array_unique($sizes);
+        fclose($handle);
+
+        $this->_data['Size'] = $sizes;
+
+        $this->_logMessage('Finished reading configuration files');
     }
 
     /**
@@ -66,9 +75,6 @@ class Bonaparte_ImportExport_Model_Custom_Import_Attributes extends Bonaparte_Im
     private function _removeDuplicates()
     {
         $this->_logMessage('Started removing duplicate attributes');
-
-
-
 
         $currentAttributeNumber = 0;
         $attributesNumber = count($this->_data);
@@ -97,8 +103,39 @@ class Bonaparte_ImportExport_Model_Custom_Import_Attributes extends Bonaparte_Im
             }
             unset($attributeCollection);
         }
+        $this->_removeExternalIdsWithoutInternalId();
 
-        $this->_logMessage('Finished removing duplicate attributes');exit;
+        $this->_logMessage('Finished removing duplicate attributes');
+
+        $this->_addMissingAttributes();
+    }
+
+    /**
+     * Remove relations with external ids if there is none anymore after the attribute has been deleted
+     */
+    private function _removeExternalIdsWithoutInternalId() {
+        $this->_logMessage('Started removing obsolete external id internal id relations');
+        $read = Mage::getSingleton('core/resource')->getConnection('core_write');
+        $result=$read->query('SELECT bierao.id FROM bonaparte_importexport_external_relation_attribute_option bierao
+	                            LEFT JOIN eav_attribute_option eao ON bierao.internal_id = eao.option_id
+	                            WHERE eao.option_id IS NULL');
+
+        $relationIds = array();
+        while($row = $result->fetch()) {
+            $relationIds[] = $row['id'];
+        }
+
+        if(empty($relationIds)) {
+            $this->_logMessage('No obsolete external id internal id relations found');
+            return;
+        }
+
+        $relationIds = implode(',', $relationIds);
+        $write = Mage::getSingleton('core/resource')->getConnection('core_write');
+        $write->query('DELETE FROM bonaparte_importexport_external_relation_attribute_option
+                        WHERE id IN (' . $relationIds . ')');
+
+        $this->_logMessage('Finished removing obsolete external id internal id relations');
     }
 
     private function _addMissingAttributes() {
@@ -113,27 +150,18 @@ class Bonaparte_ImportExport_Model_Custom_Import_Attributes extends Bonaparte_Im
                 0,
                 1
             ),
-            'StyleNbr' => array( // single value
-                4123,
-                5241
+            'ColorGroup' => array( // single value
+                0, 1, 2, 3, 4, 5, 6, 7, 8, 9
             ),
             'AdCodes' => array( // multiple values
                 'Catalogue 1',
                 'Catalogue 2'
             ),
-            'ColorGroup' => array( // single value
-                0, 1, 2, 3, 4, 5, 6, 7, 8, 9
-            ),
-            'MeasurementChart' => array(), // text
-            'MeasureChartAbrv' => array(), // text
-            'Length' => array( // single value
-                'length 1',
-                'length 2'
-            ),
-            'WashInstructions' => array( // single value
-                'wash instr 1',
-                'wash instr 2'
-            )
+            'StyleNbr' => array(), // single value
+            'MeasurementChart' => array(), // text, needs values
+            'MeasureChartAbrv' => array(), // text, needs values
+            'Length' => array(), // single value, needs values
+            'WashInstructions' => array() // single value, needs values
         );
 
         $this->_data = array_merge($this->_data, $missingAttributes);
@@ -145,36 +173,9 @@ class Bonaparte_ImportExport_Model_Custom_Import_Attributes extends Bonaparte_Im
      */
     public function start()
     {
-        $read = Mage::getSingleton('core/resource')->getConnection('core_write');
-        $result=$read->query('SELECT bierao.id FROM bonaparte_importexport_external_relation_attribute_option bierao
-	                            LEFT JOIN eav_attribute_option eao ON bierao.internal_id = eao.option_id
-	                            WHERE eao.option_id IS NULL');
-        $relationIds = array();
-        while($row = $result->fetch()) {
-            $relationIds[] = $row['id'];
-        }
+        $this->_removeDuplicates();
 
-        if(!empty($relationIds)) {
-            $relationIds = implode(',', $relationIds);
-
-            $write = Mage::getSingleton('core/resource')->getConnection('core_write');
-            $write->query('DELETE FROM bonaparte_importexport_external_relation_attribute_option
-                        WHERE id IN (' . $relationIds . ')');
-        }
-        echo 'done';exit;
-
-        // add Size to attributes array
-        $this->_logMessage('Custom file handling');
-        $data_size = array();
-        $data_csv = array();
-        $handle = fopen(Mage::getBaseDir() . self::CONFIGURATION_FILE_PATH_SIZE, 'r');
-        while ($data_csv = fgetcsv($handle,null,';','"')) {
-              $data_size[] = $data_csv[6];
-        }
-
-        $data_size = array_unique($data_size);
-        fclose($handle);
-        $this->_logMessage('Finished custom file handling');
+        $this->_logMessage('Started importing all attributes');
 
         $storeViews = array();
         foreach(Mage::app()->getWebsites() as $website) {
@@ -182,19 +183,13 @@ class Bonaparte_ImportExport_Model_Custom_Import_Attributes extends Bonaparte_Im
             $storeViews[strtolower($website->getCode())] = array_pop($storeIds);
         }
 
-        $this->_logMessage('Finished reading configuration files');
-
-        $this->_data['Size'] = $data_size;
-
-        $this->_addMissingAttributes();
-        $this->_removeDuplicates();
-
-        $this->_logMessage('Started importing all attributes');
         $attributesNumber = count($this->_data);
         $currentAttributeNumber = 0;
         foreach ($this->_data as $attributeCode => $attributeConfigurationData) {
             $code = self::ATTRIBUTE_PREFIX . strtolower($attributeCode);
             $currentAttributeNumber++;
+
+            // logs
             $this->_logMessage(
                 'Processing attribute '
                     . $currentAttributeNumber
@@ -208,15 +203,14 @@ class Bonaparte_ImportExport_Model_Custom_Import_Attributes extends Bonaparte_Im
             $this->_logMemoryUsage();
 
             // add the store id in the label value array
-
             $optionValues = array();
             $optionIds = array();
             $counter = 0;
             $this->_logMessage('Adding attribute options(' . count($attributeConfigurationData) . ')');
             foreach ($attributeConfigurationData as $optionId => $optionValue) {
                 $this->_logMessage('.', false);
-                if (is_array($optionValue)) {
 
+                if (is_array($optionValue)) {
                     $optionValues['option' . $counter][0] = $optionValue[2];
                     $optionValues['option' . $counter][$storeViews['dk']] = $optionValue[0];
                     $optionValues['option' . $counter][$storeViews['ch']] = $optionValue[1];
@@ -237,10 +231,10 @@ class Bonaparte_ImportExport_Model_Custom_Import_Attributes extends Bonaparte_Im
                     $optionValues['option' . $counter][$storeViews['nl']] = $optionValue;
                     $optionValues['option' . $counter][$storeViews['se']] = $optionValue;
                 }
+
                 $optionIds[] = $optionId;
                 $counter++;
             }
-
 
             if(in_array($attributeCode, array('Catalogue', 'Season', 'WashIcon', 'AdCodes'))) {
                 $frontendInput = 'multiselect';
@@ -254,7 +248,7 @@ class Bonaparte_ImportExport_Model_Custom_Import_Attributes extends Bonaparte_Im
 
             $attributeData = array(
                 'attribute_code' => $code,
-                'is_global' => '1',
+                'global' => Mage_Catalog_Model_Resource_Eav_Attribute::SCOPE_WEBSITE,
                 'frontend_input' => $frontendInput,
                 'default_value_text' => '',
                 'default_value_yesno' => '0',
