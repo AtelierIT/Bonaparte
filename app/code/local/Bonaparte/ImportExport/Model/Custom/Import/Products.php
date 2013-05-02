@@ -170,7 +170,8 @@ class Bonaparte_ImportExport_Model_Custom_Import_Products extends Bonaparte_Impo
                         $category_ids[]= $prefix_main_group.$productData['ProductMainGroup']['value']; //tmunteanu add Program to product main group. Ex: M_001 where M = Program and 001 = Main Group
                         $prefix_sub_group = $prefix_main_group.$productData['ProductMainGroup']['value']."_";
                     }
-                    if ($productData['ProductSubGroup']['value']!='') $category_ids[]=  $prefix_sub_group.$productData['ProductSubGroup']['value'];foreach ($category_ids as $category_id){
+                    if ($productData['ProductGroup']['value']!='') $category_ids[]=  $prefix_sub_group.$productData['ProductGroup']['value'];
+                    foreach ($category_ids as $category_id){
                         $category = Mage::getModel('catalog/category')->getCollection()->addAttributeToFilter('old_id', $category_id)->load();
                         foreach ($category->getAllIds() as $idss) $category_idss []= $idss;
 
