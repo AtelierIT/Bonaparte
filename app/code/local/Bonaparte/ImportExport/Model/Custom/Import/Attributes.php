@@ -63,6 +63,10 @@ class Bonaparte_ImportExport_Model_Custom_Import_Attributes extends Bonaparte_Im
     private function _removeDuplicates()
     {
         $this->_logMessage('Started removing duplicate attributes');
+
+
+
+
         $currentAttributeNumber = 0;
         $attributesNumber = count($this->_data);
         foreach ($this->_data as $attributeCode => $attributeConfigurationData) {
@@ -75,7 +79,7 @@ class Bonaparte_ImportExport_Model_Custom_Import_Attributes extends Bonaparte_Im
 
             foreach ($attributeCollection as $duplicateAttribute) {
                 $this->_logMessage(
-                    'Processing attribute '
+                    'Deleting attribute '
                         . $currentAttributeNumber
                         . ' out of '
                         . $attributesNumber
@@ -84,14 +88,14 @@ class Bonaparte_ImportExport_Model_Custom_Import_Attributes extends Bonaparte_Im
                         . $code
                         . '"'
                 );
-                $this->_logMemoryUsage();
 
                 $duplicateAttribute->delete();
                 $duplicateAttribute->clearInstance();
             }
             unset($attributeCollection);
         }
-        $this->_logMessage('Finished removing duplicate attributes');
+
+        $this->_logMessage('Finished removing duplicate attributes');exit;
     }
 
     private function _addMissingAttributes() {
@@ -129,6 +133,7 @@ class Bonaparte_ImportExport_Model_Custom_Import_Attributes extends Bonaparte_Im
         );
 
         $this->_data = array_merge($this->_data, $missingAttributes);
+        $this->_data['PriceCatalogAdcode'] = $this->_data['CatalogAdcode'];
     }
 
     /**
@@ -136,6 +141,24 @@ class Bonaparte_ImportExport_Model_Custom_Import_Attributes extends Bonaparte_Im
      */
     public function start()
     {
+        $read = Mage::getSingleton('core/resource')->getConnection('core_write');
+        $result=$read->query('SELECT bierao.id FROM bonaparte_importexport_external_relation_attribute_option bierao
+	                            LEFT JOIN eav_attribute_option eao ON bierao.internal_id = eao.option_id
+	                            WHERE eao.option_id IS NULL');
+        $relationIds = array();
+        while($row = $result->fetch()) {
+            $relationIds[] = $row['id'];
+        }
+
+        if(!empty($relationIds)) {
+            $relationIds = implode(',', $relationIds);
+
+            $write = Mage::getSingleton('core/resource')->getConnection('core_write');
+            $write->query('DELETE FROM bonaparte_importexport_external_relation_attribute_option
+                        WHERE id IN (' . $relationIds . ')');
+        }
+        echo 'done';exit;
+
         // add Size to attributes array
         $this->_logMessage('Custom file handling');
         $data_size = array();
