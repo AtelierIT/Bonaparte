@@ -241,8 +241,8 @@ class Bonaparte_ImportExport_Model_Custom_Import_Products extends Bonaparte_Impo
 
                         ->setShortDescription($productShortDescription[0] . '.')
 
-                        ->setBnpCatalogue($bnpCatalogueLabelIds)
-                        ->setBnpSeason($bnpSeasonLabelIds)
+                        ->setBnpCatalogue(implode(',', $bnpCatalogueLabelIds))
+                        ->setBnpSeason(implode(',', $bnpSeasonLabelIds))
                         ->setBnpWashicon(implode(',', $bnpWashiconLabelIds))
 
                         ->setData($configurable_attribute, $configurableAttributeOptionId);
