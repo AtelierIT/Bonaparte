@@ -31,7 +31,7 @@ class Bonaparte_ImportExport_Model_Custom_Import_Stock extends Bonaparte_ImportE
     /**
      * Specific category functionality
      */
-    public function start()
+    public function start($options = array())
     {
 		$csv_data = array();
         $csv_data = &$this->_data;

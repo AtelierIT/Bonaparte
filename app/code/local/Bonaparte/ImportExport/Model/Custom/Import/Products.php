@@ -488,7 +488,7 @@ class Bonaparte_ImportExport_Model_Custom_Import_Products extends Bonaparte_Impo
     /**
      * Specific category functionality
      */
-    public function start()
+    public function start($options = array())
     {
         $this->_customSizes = $this->_getCustomSize();
         $this->_getAttributeSetID('Default');

@@ -157,7 +157,7 @@ class Bonaparte_ImportExport_Model_Custom_Import_Categories extends Bonaparte_Im
     /**
      * Specific category functionality
      */
-    public function start()
+    public function start($options = array())
     {
         // before importing remove last imported categories
         $this->_removeDuplicates($this->_data);

@@ -19,16 +19,16 @@ class Bonaparte_Shell_Import extends Mage_Shell_Abstract
     public function run() {
         switch($this->_args['type']) {
             case self::IMPORT_TYPE_ATTRIBUTES:
-                Mage::getModel('Bonaparte_ImportExport/Custom_Import_Attributes')->start();
+                Mage::getModel('Bonaparte_ImportExport/Custom_Import_Attributes')->start($this->_args);
                 break;
             case self::IMPORT_TYPE_CATEGORIES:
-                Mage::getModel('Bonaparte_ImportExport/Custom_Import_Categories')->start();
+                Mage::getModel('Bonaparte_ImportExport/Custom_Import_Categories')->start($this->_args);
                 break;
             case self::IMPORT_TYPE_PRODUCTS:
-                Mage::getModel('Bonaparte_ImportExport/Custom_Import_Products')->start();
+                Mage::getModel('Bonaparte_ImportExport/Custom_Import_Products')->start($this->_args);
                 break;
             case self::IMPORT_TYPE_PRICES:
-                Mage::getModel('Bonaparte_ImportExport/Custom_Import_Prices')->start();
+                Mage::getModel('Bonaparte_ImportExport/Custom_Import_Prices')->start($this->_args);
                 break;
             default:
                 $this->usageHelp();
@@ -44,7 +44,8 @@ class Bonaparte_Shell_Import extends Mage_Shell_Abstract
         return <<<USAGE
 Usage:  php -f bonaparte_import.php -- [options]
 
-  --type <type>                 attributes|categories|products|prices
+  --type <type>                                         attributes|categories|products|prices
+  --remove_attributes_with_identical_attribute_code     only for attributes
 USAGE;
     }
 

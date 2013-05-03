@@ -101,7 +101,7 @@ class Bonaparte_ImportExport_Model_Custom_Import_Prices extends Bonaparte_Import
     /**
      * Specific category functionality
      */
-    public function start()
+    public function start($options = array())
     {//var_dump($this->_skuAdCodes);exit;
         $this->_logMessage('Started importing prices' . "\n" );
 
