@@ -187,32 +187,55 @@ class Bonaparte_ImportExport_Model_Custom_Import_Products extends Bonaparte_Impo
                     }
                     $productShortDescription =  explode(".", $productData['DescriptionCatalogues']['value']['en']);
 
+                    // BEGIN external id relate to internal id
+                    $externalIds = array($productItem['Color']['value'], $productData['Fitting']['value']);
+                    foreach($externalIds as $key => $value) {
+                        if(empty($value)) {
+                            unset($externalIds[$key]);
+                        }
+                    }
+                    $collection = Mage::getModel('Bonaparte_ImportExport/External_Relation_Attribute_Option')
+                        ->getCollection()
+                        ->addFieldToFilter('external_id', array('in' => $externalIds))
+                        ->load();
+
+                    $externalIdToInternalId = array();
+                    foreach($collection as $relation) {
+                        $externalIdToInternalId[$relation->getExternalId()] = $relation->getInternalId();
+                    }
+                    // END external id relate to internal id
 
                     $sProduct = Mage::getModel('catalog/product');
                     $sProduct
                         ->setTypeId(Mage_Catalog_Model_Product_Type::TYPE_SIMPLE)
-                        ->setWebsiteIds($this->_allWebsiteIDs)
                         ->setStatus(Mage_Catalog_Model_Product_Status::STATUS_ENABLED)
                         ->setVisibility(Mage_Catalog_Model_Product_Visibility::VISIBILITY_NOT_VISIBLE)
                         ->setTaxClassId(0) //none
+                        ->setWeight(1)
+                        ->setPrice("1000.00")
+                        ->setMetaKeywords('MetaKeywords test')
+
                         ->setAttributeSetId($this->_attributeSetIdd)
                         ->setCategoryIds($category_idss)
+                        ->setWebsiteIds($this->_allWebsiteIDs)
+
                         ->setSku($productItem['CinoNumber']['value'] . '-' . $productSize)
+                        ->setBnpColor($externalIdToInternalId[$productItem['Color']['value']])
+                        ->setBnpFitting($externalIdToInternalId[$productData['Fitting']['value']])
+
+                        ->setMetaTitle($productData['HeaderWebs']['value']['en'] . 'MetaTitle')
+                        ->setMetaDescription($productData['DescriptionCatalogues']['value']['en'] . 'MetaDescription')
                         ->setName($productData['HeaderWebs']['value']['en'])
-                        ->setShortDescription($productShortDescription[0].'.')
                         ->setDescription($productData['DescriptionCatalogues']['value']['en'])
-                        ->setPrice("1000.00")
-                        ->setWeight(1)
+
+                        ->setShortDescription($productShortDescription[0] . '.')
+
                         ->setBnpCatalogue($bnpCatalogueLabelIds)
                         ->setBnpSeason($bnpSeasonLabelIds)
                         ->setBnpWashicon($bnpWashiconLabelIds)
-                        ->setBnpFitting($this->_getAttributeLabelId('bnp_fitting',$productData['Fitting']['value']))
-                        ->setBnpColor($this->_getAttributeLabelId('bnp_color',$productData['Color']['value']))
-                        ->setMetaTitle($productData['HeaderWebs']['value']['en'] . 'MetaTitle')
-                        ->setMetaDescription($productData['DescriptionCatalogues']['value']['en'] . 'MetaDescription')
-                        ->setMetaKeywords('MetaKeywords test')
-                        ->setData($configurable_attribute, $configurableAttributeOptionId)
-                    ;
+
+                        ->setData($configurable_attribute, $configurableAttributeOptionId);
+
                     $sProduct->setStockData(array(
                         'is_in_stock' => 1,
                         'qty' => 99999
