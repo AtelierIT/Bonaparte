@@ -176,19 +176,20 @@ class Bonaparte_ImportExport_Model_Custom_Import_Products extends Bonaparte_Impo
                         foreach ($category->getAllIds() as $idss) $category_idss []= $idss;
 
                     }
-                    foreach ($productData['Catalogue']['value'] as $label ){
-                        $bnpCatalogueLabelIds[]=$this->_getAttributeLabelId('bnp_catalogue',$label);
-                    }
-                    foreach ($productData['Season']['value'] as $label ){
-                        $bnpSeasonLabelIds[]=$this->_getAttributeLabelId('bnp_season',$label);
-                    }
-                    foreach ($productData['WashIcon']['value'] as $label ){
-                        $bnpWashiconLabelIds[]=$this->_getAttributeLabelId('bnp_washicon',$label);
-                    }
+
                     $productShortDescription =  explode(".", $productData['DescriptionCatalogues']['value']['en']);
 
                     // BEGIN external id relate to internal id
-                    $externalIds = array($productItem['Color']['value'], $productData['Fitting']['value']);
+                    $externalIds = array_merge(
+                        array(
+                            $productItem['Color']['value'],
+                            $productData['Fitting']['value']
+                        ),
+                        (array) $productData['Catalogue']['value'],
+                        (array) $productData['Season']['value'],
+                        (array) $productItem['WashIcon']['value']
+                    );
+
                     foreach($externalIds as $key => $value) {
                         if(empty($value)) {
                             unset($externalIds[$key]);
@@ -204,6 +205,16 @@ class Bonaparte_ImportExport_Model_Custom_Import_Products extends Bonaparte_Impo
                         $externalIdToInternalId[$relation->getExternalId()] = $relation->getInternalId();
                     }
                     // END external id relate to internal id
+
+                    foreach ($productData['Catalogue']['value'] as $externalId){
+                        $bnpCatalogueLabelIds[] = $externalIdToInternalId[$externalId];
+                    }
+                    foreach ($productData['Season']['value'] as $externalId){
+                        $bnpSeasonLabelIds[] = $externalIdToInternalId[$externalId];
+                    }
+                    foreach ($productItem['WashIcon']['value'] as $externalId){
+                        $bnpWashiconLabelIds[] = $externalIdToInternalId[$externalId];
+                    }
 
                     $sProduct = Mage::getModel('catalog/product');
                     $sProduct
@@ -232,7 +243,7 @@ class Bonaparte_ImportExport_Model_Custom_Import_Products extends Bonaparte_Impo
 
                         ->setBnpCatalogue($bnpCatalogueLabelIds)
                         ->setBnpSeason($bnpSeasonLabelIds)
-                        ->setBnpWashicon($bnpWashiconLabelIds)
+                        ->setBnpWashicon(implode(',', $bnpWashiconLabelIds))
 
                         ->setData($configurable_attribute, $configurableAttributeOptionId);
 
