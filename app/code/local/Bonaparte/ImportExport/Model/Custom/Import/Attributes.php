@@ -59,12 +59,14 @@ class Bonaparte_ImportExport_Model_Custom_Import_Attributes extends Bonaparte_Im
         $sizes = array();
         $handle = fopen(Mage::getBaseDir() . self::CONFIGURATION_FILE_PATH_SIZE, 'r');
         while ($row = fgetcsv($handle,null,';','"')) {
-            $row[] = $sizes[6];
+            $sizes[] = $row[6];
         }
         $sizes = array_unique($sizes);
         fclose($handle);
 
         $this->_data['Size'] = $sizes;
+
+        $this->_addMissingAttributes();
 
         $this->_logMessage('Finished reading configuration files');
     }
@@ -103,11 +105,10 @@ class Bonaparte_ImportExport_Model_Custom_Import_Attributes extends Bonaparte_Im
             }
             unset($attributeCollection);
         }
+
         $this->_removeExternalIdsWithoutInternalId();
 
         $this->_logMessage('Finished removing duplicate attributes');
-
-        $this->_addMissingAttributes();
     }
 
     /**
