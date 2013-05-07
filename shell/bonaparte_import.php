@@ -15,6 +15,9 @@ class Bonaparte_Shell_Import extends Mage_Shell_Abstract
     const IMPORT_TYPE_CATEGORIES = 'categories';
     const IMPORT_TYPE_PRODUCTS = 'products';
     const IMPORT_TYPE_PRICES = 'prices';
+    const IMPORT_TYPE_STOCK = 'stock';
+    const IMPORT_TYPE_STOCKINCR = 'stockincr';
+
 
     public function run() {
         switch($this->_args['type']) {
@@ -29,6 +32,12 @@ class Bonaparte_Shell_Import extends Mage_Shell_Abstract
                 break;
             case self::IMPORT_TYPE_PRICES:
                 Mage::getModel('Bonaparte_ImportExport/Custom_Import_Prices')->start();
+                break;
+            case self::IMPORT_TYPE_STOCK:
+                Mage::getModel('Bonaparte_ImportExport/Custom_Import_Stock')->start();
+                break;
+            case self::IMPORT_TYPE_STOCKINCR:
+                Mage::getModel('Bonaparte_ImportExport/Custom_Import_Stockincr')->start();
                 break;
             default:
                 $this->usageHelp();

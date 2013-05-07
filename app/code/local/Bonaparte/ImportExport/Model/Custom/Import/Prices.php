@@ -54,8 +54,7 @@ class Bonaparte_ImportExport_Model_Custom_Import_Prices extends Bonaparte_Import
             'metrecode',
             'waitlist',
             'reg_price',
-            'traffic',
-            'light',
+            'traffic_light',
             'available_date',
             'preview'
         );
@@ -65,7 +64,7 @@ class Bonaparte_ImportExport_Model_Custom_Import_Prices extends Bonaparte_Import
         $temporaryData = array();
         while($line = fgets($fileHandler)) {
             $row++;
-            $this->_logMessage('Processing row ' . $row);
+            $this->_logMessage('Row ' . $row);
             $line = explode(';', $line);
             $priceData = array();
             foreach($dataKeys as $key => $value) {
@@ -126,7 +125,7 @@ class Bonaparte_ImportExport_Model_Custom_Import_Prices extends Bonaparte_Import
                continue;
             }
 
-            $this->_logMessage('Price set on sku: ' . $sku . ' on store view ' . $countryCode . "\n" );
+            $this->_logMessage('Sku: ' . $sku . ' on ' . $countryCode . "\n" );
             $model->setStoreId($storeViews[$countryCode])
                     ->setPrice($price)
                     ->save()

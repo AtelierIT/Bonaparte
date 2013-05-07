@@ -39,6 +39,11 @@ class Bonaparte_ImportExport_Adminhtml_CustomController extends Mage_Adminhtml_C
         Mage::getModel('Bonaparte_ImportExport/Custom_Import_Products')->start();
     }
 
+    public function pricesAction()
+    {
+        $this->loadLayout()->renderLayout();
+    }
+
     public function importPricesAction()
     {
         Mage::getModel('Bonaparte_ImportExport/Custom_Import_Prices')->start();
@@ -53,4 +58,26 @@ class Bonaparte_ImportExport_Adminhtml_CustomController extends Mage_Adminhtml_C
     {
         Mage::getModel('Bonaparte_ImportExport/Custom_Import_Resources')->start();
     }
+
+    public function stackAction()
+    {
+        $this->loadLayout()->renderLayout();
+    }
+
+    public function importStockAction()
+    {
+        Mage::getModel('Bonaparte_ImportExport/Custom_Import_Stock')->start();
+    }
+
+    public function stockincrAction()
+    {
+        $this->loadLayout()->renderLayout();
+    }
+
+    public function importStockincrAction()
+    {
+        Mage::getModel('Bonaparte_ImportExport/Custom_Import_Stockincr')->start();
+    }
+
+
 }

@@ -11,7 +11,9 @@ class Bonaparte_ImportExport_Model_Custom_Import_Products extends Bonaparte_Impo
      * @var string
      */
     const CONFIGURATION_FILE_SIZE_TRANSLATION = '/dump_files/xml/SizeTranslation.csv';
+    const CONFIGURATION_FILE_INVENTORY = '/dump_files/csv/ARTIKLAR.TXT';
     private $_customSizes = array();
+    private $_productInventory = array();
     private $_bnpAttributes = array();
     private $_attributeSetIdd = 0;
     private $_attributeIdd = 0;
@@ -23,10 +25,12 @@ class Bonaparte_ImportExport_Model_Custom_Import_Products extends Bonaparte_Impo
     public function _construct()
     {
         echo 'Start' . date("h:i:s a", time());
+        $this->_logMessage('Start PRODUCT IMPORT');
         $this->_configurationFilePath = array();
-        $configFilesPath = Mage::getBaseDir() . '/dump_files/xml/test2';
+        $configFilesPath = Mage::getBaseDir() . '/dump_files/xml/test3';
         $files = scandir($configFilesPath);
 
+        $this->_logMessage('There are ' . (count($files)-2) . 'files');
         foreach($files as $fileName) {
             if(strlen($fileName) < 3) {
                 continue;
@@ -101,6 +105,21 @@ class Bonaparte_ImportExport_Model_Custom_Import_Products extends Bonaparte_Impo
         return $customSize;
     }
 
+    public function _getProductInventory()
+    {
+        $productInventory = array();
+//        $data_csv = array();
+        $handle = fopen(Mage::getBaseDir() . self::CONFIGURATION_FILE_INVENTORY, 'r');
+
+        while ($data_csv = fgets($handle)) {
+            $data_csv = explode(';', $data_csv);
+            $headArticleExploded = explode('-', $data_csv[1]);
+            $productInventory[$headArticleExploded[1] . '-' . $data_csv[6]] = $data_csv[8];
+        }
+        fclose($handle);
+
+        return $productInventory;
+    }
     public function addAttributeOption($arg_attribute, $arg_value)
     {
         $attribute_model = Mage::getModel('eav/entity_attribute');
@@ -131,28 +150,40 @@ class Bonaparte_ImportExport_Model_Custom_Import_Products extends Bonaparte_Impo
 
         $configurable_attribute = "bnp_size";
         $attr_id = $this->_attributeIdd;
+        $cino_picture_directory = Mage::getBaseDir('media') . '/cino/';
+//        $cino_picture_directory = Mage::getBaseDir() . '/dump_files/temp/';
 
-        $simpleProducts = array();
-        $mediaAttributes = array (
-            'image',
-            'thumbnail',
-            'small_image'
-        );
+        $pictureBasePath = '/chroot/home/stagebon/upload/pictures/';
+//        $pictureBasePath = Mage::getBaseDir() . '/dump_files/pictures/';
 
-
+        $mediaAttributes = array('image','thumbnail','small_image');
+        $this->_logMessage('Creating ' . count($productData['Items']['value']) . ' from this file');
+        $productCounter = 1;
            foreach ($productData['Items']['value'] as $productItem){
+
+               $simpleProducts = array();
+               $productSizes = array();
+               $this->_logMessage( $productCounter++ . ' Configuring product details ...');
                 // first step is to check if the size is custom or not
                 if (in_array($productItem['Sizess']['value']['en'],array('50X100','70X140','ne size','one size','One size','One Size','ONE SIZE','onesize','Onesize','ONESIZE'))){
                     $productSizes = array('cst_'.$productItem['Sizess']['value']['en']);
                 }
                 elseif (!$this->_customSizes[$productItem['Sizess']['value']['en']]){
-                    $productSizes =  explode("-", $productItem['Sizess']['value']['en']);
+                    $productSizesTemp =  explode("-", $productItem['Sizess']['value']['en']);
+                    foreach ($productSizesTemp as $productSizeTemp)
+                        if (!$this->_customSizes[$productSizeTemp]) {
+                            $productSizes[] = $productSizeTemp;
+                        } else{
+                            $productSizes[] = $this->_customSizes[$productSizeTemp];
+                        }
+
                 }else{
                 $productSizes = array($this->_customSizes[$productItem['Sizess']['value']['en']]);
                 }
 
+                $this->_logMessage('Creating ' . count($productSizes) . ' simple products');
                 foreach($productSizes as $productSize){
-
+                    $this->_logMessage('.', false);
                     $attr_value = $productSize;
                     $configurableAttributeOptionId = $this->_getAttributeLabelId($configurable_attribute,$productSize);
                     if (!$configurableAttributeOptionId) {
@@ -215,7 +246,7 @@ class Bonaparte_ImportExport_Model_Custom_Import_Products extends Bonaparte_Impo
                     foreach ($productItem['WashIcon']['value'] as $externalId){
                         $bnpWashiconLabelIds[] = $externalIdToInternalId[$externalId];
                     }
-
+                    $productSKU= $productItem['CinoNumber']['value'] . '-' . $productSize;
                     $sProduct = Mage::getModel('catalog/product');
                     $sProduct
                         ->setTypeId(Mage_Catalog_Model_Product_Type::TYPE_SIMPLE)
@@ -230,7 +261,7 @@ class Bonaparte_ImportExport_Model_Custom_Import_Products extends Bonaparte_Impo
                         ->setCategoryIds($category_idss)
                         ->setWebsiteIds($this->_allWebsiteIDs)
 
-                        ->setSku($productItem['CinoNumber']['value'] . '-' . $productSize)
+                        ->setSku($productSKU)
                         ->setBnpColor($externalIdToInternalId[$productItem['Color']['value']])
                         ->setBnpFitting($externalIdToInternalId[$productData['Fitting']['value']])
 
@@ -246,27 +277,42 @@ class Bonaparte_ImportExport_Model_Custom_Import_Products extends Bonaparte_Impo
                         ->setBnpWashicon(implode(',', $bnpWashiconLabelIds))
 
                         ->setData($configurable_attribute, $configurableAttributeOptionId);
+                    $productQTY = (!is_null($this->_productInventory[$productSKU]))?$this->_productInventory[$productSKU]:"99999";
 
                     $sProduct->setStockData(array(
-                        'is_in_stock' => 1,
-                        'qty' => 99999
+                        'is_in_stock' => (($productQTY>0)?1:0),
+                        'qty' => $productQTY
                     ));
 
-                    // adding the images
-
-
+                    // adding the item images
                     foreach ($productItem['Resources']['value'] as $resource){
-                        $picturePath = Mage::getBaseDir() . '/dump_files/pictures/' . $resource['OriginalFilename']['value'];
+                        $picturePath = $pictureBasePath . $resource['OriginalFilename']['value'];
                         if (file_exists($picturePath) && ($resource['OriginalFilename']['value']!='')){
                             try {
                                 $sProduct->addImageToMediaGallery($picturePath,$mediaAttributes, false, false);
+                                $this->_logMessage('O', false);
                             } catch (Exception $e) {
                                 echo $e->getMessage();
                             }
                         } else {
-                            echo "Product does not have an image or the path is incorrect. Path was: {$picturePath}<br/>\n";
+                            $this->_logMessage('X', false);
                         }
                     }
+                    // adding the BNP 'style' images
+                    foreach ($productData['Resources']['value'] as $resource){
+                        $picturePath = $pictureBasePath . $resource['OriginalFilename']['value'];
+                        if (file_exists($picturePath) && ($resource['OriginalFilename']['value']!='')){
+                            try {
+                                $sProduct->addImageToMediaGallery($picturePath,$mediaAttributes, false, false);
+                                $this->_logMessage('O', false);
+                            } catch (Exception $e) {
+                                echo $e->getMessage();
+                            }
+                        } else {
+                            $this->_logMessage('X', false);
+                        }
+                    }
+
 
                     try{
                         $sProduct->save();
@@ -310,6 +356,9 @@ class Bonaparte_ImportExport_Model_Custom_Import_Products extends Bonaparte_Impo
                     ->setShortDescription($productShortDescription[0].'.')
                     ->setDescription($productData['DescriptionCatalogues']['value']['en'])
                     ->setPrice("1000.00")
+                    ->setBnpColor($externalIdToInternalId[$productItem['Color']['value']])
+                    ->setBnpFitting($externalIdToInternalId[$productData['Fitting']['value']])
+
                     ->setUrlKey($productData['HeaderWebs']['value']['en'] . '_' . $productItem['CinoNumber']['value'])
                 ;
                 $cProduct->setCanSaveConfigurableAttributes(true);
@@ -357,31 +406,91 @@ class Bonaparte_ImportExport_Model_Custom_Import_Products extends Bonaparte_Impo
                     'is_salable' => 1
                 ));
                 // adding the images
-
+               $resourceList = array();
 
                foreach ($productItem['Resources']['value'] as $resource){
-                   $picturePath = Mage::getBaseDir() . '/dump_files/pictures/' . $resource['OriginalFilename']['value'];
+                   $picturePath = $pictureBasePath . $resource['OriginalFilename']['value'];
                    if (file_exists($picturePath) && ($resource['OriginalFilename']['value']!='')){
                        try {
                            $cProduct->addImageToMediaGallery($picturePath,$mediaAttributes, false, false);
+                           $this->_logMessage('O', false);
                        } catch (Exception $e) {
                            echo $e->getMessage();
                        }
                    } else {
-                       echo "Product does not have an image or the path is incorrect. Path was: {$picturePath}<br/>\n";
+                       $this->_logMessage('X', false);
+                   }
+                   $resourceList[$resource['id']]=$resource['OriginalFilename']['value'];
+               }
+
+               // create cino pictures
+               $this->_logMessage('Creating lead pictures files ');
+               if (count($productItem['LeadPicture']['value'])==2){
+                   $picture1Name = $resourceList[$productItem['LeadPicture']['value'][0]['id']];
+                   $picture1Path = $pictureBasePath . $picture1Name;
+                   $picture2Name = $resourceList[$productItem['LeadPicture']['value'][1]['id']];
+                   $picture2Path = $pictureBasePath . $picture2Name;
+                   // if first picture is Plus size it is copied to cino_p
+                   if ($picture1Name[3]=='P'){
+                       if (file_exists($picture1Path)) copy($picture1Path, $cino_picture_directory . $productItem['CinoNumber']['value'] . '_p.jpg');
+                       if (file_exists($picture2Path)) copy($picture2Path, $cino_picture_directory . $productItem['CinoNumber']['value'] . '.jpg');
+                       $this->_logMessage('Pp', false);
+
+                   }else{
+                       if (file_exists($picture1Path)) copy($picture1Path, $cino_picture_directory . $productItem['CinoNumber']['value'] . '.jpg');
+                       if (file_exists($picture2Path)) copy($picture2Path, $cino_picture_directory . $productItem['CinoNumber']['value'] . '_p.jpg');
+                       $this->_logMessage('Pp', false);
+
+                   }
+
+               }elseif ($resourceList[$productItem['LeadPicture']['value'][0]['id']][3]=='P'){
+                   $picture1Name = $resourceList[$productItem['LeadPicture']['value'][0]['id']];
+                   $picture1Path = $pictureBasePath . $picture1Name;
+
+                   if (file_exists($picture1Path)){
+                       copy ($picture1Path, $cino_picture_directory . $productItem['CinoNumber']['value'] . '.jpg');
+                       copy ($picture1Path, $cino_picture_directory . $productItem['CinoNumber']['value'] . '_p.jpg');
+                       $this->_logMessage('Pp', false);
+                   }
+               }else{
+                   $picture1Name = $resourceList[$productItem['LeadPicture']['value'][0]['id']];
+                   $picture1Path = $pictureBasePath . $picture1Name;
+
+                   if (file_exists($picture1Path)) {
+                       copy ($picture1Path, $cino_picture_directory . $productItem['CinoNumber']['value'] . '.jpg');
+                       $this->_logMessage('P', false);
                    }
                }
-                try{
+
+               // end create cino picture
+
+               // adding the BNP 'style' images
+               foreach ($productData['Resources']['value'] as $resource){
+                   $picturePath = $pictureBasePath . $resource['OriginalFilename']['value'];
+                   if (file_exists($picturePath) && ($resource['OriginalFilename']['value']!='')){
+                       try {
+                           $cProduct->addImageToMediaGallery($picturePath,$mediaAttributes, false, false);
+                           $this->_logMessage('O', false);
+                       } catch (Exception $e) {
+                           echo $e->getMessage();
+                       }
+                   } else {
+                       $this->_logMessage('X', false);
+                   }
+               }
+
+               $this->_logMessage('Saving configurable product');
+               try{
                     $cProduct->save();
                     $cProduct->clearInstance();
-                }
-                catch (Exception $e){
+               }
+               catch (Exception $e){
                     echo "item " . $productData['HeaderWebs']['value']['en'] . " not added\n";
                     echo "exception:$e";
-                }
+               }
 
 
-            }
+           }
 
 
     }
@@ -490,25 +599,23 @@ class Bonaparte_ImportExport_Model_Custom_Import_Products extends Bonaparte_Impo
      */
     public function start()
     {
+        $this->_logMessage('Inventory start');
+        $this->_productInventory = $this->_getProductInventory();
+        $this->_logMessage('Inventory end');
+
         $this->_customSizes = $this->_getCustomSize();
         $this->_getAttributeSetID('Default');
         $this->_getAttributeID('bnp_size');
         $this->_allWebsiteIDs = Mage::getModel('core/website')->getCollection()->getAllIds();
-
-        //$products = array();
-        echo '<br>***************PRODUCT IMPORT';
+        $numberOfFiles = count($this->_data);
         $counter = 1;
         foreach($this->_data as $productConfig) {
             $productData = array();
             $this->_extractConfiguration($productConfig->getNode(), $productData);
-            echo '<br>\n ' . $counter++ . '. '. date("h:i:s a", time()) . ' ' . $productData['Items']['value'][0]['id'];
+            $this->_logMessage($counter++ . ' / '. $numberOfFiles . ' - Adding product file');
             $this->_addProduct($productData);
-          //  $products[] = $productData;
-
         }
-        echo '<br>' . date("h:i:s a", time());
-
-        echo 'DONE';
+        $this->_logMessage('ALL DONE!!!'. "\n");
     }
 
 }
