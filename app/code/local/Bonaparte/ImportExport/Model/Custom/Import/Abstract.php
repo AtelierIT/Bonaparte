@@ -83,7 +83,9 @@ abstract class Bonaparte_ImportExport_Model_Custom_Import_Abstract extends Mage_
     /**
      * Starts the import process
      *
+     * @param array $options
+     *
      * @return mixed
      */
-    abstract function start();
+    abstract function start($options = array());
 }
