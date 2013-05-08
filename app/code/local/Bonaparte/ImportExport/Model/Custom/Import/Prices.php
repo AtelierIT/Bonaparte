@@ -127,7 +127,7 @@ class Bonaparte_ImportExport_Model_Custom_Import_Prices extends Bonaparte_Import
 
             $this->_logMessage('Sku: ' . $sku . ' on ' . $countryCode . "\n" );
             $model->setStoreId($storeViews[$countryCode])
-                    ->setPrice($price)
+                    ->setPrice($price/100)
                     ->save()
                     ->clearInstance();
         }
