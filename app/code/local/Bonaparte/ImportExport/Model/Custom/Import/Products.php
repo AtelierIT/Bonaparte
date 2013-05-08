@@ -182,6 +182,9 @@ class Bonaparte_ImportExport_Model_Custom_Import_Products extends Bonaparte_Impo
                 }
 
                 $this->_logMessage('Creating ' . count($productSizes) . ' simple products');
+               if (count($productSizes)==1) $productOneSize=1;
+               else $productOneSize=0;
+
                 foreach($productSizes as $productSize){
                     $this->_logMessage('.', false);
                     $attr_value = $productSize;
@@ -193,6 +196,7 @@ class Bonaparte_ImportExport_Model_Custom_Import_Products extends Bonaparte_Impo
                         //create each simple product
                     $category_ids = array();
                     $category_idss = array();
+
                     $prefix_main_group = "";
                     $prefix_sub_group = "";
                     if ($productData['Program']['value']!='') $category_ids[]=$productData['Program']['value'];
@@ -261,7 +265,7 @@ class Bonaparte_ImportExport_Model_Custom_Import_Products extends Bonaparte_Impo
                         ->setCategoryIds($category_idss)
                         ->setWebsiteIds($this->_allWebsiteIDs)
 
-                        ->setSku($productSKU)
+                        ->setSku($productOneSize?$productItem['CinoNumber']['value']:$productSKU)
                         ->setBnpColor($externalIdToInternalId[$productItem['Color']['value']])
                         ->setBnpFitting($externalIdToInternalId[$productData['Fitting']['value']])
 
@@ -275,6 +279,7 @@ class Bonaparte_ImportExport_Model_Custom_Import_Products extends Bonaparte_Impo
                         ->setBnpCatalogue(implode(',', $bnpCatalogueLabelIds))
                         ->setBnpSeason(implode(',', $bnpSeasonLabelIds))
                         ->setBnpWashicon(implode(',', $bnpWashiconLabelIds))
+                        ->setBnpColorgroup($this->_getAttributeLabelId("bnp_colorgroup",$productItem['ColorGroup']['value']))
 
                         ->setData($configurable_attribute, $configurableAttributeOptionId);
                     $productQTY = (!is_null($this->_productInventory[$productSKU]))?$this->_productInventory[$productSKU]:"99999";
@@ -351,13 +356,14 @@ class Bonaparte_ImportExport_Model_Custom_Import_Products extends Bonaparte_Impo
                     ->setWebsiteIds($this->_allWebsiteIDs)
                     ->setCategoryIds($category_idss)
                     ->setAttributeSetId($this->_attributeSetIdd)
-                    ->setSku($productItem['CinoNumber']['value'])
+                    ->setSku($productItem['CinoNumber']['value'].'c')
                     ->setName($productData['HeaderWebs']['value']['en'])
                     ->setShortDescription($productShortDescription[0].'.')
                     ->setDescription($productData['DescriptionCatalogues']['value']['en'])
                     ->setPrice("1000.00")
                     ->setBnpColor($externalIdToInternalId[$productItem['Color']['value']])
                     ->setBnpFitting($externalIdToInternalId[$productData['Fitting']['value']])
+                    ->setBnpColorgroup($this->_getAttributeLabelId("bnp_colorgroup",$productItem['ColorGroup']['value']))
 
                     ->setUrlKey($productData['HeaderWebs']['value']['en'] . '_' . $productItem['CinoNumber']['value'])
                 ;

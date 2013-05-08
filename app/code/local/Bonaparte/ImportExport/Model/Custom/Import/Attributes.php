@@ -103,6 +103,13 @@ class Bonaparte_ImportExport_Model_Custom_Import_Attributes extends Bonaparte_Im
     private $_configurableAttributes = array('Size');
 
     /**
+     * Contains all attributes that need to be set as searchable/Use In Layered Navigation
+     *
+     * @var array
+     */
+    private $_searchableAttributes = array('ColorGroup');
+
+    /**
      * Remove previously imported attributes
      */
     private function _removeAttributesWithIdenticalAttributeCode()
@@ -176,7 +183,7 @@ class Bonaparte_ImportExport_Model_Custom_Import_Attributes extends Bonaparte_Im
         $missingAttributes = array(
             'AnimalOrigin' => array(0, 1), // bolean
             'DisplayComposition' => array(0, 1), // boolean
-            'ColorGroup' => array(0, 1, 2, 3, 4, 5, 6, 7, 8, 9), // single value
+            'ColorGroup' => array('White', 'Sand', 'Red', 'Yellow', 'Blue', 'Green', 'Purple', 'Brown', 'Grey', 'Black'), // single value
             'AdCodes' => array(), // multiple values
             'StyleNbr' => array(), // single value
             'MeasurementChart' => array(), // text, needs values
@@ -254,9 +261,9 @@ class Bonaparte_ImportExport_Model_Custom_Import_Attributes extends Bonaparte_Im
             $relationModel->clearInstance();
             unset($relationModel);
 
-            if($externalOptionId == '2012-UDS4-PAUT') {
-                $break = true;
-            }
+//            if($externalOptionId == '2012-UDS4-PAUT') {
+//                $break = true;
+//            }
 
             if($relationId) {
                 continue;
@@ -439,13 +446,13 @@ if(false){
                 'is_user_defined' => '1',
                 'is_unique' => '0',
                 'is_required' => '0',
-                'is_searchable' => '0',
-                'is_visible_in_advanced_search' => '0',
-                'is_comparable' => '0',
+                'is_searchable' => (in_array($attributeCode,$this->_searchableAttributes))?1:0,
+                'is_visible_in_advanced_search' => (in_array($attributeCode,$this->_searchableAttributes))?1:0,
+                'is_comparable' => (in_array($attributeCode,$this->_searchableAttributes))?1:0,
                 'is_used_for_price_rules' => '0',
                 'is_wysiwyg_enabled' => '0',
                 'is_visible_on_front' => '0',
-                'is_filterable' => '0',
+                'is_filterable' => (in_array($attributeCode,$this->_searchableAttributes))?1:0,
                 'is_filterable_in_search' => '0',
                 'used_in_product_listing' => '0',
                 'used_for_sort_by' => '0'
