@@ -380,14 +380,10 @@ class Bonaparte_ImportExport_Model_Custom_Import_Attributes extends Bonaparte_Im
      */
     public function start($options = array())
     {
-        //if($options['remove_attributes_with_identical_attribute_code']) {
+        if($options['remove_attributes_with_identical_attribute_code']) {
             // remove attributes with the same code
             $this->_removeAttributesWithIdenticalAttributeCode();
-        //}
-
-        /*$size = $this->_data['AdCodes'];
-        $this->_data = array();
-        $this->_data['AdCodes'] = $size;*/
+        }
 
         $this->_logMessage('Started importing all attributes');
 
