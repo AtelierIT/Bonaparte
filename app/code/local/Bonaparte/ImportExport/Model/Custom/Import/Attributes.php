@@ -3,6 +3,12 @@
 /**
  * Stores the business logic for the custom attribute import
  *
+ * Attribute problems:
+ *
+ * Code: Color OK
+ * Code: Size
+ *      88113 has no actual size
+ *
  * @category    Bonaparte
  * @package     Bonaparte_ImportExport
  * @author      Atelier IT Team <office@atelierit.ro>
@@ -246,7 +252,7 @@ class Bonaparte_ImportExport_Model_Custom_Import_Attributes extends Bonaparte_Im
      * @param array $databaseOptions
      * @param array $externalOptionIds
      */
-    private function _createAttributeOptionExternalInternalIdRelation($databaseOptions, $externalOptionIds) {
+    private function _createAttributeOptionExternalInternalIdRelation($databaseOptions, $externalOptionIds, $optionLabels, $attributeCode) {
         $this->_logMessage('Relating external id of options to the internal id of options');
 
         $labelValueDatabaseOptions = array();
@@ -261,18 +267,20 @@ class Bonaparte_ImportExport_Model_Custom_Import_Attributes extends Bonaparte_Im
             $relationModel->clearInstance();
             unset($relationModel);
 
-//            if($externalOptionId == '2012-UDS4-PAUT') {
-//                $break = true;
-//            }
-
             if($relationId) {
                 continue;
+            }
+
+            $internalId = $labelValueDatabaseOptions[$externalOptionId];
+            if(empty($internalId) || in_array($attributeCode, array('bnp_adcodes'))) {
+                $internalId = $labelValueDatabaseOptions[$optionLabels[$externalOptionId]];
             }
 
             $relationModel = Mage::getModel('Bonaparte_ImportExport/External_Relation_Attribute_Option');
             $relationModel->setType(Bonaparte_ImportExport_Model_External_Relation_Attribute_Option::TYPE_ATTRIBUTE_OPTION);
             $relationModel->setExternalId($externalOptionId);
-            $relationModel->setInternalId($labelValueDatabaseOptions[$externalOptionId]);
+            $relationModel->setInternalId($internalId);
+            $relationModel->setAttributeCode($attributeCode);
             $relationModel->save();
             $relationModel->clearInstance();
         }
@@ -347,7 +355,7 @@ class Bonaparte_ImportExport_Model_Custom_Import_Attributes extends Bonaparte_Im
         }
 
         $this->_data = $attributes;
-if(false){
+
         $sizes = array();
         $handle = fopen(Mage::getBaseDir() . self::CONFIGURATION_FILE_PATH_SIZE, 'r');
         while ($row = fgetcsv($handle,null,';','"')) {
@@ -357,7 +365,7 @@ if(false){
         fclose($handle);
 
         $this->_data['Size'] = $sizes;
-}
+
         $this->_addMissingAttributes();
 
         $this->_logMessage('Finished reading configuration files');
@@ -372,10 +380,14 @@ if(false){
      */
     public function start($options = array())
     {
-       // if($options['remove_attributes_with_identical_attribute_code']) {
+        //if($options['remove_attributes_with_identical_attribute_code']) {
             // remove attributes with the same code
             $this->_removeAttributesWithIdenticalAttributeCode();
-       // }
+        //}
+
+        /*$size = $this->_data['AdCodes'];
+        $this->_data = array();
+        $this->_data['AdCodes'] = $size;*/
 
         $this->_logMessage('Started importing all attributes');
 
@@ -412,7 +424,7 @@ if(false){
                 } else {
                     // ??????????
                     // add option id to the label if label is smaller than 2 char
-                    if ((strlen($optionValue) <= 2) && ($attributeCode != 'Size')) {
+                    if ((strlen($optionValue) <= 2) && (!in_array($attributeCode, array('Size', 'AdCodes', 'Priority', 'AnimalOrigin')))) {
                         $optionId = $optionValue = $optionId . '_' . $optionValue;
                     }
 
@@ -423,6 +435,7 @@ if(false){
                 }
 
                 $optionIds[] = $optionId;
+                $optionLabels[$optionId] = (is_array($optionValue))?$optionValue[2]:$optionValue;
                 $counter++;
             }
 
@@ -488,7 +501,7 @@ if(false){
             }
 
             $this->_createAttributeOptionExternalInternalIdRelation(
-                $model->getSource()->getAllOptions(false), $optionIds
+                $model->getSource()->getAllOptions(false), $optionIds, $optionLabels, $magentoAttributeCode
             );
             $model->clearInstance();
 
