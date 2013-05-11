@@ -1,5 +1,5 @@
 <?php
-
+ini_set('memory_limit', '3072M');
 /**
  * Stores the business logic for the custom product import
  */
@@ -11,12 +11,76 @@ class Bonaparte_ImportExport_Model_Custom_Import_Products extends Bonaparte_Impo
      * @var string
      */
     const CONFIGURATION_FILE_SIZE_TRANSLATION = '/dump_files/xml/SizeTranslation.csv';
+
+    /**
+     * Path to
+     *
+     * @var string
+     */
     const CONFIGURATION_FILE_INVENTORY = '/dump_files/csv/ARTIKLAR.TXT';
+    /**
+     * Path to the product configuration XML files
+     *
+     * @var string
+     */
+//    const CONFIGURATION_FILE_PATH = '/chroot/home/stagebon/upload/xml/product';       // server configuration
+    const CONFIGURATION_FILE_PATH = '/dump_files/xml/test6';         // local developer station
+
+
+    /**
+     * Path to the product pictures source files
+     *
+     * @var string
+     */
+//    const PICTURE_BASE_PATH = '/chroot/home/stagebon/upload/pictures/';
+    const PICTURE_BASE_PATH = '/dump_files/pictures/';
+
+
+    /**
+     * Contains all sizes that need to be translated to short ERP name
+     *
+     * @var array
+     */
     private $_customSizes = array();
+
+    /**
+     * Contains all product QTYs, the keys are product SKUs
+     *
+     * @var array
+     */
     private $_productInventory = array();
+
+    /**
+     * Contains all BNP attributes
+     *
+     * @var array
+     */
     private $_bnpAttributes = array();
+
+    /**
+     * Contains the attribute set id
+     *
+     * @var integer
+     */
     private $_attributeSetIdd = 0;
+
+    /**
+     * Contains the attribute id of the attribute user for configurable product creation
+     *
+     * @var array
+     */
     private $_attributeIdd = 0;
+    private $_mediaGalleryId = 0;
+    private $_baseImageId = 0;
+    private $_smallImageId = 0;
+    private $_thumbnailId = 0;
+
+
+    /**
+     * Contains all Websites IDs
+     *
+     * @var array
+     */
     private $_allWebsiteIDs = array();
 
     /**
@@ -24,12 +88,13 @@ class Bonaparte_ImportExport_Model_Custom_Import_Products extends Bonaparte_Impo
      */
     public function _construct()
     {
-        echo 'Start' . date("h:i:s a", time());
         $this->_logMessage('Start PRODUCT IMPORT');
         $this->_configurationFilePath = array();
-        $configFilesPath = Mage::getBaseDir() . '/dump_files/xml/test3';
-        $files = scandir($configFilesPath);
+//        $configFilesPath = self::CONFIGURATION_FILE_PATH;
+//     to be changed on local computer
+      $configFilesPath = Mage::getBaseDir() . self::CONFIGURATION_FILE_PATH;
 
+        $files = scandir($configFilesPath);
         $this->_logMessage('There are ' . (count($files)-2) . 'files');
         foreach($files as $fileName) {
             if(strlen($fileName) < 3) {
@@ -43,15 +108,13 @@ class Bonaparte_ImportExport_Model_Custom_Import_Products extends Bonaparte_Impo
             return parent::_initialize();
         }
 
-        $limit = 5000;
+        $limit = 5000;  //change the limit if the number of files is greater than 5000
         $counter = 0;
         foreach($this->_configurationFilePath as $filePath) {
             if($counter == $limit) {
                 break;
             }
-
             $this->_data[] = new Varien_Simplexml_Config($filePath);
-            
             $counter++;
         }
     }
@@ -59,6 +122,11 @@ class Bonaparte_ImportExport_Model_Custom_Import_Products extends Bonaparte_Impo
 
     /**
      * Construct array with attributes options ids
+     *
+     * @param $attributeCode
+     * @param $label
+     *
+     * @return integer
      */
     public function _getAttributeLabelId($attributeCode,$label)
     {
@@ -76,28 +144,38 @@ class Bonaparte_ImportExport_Model_Custom_Import_Products extends Bonaparte_Impo
         return $this->_bnpAttributes[$attributeCode][$label];
 
     }
+
+    /**
+     * Get the attributes set id
+     *
+     * @param $label - attributes label
+     */
     public function _getAttributeSetID($label)
     {
-
         $entityTypeId = Mage::getModel('eav/entity')->setType('catalog_product')->getTypeId();
         $SetId = intval(Mage::getModel('eav/entity_attribute_set')->getCollection()->setEntityTypeFilter($entityTypeId)->addFieldToFilter('attribute_set_name', $label)->getFirstItem()->getAttributeSetId());
         $this->_attributeSetIdd = $SetId ;
     }
 
+    /**
+     * Get the attribute id
+     *
+     * @param $label - attributes label
+     */
     public function _getAttributeID($label)
     {
         $eavAttribute = new Mage_Eav_Model_Mysql4_Entity_Attribute();
         $attr_id = $eavAttribute->getIdByCode('catalog_product', $label);
-        $this->_attributeIdd = $attr_id;
+        return $attr_id;
     }
 
+    /**
+     * Get the custom sizes from the Translation file
+     */
     public function _getCustomSize()
     {
-        // create Custom Sizes array
         $customSize = array();
-        $data_csv = array();
         $handle = fopen(Mage::getBaseDir() . self::CONFIGURATION_FILE_SIZE_TRANSLATION, 'r');
-
         while ($data_csv = fgetcsv($handle,null,';','"')) {
             $customSize[$data_csv[3]] = $data_csv[2];
         }
@@ -105,12 +183,15 @@ class Bonaparte_ImportExport_Model_Custom_Import_Products extends Bonaparte_Impo
         return $customSize;
     }
 
+    /**
+     * Get the product inventory from file
+     *
+     * @return array
+     */
     public function _getProductInventory()
     {
         $productInventory = array();
-//        $data_csv = array();
         $handle = fopen(Mage::getBaseDir() . self::CONFIGURATION_FILE_INVENTORY, 'r');
-
         while ($data_csv = fgets($handle)) {
             $data_csv = explode(';', $data_csv);
             $headArticleExploded = explode('-', $data_csv[1]);
@@ -120,6 +201,10 @@ class Bonaparte_ImportExport_Model_Custom_Import_Products extends Bonaparte_Impo
 
         return $productInventory;
     }
+
+    /**
+     * Add attribute option
+     */
     public function addAttributeOption($arg_attribute, $arg_value)
     {
         $attribute_model = Mage::getModel('eav/entity_attribute');
@@ -141,10 +226,93 @@ class Bonaparte_ImportExport_Model_Custom_Import_Products extends Bonaparte_Impo
 
 
     /**
-     * Recursive method to add unknown levels of categories
+     * Function copy all images from feeding folder to magento /media folder
      *
-     * @param mixed (integer|Mage_Catalog_Model_Category) $parentId
-     * @param array $children
+     */
+    private function _getProductImageReady()
+    {
+
+        $images = scandir(Mage::getBaseDir().self::PICTURE_BASE_PATH);
+        $_mediaBase = Mage::getBaseDir('media').'/catalog/product/';
+
+        $pictureNumber = count($images);
+        $counter = 1;
+        foreach($images as $image) {
+            if (in_array($image,array('.','..')))
+                continue;
+
+            $firstDir = $_mediaBase.$image[0];
+            $secondDir = $firstDir.'/'.$image[1];
+            $path = $secondDir.'/'.$image;
+
+            if(!file_exists($path)) {
+                $this->_logMessage('Creating ' . $counter++ . ' of ' . $pictureNumber . ' - ' . $image);
+                if (!file_exists($secondDir))
+                    mkdir($secondDir, 0775, true);
+                copy(Mage::getBaseDir().self::PICTURE_BASE_PATH.$image, $path);
+            }
+            else $this->_logMessage('Existing ' . $counter++ . ' of ' . $pictureNumber . ' - ' . $image);
+       }
+
+
+    }
+
+    /**
+     * Function build to replace the MAGENTO addImageToMediaGallery
+     *
+     */
+    private function _addProductImage($productID, $pictureName)
+    {
+        $conn = Mage::getSingleton('core/resource')->getConnection('core_read');
+        $connW = Mage::getSingleton('core/resource')->getConnection('core_write');
+        $pictureValueField = '/'.$pictureName[0].'/'.$pictureName[1].'/'.$pictureName;
+
+        /*
+           *    Check the existing images
+           */
+
+        $sql = "SELECT * FROM catalog_product_entity_media_gallery WHERE entity_id IN (".$productID.") AND value IN ('".$pictureValueField."');";
+        $_galleryImgs = $conn->fetchAll($sql);
+
+        if (!$_galleryImgs){
+            $sql = "INSERT INTO catalog_product_entity_media_gallery (attribute_id, entity_id, value) VALUES (".$this->_mediaGalleryId.",".$productID.",'".$pictureValueField."');";
+            $connW->query($sql);
+        }
+
+        $sql = "SELECT * FROM catalog_product_entity_varchar WHERE entity_id IN (".$productID.") AND attribute_id IN (".$this->_baseImageId.",".$this->_smallImageId.",".$this->_thumbnailId.");";
+        $_imageAssoc = $conn->fetchAll($sql);
+
+        if (!$_imageAssoc){
+            $sql = "INSERT INTO catalog_product_entity_varchar (entity_type_id, attribute_id, store_id, entity_id, value) VALUES (4,".$this->_baseImageId.",0,".$productID.",'".$pictureValueField."'), (4,".$this->_smallImageId.",0,".$productID.",'".$pictureValueField."'), (4,".$this->_thumbnailId.",0,".$productID.",'".$pictureValueField."');";
+            $connW->query($sql);
+        }
+
+    }
+
+
+    /**
+     * Function to delete all products
+     */
+    private function _deleteAllProducts(){
+        $products = Mage::getResourceModel('catalog/product_collection')->getAllIds();
+        foreach ($products as $key => $productId)
+        {
+            try {
+                $product = Mage::getSingleton('catalog/product')->load($productId);
+                Mage::dispatchEvent('catalog_controller_product_delete', array('product' => $product));
+                $this->_logMessage('Deleting product id'.$productId);
+                $product->delete();
+            } catch (Exception $e) {
+                $this->_logMessage('Could not delete product id'.$productId);
+            }
+        }
+    }
+
+
+    /**
+     * Function build to add product to database
+     *
+     * @param array $productData
      */
     private function _addProduct($productData) {
 
@@ -153,8 +321,8 @@ class Bonaparte_ImportExport_Model_Custom_Import_Products extends Bonaparte_Impo
         $cino_picture_directory = Mage::getBaseDir('media') . '/cino/';
 //        $cino_picture_directory = Mage::getBaseDir() . '/dump_files/temp/';
 
-        $pictureBasePath = '/chroot/home/stagebon/upload/pictures/';
-//        $pictureBasePath = Mage::getBaseDir() . '/dump_files/pictures/';
+//        $pictureBasePath = '/chroot/home/stagebon/upload/pictures/';
+        $pictureBasePath = Mage::getBaseDir() . '/dump_files/pictures/';
 
         $mediaAttributes = array('image','thumbnail','small_image');
         $this->_logMessage('Creating ' . count($productData['Items']['value']) . ' from this file');
@@ -169,7 +337,8 @@ class Bonaparte_ImportExport_Model_Custom_Import_Products extends Bonaparte_Impo
                     $productSizes = array('cst_'.$productItem['Sizess']['value']['en']);
                 }
                 elseif (!$this->_customSizes[$productItem['Sizess']['value']['en']]){
-                    $productSizesTemp =  explode("-", $productItem['Sizess']['value']['en']);
+                    $productItemSizess = $productItem['Sizess']['value']['en'] == $productItem['Sizess']['value']['de']?$productItem['Sizess']['value']['en']:$productItem['Sizess']['value']['en'] . '-' . $productItem['Sizess']['value']['de'];
+                    $productSizesTemp =  explode("-", $productItemSizess);
                     foreach ($productSizesTemp as $productSizeTemp)
                         if (!$this->_customSizes[$productSizeTemp]) {
                             $productSizes[] = $productSizeTemp;
@@ -275,6 +444,7 @@ class Bonaparte_ImportExport_Model_Custom_Import_Products extends Bonaparte_Impo
                         ->setDescription($productData['DescriptionCatalogues']['value']['en'])
 
                         ->setShortDescription($productShortDescription[0] . '.')
+                        ->setUrlKey($productData['HeaderWebs']['value']['en'] . '_' . $productItem['CinoNumber']['value'] . '_' . $productSize)
 
                         ->setBnpCatalogue(implode(',', $bnpCatalogueLabelIds))
                         ->setBnpSeason(implode(',', $bnpSeasonLabelIds))
@@ -289,34 +459,7 @@ class Bonaparte_ImportExport_Model_Custom_Import_Products extends Bonaparte_Impo
                         'qty' => $productQTY
                     ));
 
-                    // adding the item images
-                    foreach ($productItem['Resources']['value'] as $resource){
-                        $picturePath = $pictureBasePath . $resource['OriginalFilename']['value'];
-                        if (file_exists($picturePath) && ($resource['OriginalFilename']['value']!='')){
-                            try {
-                                $sProduct->addImageToMediaGallery($picturePath,$mediaAttributes, false, false);
-                                $this->_logMessage('O', false);
-                            } catch (Exception $e) {
-                                echo $e->getMessage();
-                            }
-                        } else {
-                            $this->_logMessage('X', false);
-                        }
-                    }
-                    // adding the BNP 'style' images
-                    foreach ($productData['Resources']['value'] as $resource){
-                        $picturePath = $pictureBasePath . $resource['OriginalFilename']['value'];
-                        if (file_exists($picturePath) && ($resource['OriginalFilename']['value']!='')){
-                            try {
-                                $sProduct->addImageToMediaGallery($picturePath,$mediaAttributes, false, false);
-                                $this->_logMessage('O', false);
-                            } catch (Exception $e) {
-                                echo $e->getMessage();
-                            }
-                        } else {
-                            $this->_logMessage('X', false);
-                        }
-                    }
+
 
 
                     try{
@@ -333,6 +476,41 @@ class Bonaparte_ImportExport_Model_Custom_Import_Products extends Bonaparte_Impo
                                 "label" => $attr_value
                             )
                         );
+
+                        // adding the item images
+                        foreach ($productItem['Resources']['value'] as $resource){
+                            $picturePath = $pictureBasePath . $resource['OriginalFilename']['value'];
+                            if (file_exists($picturePath) && ($resource['OriginalFilename']['value']!='')){
+                                try {
+                                    $this->_addProductImage($sProduct->getId(),$resource['OriginalFilename']['value']);
+//                                $sProduct->addImageToMediaGallery($picturePath,$mediaAttributes, false, false);
+                                    $this->_logMessage('O', false);
+                                } catch (Exception $e) {
+                                    echo $e->getMessage();
+                                }
+                            } else {
+                                $this->_logMessage('X', false);
+                            }
+                        }
+                        // adding the BNP 'style' images
+                        foreach ($productData['Resources']['value'] as $resource){
+                            $picturePath = $pictureBasePath . $resource['OriginalFilename']['value'];
+                            if (file_exists($picturePath) && ($resource['OriginalFilename']['value']!='')){
+                                try {
+                                    $this->_addProductImage($sProduct->getId(),$resource['OriginalFilename']['value']);
+//                              $sProduct->addImageToMediaGallery($picturePath,$mediaAttributes, false, false);
+                                    $this->_logMessage('O', false);
+                                } catch (Exception $e) {
+                                    echo $e->getMessage();
+                                }
+                            } else {
+                                $this->_logMessage('X', false);
+                            }
+                        }
+
+
+
+
                         $sProduct->clearInstance();
 
                     }
@@ -361,6 +539,7 @@ class Bonaparte_ImportExport_Model_Custom_Import_Products extends Bonaparte_Impo
                     ->setShortDescription($productShortDescription[0].'.')
                     ->setDescription($productData['DescriptionCatalogues']['value']['en'])
                     ->setPrice("1000.00")
+
                     ->setBnpColor($externalIdToInternalId[$productItem['Color']['value']])
                     ->setBnpFitting($externalIdToInternalId[$productData['Fitting']['value']])
                     ->setBnpColorgroup($this->_getAttributeLabelId("bnp_colorgroup",$productItem['ColorGroup']['value']))
@@ -411,83 +590,91 @@ class Bonaparte_ImportExport_Model_Custom_Import_Products extends Bonaparte_Impo
                     'is_in_stock' => 1,
                     'is_salable' => 1
                 ));
-                // adding the images
-               $resourceList = array();
 
-               foreach ($productItem['Resources']['value'] as $resource){
-                   $picturePath = $pictureBasePath . $resource['OriginalFilename']['value'];
-                   if (file_exists($picturePath) && ($resource['OriginalFilename']['value']!='')){
-                       try {
-                           $cProduct->addImageToMediaGallery($picturePath,$mediaAttributes, false, false);
-                           $this->_logMessage('O', false);
-                       } catch (Exception $e) {
-                           echo $e->getMessage();
-                       }
-                   } else {
-                       $this->_logMessage('X', false);
-                   }
-                   $resourceList[$resource['id']]=$resource['OriginalFilename']['value'];
-               }
 
-               // create cino pictures
-               $this->_logMessage('Creating lead pictures files ');
-               if (count($productItem['LeadPicture']['value'])==2){
-                   $picture1Name = $resourceList[$productItem['LeadPicture']['value'][0]['id']];
-                   $picture1Path = $pictureBasePath . $picture1Name;
-                   $picture2Name = $resourceList[$productItem['LeadPicture']['value'][1]['id']];
-                   $picture2Path = $pictureBasePath . $picture2Name;
-                   // if first picture is Plus size it is copied to cino_p
-                   if ($picture1Name[3]=='P'){
-                       if (file_exists($picture1Path)) copy($picture1Path, $cino_picture_directory . $productItem['CinoNumber']['value'] . '_p.jpg');
-                       if (file_exists($picture2Path)) copy($picture2Path, $cino_picture_directory . $productItem['CinoNumber']['value'] . '.jpg');
-                       $this->_logMessage('Pp', false);
-
-                   }else{
-                       if (file_exists($picture1Path)) copy($picture1Path, $cino_picture_directory . $productItem['CinoNumber']['value'] . '.jpg');
-                       if (file_exists($picture2Path)) copy($picture2Path, $cino_picture_directory . $productItem['CinoNumber']['value'] . '_p.jpg');
-                       $this->_logMessage('Pp', false);
-
-                   }
-
-               }elseif ($resourceList[$productItem['LeadPicture']['value'][0]['id']][3]=='P'){
-                   $picture1Name = $resourceList[$productItem['LeadPicture']['value'][0]['id']];
-                   $picture1Path = $pictureBasePath . $picture1Name;
-
-                   if (file_exists($picture1Path)){
-                       copy ($picture1Path, $cino_picture_directory . $productItem['CinoNumber']['value'] . '.jpg');
-                       copy ($picture1Path, $cino_picture_directory . $productItem['CinoNumber']['value'] . '_p.jpg');
-                       $this->_logMessage('Pp', false);
-                   }
-               }else{
-                   $picture1Name = $resourceList[$productItem['LeadPicture']['value'][0]['id']];
-                   $picture1Path = $pictureBasePath . $picture1Name;
-
-                   if (file_exists($picture1Path)) {
-                       copy ($picture1Path, $cino_picture_directory . $productItem['CinoNumber']['value'] . '.jpg');
-                       $this->_logMessage('P', false);
-                   }
-               }
-
-               // end create cino picture
-
-               // adding the BNP 'style' images
-               foreach ($productData['Resources']['value'] as $resource){
-                   $picturePath = $pictureBasePath . $resource['OriginalFilename']['value'];
-                   if (file_exists($picturePath) && ($resource['OriginalFilename']['value']!='')){
-                       try {
-                           $cProduct->addImageToMediaGallery($picturePath,$mediaAttributes, false, false);
-                           $this->_logMessage('O', false);
-                       } catch (Exception $e) {
-                           echo $e->getMessage();
-                       }
-                   } else {
-                       $this->_logMessage('X', false);
-                   }
-               }
 
                $this->_logMessage('Saving configurable product');
                try{
                     $cProduct->save();
+
+
+                   // adding the images
+                   $resourceList = array();
+
+                   foreach ($productItem['Resources']['value'] as $resource){
+                       $picturePath = $pictureBasePath . $resource['OriginalFilename']['value'];
+                       if (file_exists($picturePath) && ($resource['OriginalFilename']['value']!='')){
+                           try {
+                               $this->_addProductImage($cProduct->getId(),$resource['OriginalFilename']['value']);
+//                              $cProduct->addImageToMediaGallery($picturePath,$mediaAttributes, false, false);
+                               $this->_logMessage('O', false);
+                           } catch (Exception $e) {
+                               echo $e->getMessage();
+                           }
+                       } else {
+                           $this->_logMessage('X', false);
+                       }
+                       $resourceList[$resource['id']]=$resource['OriginalFilename']['value'];
+                   }
+
+                   // create cino pictures
+                   $this->_logMessage('Creating lead pictures files ');
+                   if (count($productItem['LeadPicture']['value'])==2){
+                       $picture1Name = $resourceList[$productItem['LeadPicture']['value'][0]['id']];
+                       $picture1Path = $pictureBasePath . $picture1Name;
+                       $picture2Name = $resourceList[$productItem['LeadPicture']['value'][1]['id']];
+                       $picture2Path = $pictureBasePath . $picture2Name;
+                       // if first picture is Plus size it is copied to cino_p
+                       if ($picture1Name[3]=='P'){
+                           if (file_exists($picture1Path)) copy($picture1Path, $cino_picture_directory . $productItem['CinoNumber']['value'] . '_p.jpg');
+                           if (file_exists($picture2Path)) copy($picture2Path, $cino_picture_directory . $productItem['CinoNumber']['value'] . '.jpg');
+                           $this->_logMessage('Pp', false);
+
+                       }else{
+                           if (file_exists($picture1Path)) copy($picture1Path, $cino_picture_directory . $productItem['CinoNumber']['value'] . '.jpg');
+                           if (file_exists($picture2Path)) copy($picture2Path, $cino_picture_directory . $productItem['CinoNumber']['value'] . '_p.jpg');
+                           $this->_logMessage('Pp', false);
+
+                       }
+
+                   }elseif ($resourceList[$productItem['LeadPicture']['value'][0]['id']][3]=='P'){
+                       $picture1Name = $resourceList[$productItem['LeadPicture']['value'][0]['id']];
+                       $picture1Path = $pictureBasePath . $picture1Name;
+
+                       if (file_exists($picture1Path)){
+                           copy ($picture1Path, $cino_picture_directory . $productItem['CinoNumber']['value'] . '.jpg');
+                           copy ($picture1Path, $cino_picture_directory . $productItem['CinoNumber']['value'] . '_p.jpg');
+                           $this->_logMessage('Pp', false);
+                       }
+                   }else{
+                       $picture1Name = $resourceList[$productItem['LeadPicture']['value'][0]['id']];
+                       $picture1Path = $pictureBasePath . $picture1Name;
+
+                       if (file_exists($picture1Path)) {
+                           copy ($picture1Path, $cino_picture_directory . $productItem['CinoNumber']['value'] . '.jpg');
+                           $this->_logMessage('P', false);
+                       }
+                   }
+
+                   // end create cino picture
+
+
+                   // adding the BNP 'style' images
+                   foreach ($productData['Resources']['value'] as $resource){
+                       $picturePath = $pictureBasePath . $resource['OriginalFilename']['value'];
+                       if (file_exists($picturePath) && ($resource['OriginalFilename']['value']!='')){
+                           try {
+                               $this->_addProductImage($cProduct->getId(),$resource['OriginalFilename']['value']);
+//                              $cProduct->addImageToMediaGallery($picturePath,$mediaAttributes, false, false);
+                               $this->_logMessage('O', false);
+                           } catch (Exception $e) {
+                               echo $e->getMessage();
+                           }
+                       } else {
+                           $this->_logMessage('X', false);
+                       }
+                   }
+
                     $cProduct->clearInstance();
                }
                catch (Exception $e){
@@ -500,6 +687,7 @@ class Bonaparte_ImportExport_Model_Custom_Import_Products extends Bonaparte_Impo
 
 
     }
+
 
     private function _extractConfiguration($node, &$productData) {
         foreach($node as $element) {
@@ -605,13 +793,26 @@ class Bonaparte_ImportExport_Model_Custom_Import_Products extends Bonaparte_Impo
      */
     public function start($options = array())
     {
-        $this->_logMessage('Inventory start');
+//        $this->_logMessage('Starting product deleting');
+//        $this->_deleteAllProducts();
+//        exit;
+
+        $this->_mediaGalleryId = $this->_getAttributeID('media_gallery');
+        $this->_baseImageId = $this->_getAttributeID('image');
+        $this->_smallImageId = $this->_getAttributeID('small_image');
+        $this->_thumbnailId = $this->_getAttributeID('thumbnail');
+
+        $this->_logMessage('Getting the pictures ready');
+        $this->_getProductImageReady();
+        $this->_logMessage('Finished');
+
+        $this->_logMessage('Inventory parsing start');
         $this->_productInventory = $this->_getProductInventory();
         $this->_logMessage('Inventory end');
 
         $this->_customSizes = $this->_getCustomSize();
         $this->_getAttributeSetID('Default');
-        $this->_getAttributeID('bnp_size');
+        $this->_attributeIdd = $this->_getAttributeID('bnp_size');
         $this->_allWebsiteIDs = Mage::getModel('core/website')->getCollection()->getAllIds();
         $numberOfFiles = count($this->_data);
         $counter = 1;
