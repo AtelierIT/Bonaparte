@@ -17,6 +17,15 @@ class Bonaparte_ImportExport_Model_Custom_Import_Prices extends Bonaparte_Import
     const CONFIGURATION_FILE_PATH = '/dump_files/ARTIKLAR.TXT';
 
     /**
+     * The magento code for attibute adcodes
+     *
+     * @var string
+     */
+    const ATTRIBUTE_CODE_ADCODES = 'bnp_adcodes';
+
+    const MEMORY_LIMIT = '2048M';
+
+    /**
      * Store current ad code for the sku
      *
      * @var array
@@ -28,7 +37,8 @@ class Bonaparte_ImportExport_Model_Custom_Import_Prices extends Bonaparte_Import
      */
     public function _construct()
     {
-        ini_set('memory_limit', '2048M');
+        ini_set('memory_limit', self::MEMORY_LIMIT);
+
         $this->_logMessage('Reading configuration files');
         $this->_configurationFilePath = Mage::getBaseDir() . self::CONFIGURATION_FILE_PATH;
 
@@ -83,7 +93,10 @@ class Bonaparte_ImportExport_Model_Custom_Import_Prices extends Bonaparte_Import
                             $this->_skuAdCodes[$currentSKU] = substr($data['articleno2'], 5, 1);
                         }
                     }
-                    $this->_data[$currentSKU] = $lowestPrice;
+                    $this->_data[$currentSKU] = array(
+                        'regular' => $data['price'],
+                        'special' => $lowestPrice
+                    );
                     unset($data, $lowestPrice);
                 }
 
@@ -101,9 +114,8 @@ class Bonaparte_ImportExport_Model_Custom_Import_Prices extends Bonaparte_Import
      * Specific category functionality
      */
     public function start($options = array())
-    {//var_dump($this->_skuAdCodes);exit;
+    {
         $this->_logMessage('Started importing prices' . "\n" );
-
 
         $storeViews = array();
         foreach(Mage::app()->getWebsites() as $website) {
@@ -114,6 +126,7 @@ class Bonaparte_ImportExport_Model_Custom_Import_Prices extends Bonaparte_Import
         $row = 0;
         foreach($this->_data as $sku => $price) {
             $this->_logMemoryUsage();
+            $countrySku = $sku;
             $sku = explode('-', $sku);
             $countryCode = strtolower($sku[2]);
             $sku = $sku[0] . '-' . $sku[1];
@@ -122,14 +135,25 @@ class Bonaparte_ImportExport_Model_Custom_Import_Prices extends Bonaparte_Import
 
             $model = Mage::getModel('catalog/product')->loadByAttribute('sku', $sku);
             if(empty($model)) {
-               continue;
+                continue;
             }
+
+            $relationCollection = Mage::getModel('Bonaparte_ImportExport/External_Relation_Attribute_Option')
+                ->getCollection()
+                ->addFieldToFilter('attribute_code', self::ATTRIBUTE_CODE_ADCODES)
+                ->addFieldToFilter('external_id', $this->_skuAdCodes[$countrySku]);
+            $relationModel = $relationCollection->load()->getFirstItem();
 
             $this->_logMessage('Sku: ' . $sku . ' on ' . $countryCode . "\n" );
             $model->setStoreId($storeViews[$countryCode])
-                    ->setPrice($price/100)
-                    ->save()
-                    ->clearInstance();
+                    ->setPrice($price['regular']/100)
+                    ->setSpecialPrice($price['special']/100)
+                    ->setBnpAdcodes($relationModel->getInternalId())
+                    ->save();
+            $model->clearInstance();
+            $relationModel->clearInstance();
+            unset($relationCollection);
+            break;
         }
 
         $this->_logMessage('Finished importing prices' . "\n" );
