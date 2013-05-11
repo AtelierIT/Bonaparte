@@ -5,6 +5,7 @@
  *
  * Attribute problems:
  *
+ * Code: AdCodes OK
  * Code: Color OK
  * Code: Size
  *      88113 has no actual size
@@ -82,6 +83,20 @@ class Bonaparte_ImportExport_Model_Custom_Import_Attributes extends Bonaparte_Im
      * @var string
      */
     const OPTION_KEY_PREFIX = 'option';
+
+    /**
+     * Codes retrieved from xml configuration for the attributes
+     *
+     * @var string
+     */
+    const ATTRIBUTE_EXTERNAL_CODE_CATALOG_ADCODE = 'CatalogAdcode';
+
+    /**
+     * Separator used between the option id and option value when needed
+     *
+     * @var string
+     */
+    const OPTION_ID_VALUE_SEPARATOR = '_';
 
     /**
      * Attributes that have a specific frontend input different than "select"
@@ -261,11 +276,14 @@ class Bonaparte_ImportExport_Model_Custom_Import_Attributes extends Bonaparte_Im
         }
 
         foreach ($externalOptionIds as $externalOptionId) {
-            $relationModel = Mage::getModel('Bonaparte_ImportExport/External_Relation_Attribute_Option')
-                ->load($externalOptionId, 'external_id');
+            $relationCollection = Mage::getModel('Bonaparte_ImportExport/External_Relation_Attribute_Option')
+                ->getCollection()
+                ->addFieldToFilter('attribute_code', $attributeCode)
+                ->addFieldToFilter('external_id', $externalOptionId);
+            $relationModel = $relationCollection->load()->getFirstItem();
             $relationId = $relationModel->getId();
             $relationModel->clearInstance();
-            unset($relationModel);
+            unset($relationModel, $relationCollection);
 
             if($relationId) {
                 continue;
@@ -276,13 +294,13 @@ class Bonaparte_ImportExport_Model_Custom_Import_Attributes extends Bonaparte_Im
                 $internalId = $labelValueDatabaseOptions[$optionLabels[$externalOptionId]];
             }
 
-            $relationModel = Mage::getModel('Bonaparte_ImportExport/External_Relation_Attribute_Option');
-            $relationModel->setType(Bonaparte_ImportExport_Model_External_Relation_Attribute_Option::TYPE_ATTRIBUTE_OPTION);
-            $relationModel->setExternalId($externalOptionId);
-            $relationModel->setInternalId($internalId);
-            $relationModel->setAttributeCode($attributeCode);
-            $relationModel->save();
-            $relationModel->clearInstance();
+            Mage::getModel('Bonaparte_ImportExport/External_Relation_Attribute_Option')
+                ->setType(Bonaparte_ImportExport_Model_External_Relation_Attribute_Option::TYPE_ATTRIBUTE_OPTION)
+                ->setExternalId($externalOptionId)
+                ->setInternalId($internalId)
+                ->setAttributeCode($attributeCode)
+                ->save()
+                ->clearInstance();
         }
 
         $this->_logMessage('Finished relating external id of options to the internal id of options');
@@ -418,10 +436,9 @@ class Bonaparte_ImportExport_Model_Custom_Import_Attributes extends Bonaparte_Im
                         $optionValueCounter++;
                     }
                 } else {
-                    // ??????????
-                    // add option id to the label if label is smaller than 2 char
-                    if ((strlen($optionValue) <= 2) && (!in_array($attributeCode, array('Size', 'AdCodes', 'Priority', 'AnimalOrigin')))) {
-                        $optionId = $optionValue = $optionId . '_' . $optionValue;
+                    // add option id to the label if the attribute code is CatalogueAdCode
+                    if ((strlen($optionValue) <= 2) && $attributeCode == self::ATTRIBUTE_EXTERNAL_CODE_CATALOG_ADCODE) {
+                        $optionId = $optionValue = $optionId . self::OPTION_ID_VALUE_SEPARATOR . $optionValue;
                     }
 
                     $optionValues[self::OPTION_KEY_PREFIX . $counter][0] = $optionValue;

@@ -34,13 +34,13 @@ class Bonaparte_Shell_Import extends Mage_Shell_Abstract
                 Mage::getModel('Bonaparte_ImportExport/Custom_Import_Prices')->start($this->_args);
                 break;
             case self::IMPORT_TYPE_STOCK:
-                Mage::getModel('Bonaparte_ImportExport/Custom_Import_Stock')->start();
+                Mage::getModel('Bonaparte_ImportExport/Custom_Import_Stock')->start($this->_args);
                 break;
             case self::IMPORT_TYPE_STOCKINCR:
-                Mage::getModel('Bonaparte_ImportExport/Custom_Import_Stockincr')->start();
+                Mage::getModel('Bonaparte_ImportExport/Custom_Import_Stockincr')->start($this->_args);
                 break;
             default:
-                $this->usageHelp();
+                echo $this->usageHelp();
         }
     }
 
@@ -55,6 +55,7 @@ Usage:  php -f bonaparte_import.php -- [options]
 
   --type <type>                                         attributes|categories|products|prices
   --remove_attributes_with_identical_attribute_code     only for attributes
+
 USAGE;
     }
 
