@@ -153,7 +153,6 @@ class Bonaparte_ImportExport_Model_Custom_Import_Prices extends Bonaparte_Import
             $model->clearInstance();
             $relationModel->clearInstance();
             unset($relationCollection);
-            break;
         }
 
         $this->_logMessage('Finished importing prices' . "\n" );
