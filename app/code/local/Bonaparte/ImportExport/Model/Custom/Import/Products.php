@@ -23,8 +23,8 @@ class Bonaparte_ImportExport_Model_Custom_Import_Products extends Bonaparte_Impo
      *
      * @var string
      */
-//    const CONFIGURATION_FILE_PATH = '/chroot/home/stagebon/upload/xml/product';       // server configuration
-    const CONFIGURATION_FILE_PATH = '/dump_files/xml/test6';         // local developer station
+    const CONFIGURATION_FILE_PATH = '/chroot/home/stagebon/upload/xml/product';       // server configuration
+//    const CONFIGURATION_FILE_PATH = '/dump_files/xml/test6';         // local developer station
 
 
     /**
@@ -32,8 +32,8 @@ class Bonaparte_ImportExport_Model_Custom_Import_Products extends Bonaparte_Impo
      *
      * @var string
      */
-//    const PICTURE_BASE_PATH = '/chroot/home/stagebon/upload/pictures/';
-    const PICTURE_BASE_PATH = '/dump_files/pictures/';
+    const PICTURE_BASE_PATH = '/chroot/home/stagebon/upload/pictures/';
+//    const PICTURE_BASE_PATH = '/dump_files/pictures/';
 
 
     /**
@@ -90,9 +90,9 @@ class Bonaparte_ImportExport_Model_Custom_Import_Products extends Bonaparte_Impo
     {
         $this->_logMessage('Start PRODUCT IMPORT');
         $this->_configurationFilePath = array();
-//        $configFilesPath = self::CONFIGURATION_FILE_PATH;
+        $configFilesPath = self::CONFIGURATION_FILE_PATH;//server
 //     to be changed on local computer
-      $configFilesPath = Mage::getBaseDir() . self::CONFIGURATION_FILE_PATH;
+//      $configFilesPath = Mage::getBaseDir() . self::CONFIGURATION_FILE_PATH;
 
         $files = scandir($configFilesPath);
         $this->_logMessage('There are ' . (count($files)-2) . 'files');
@@ -221,7 +221,17 @@ class Bonaparte_ImportExport_Model_Custom_Import_Products extends Bonaparte_Impo
         $attribute->setData('option',$result);
         $attribute->save();
 
-        return $this->_getAttributeLabelId($arg_attribute, $arg_value);
+        // add AttributeOptionExternalInternalIdRelation
+        $internalId = $this->_getAttributeLabelId($arg_attribute, $arg_value);
+//        Mage::getModel('Bonaparte_ImportExport/External_Relation_Attribute_Option')
+//            ->setType(Bonaparte_ImportExport_Model_External_Relation_Attribute_Option::TYPE_ATTRIBUTE_OPTION)
+//            ->setExternalId($arg_value)
+//            ->setInternalId($internalId)
+//            ->setAttributeCode($arg_attribute)
+//            ->save()
+//            ->clearInstance();
+
+        return $internalId;
     }
 
 
@@ -232,10 +242,12 @@ class Bonaparte_ImportExport_Model_Custom_Import_Products extends Bonaparte_Impo
     private function _getProductImageReady()
     {
 
-        $images = scandir(Mage::getBaseDir().self::PICTURE_BASE_PATH);
+        //$images = scandir(Mage::getBaseDir().self::PICTURE_BASE_PATH); //localhost
+        $images = scandir(self::PICTURE_BASE_PATH); //STAGE
         $_mediaBase = Mage::getBaseDir('media').'/catalog/product/';
 
         $pictureNumber = count($images);
+        $this->_logMessage($pictureNumber.' in '.$_mediaBase);
         $counter = 1;
         foreach($images as $image) {
             if (in_array($image,array('.','..')))
@@ -246,10 +258,11 @@ class Bonaparte_ImportExport_Model_Custom_Import_Products extends Bonaparte_Impo
             $path = $secondDir.'/'.$image;
 
             if(!file_exists($path)) {
-                $this->_logMessage('Creating ' . $counter++ . ' of ' . $pictureNumber . ' - ' . $image);
-                if (!file_exists($secondDir))
-                    mkdir($secondDir, 0775, true);
-                copy(Mage::getBaseDir().self::PICTURE_BASE_PATH.$image, $path);
+                if (!file_exists($secondDir)) mkdir($secondDir, 0775, true);
+                $this->_logMessage('Creating ' . $counter++ . ' of ' . $pictureNumber . ' - from ' . self::PICTURE_BASE_PATH.$image . ' - to ' . $path);
+                copy(self::PICTURE_BASE_PATH.$image, $path); // Stage version
+                //copy(Mage::getBaseDir().self::PICTURE_BASE_PATH.$image, $path); //localhost version
+
             }
             else $this->_logMessage('Existing ' . $counter++ . ' of ' . $pictureNumber . ' - ' . $image);
        }
@@ -321,10 +334,10 @@ class Bonaparte_ImportExport_Model_Custom_Import_Products extends Bonaparte_Impo
         $cino_picture_directory = Mage::getBaseDir('media') . '/cino/';
 //        $cino_picture_directory = Mage::getBaseDir() . '/dump_files/temp/';
 
-//        $pictureBasePath = '/chroot/home/stagebon/upload/pictures/';
-        $pictureBasePath = Mage::getBaseDir() . '/dump_files/pictures/';
+        $pictureBasePath = '/chroot/home/stagebon/upload/pictures/';
+//        $pictureBasePath = Mage::getBaseDir() . '/dump_files/pictures/';
 
-        $mediaAttributes = array('image','thumbnail','small_image');
+//        $mediaAttributes = array('image','thumbnail','small_image');
         $this->_logMessage('Creating ' . count($productData['Items']['value']) . ' from this file');
         $productCounter = 1;
            foreach ($productData['Items']['value'] as $productItem){
@@ -387,7 +400,13 @@ class Bonaparte_ImportExport_Model_Custom_Import_Products extends Bonaparte_Impo
                     $externalIds = array_merge(
                         array(
                             $productItem['Color']['value'],
-                            $productData['Fitting']['value']
+                            $productData['Fitting']['value'],
+                            $productData['Composition']['value'],
+                            $productData['Concept']['value'],
+                            $productData['Program']['value'],
+                            $productData['ProductMainGroup']['value'],
+                            $productData['ProductGroup']['value'],
+                            $productData['ProductSubGroup']['value']
                         ),
                         (array) $productData['Catalogue']['value'],
                         (array) $productData['Season']['value'],
@@ -410,12 +429,15 @@ class Bonaparte_ImportExport_Model_Custom_Import_Products extends Bonaparte_Impo
                     }
                     // END external id relate to internal id
 
+                    $bnpCatalogueLabelIds = array();
                     foreach ($productData['Catalogue']['value'] as $externalId){
                         $bnpCatalogueLabelIds[] = $externalIdToInternalId[$externalId];
                     }
+                    $bnpSeasonLabelIds = array();
                     foreach ($productData['Season']['value'] as $externalId){
                         $bnpSeasonLabelIds[] = $externalIdToInternalId[$externalId];
                     }
+                    $bnpWashiconLabelIds = array();
                     foreach ($productItem['WashIcon']['value'] as $externalId){
                         $bnpWashiconLabelIds[] = $externalIdToInternalId[$externalId];
                     }
@@ -450,6 +472,15 @@ class Bonaparte_ImportExport_Model_Custom_Import_Products extends Bonaparte_Impo
                         ->setBnpSeason(implode(',', $bnpSeasonLabelIds))
                         ->setBnpWashicon(implode(',', $bnpWashiconLabelIds))
                         ->setBnpColorgroup($this->_getAttributeLabelId("bnp_colorgroup",$productItem['ColorGroup']['value']))
+                        ->setBnpMeasurechartabrv($productData['MeasureChartAbrv']['value'])
+                        ->setBnpMeasurementchart($productItem['MeasurementChart']['value'])
+                        ->setBnpProgram($externalIdToInternalId[$productData['Program']['value']])
+                        ->setBnpProductmaingroup($externalIdToInternalId[$productData['ProductMainGroup']['value']])
+                        ->setBnpProductgroup($externalIdToInternalId[$productData['ProductGroup']['value']])
+                        ->setBnpProductsubgroup($externalIdToInternalId[$productData['ProductSubGroup']['value']])
+
+                        ->setBnpComposition($externalIdToInternalId[$productData['Composition']['value']])
+                        ->setBnpConcept($externalIdToInternalId[$productData['Concept']['value']])
 
                         ->setData($configurable_attribute, $configurableAttributeOptionId);
                     $productQTY = (!is_null($this->_productInventory[$productSKU]))?$this->_productInventory[$productSKU]:"99999";
@@ -543,6 +574,15 @@ class Bonaparte_ImportExport_Model_Custom_Import_Products extends Bonaparte_Impo
                     ->setBnpColor($externalIdToInternalId[$productItem['Color']['value']])
                     ->setBnpFitting($externalIdToInternalId[$productData['Fitting']['value']])
                     ->setBnpColorgroup($this->_getAttributeLabelId("bnp_colorgroup",$productItem['ColorGroup']['value']))
+                    ->setBnpMeasurechartabrv($productData['MeasureChartAbrv']['value'])
+                    ->setBnpMeasurementchart($productItem['MeasurementChart']['value'])
+                    ->setBnpProgram($externalIdToInternalId[$productData['Program']['value']])
+                    ->setBnpProductmaingroup($externalIdToInternalId[$productData['ProductMainGroup']['value']])
+                    ->setBnpProductgroup($externalIdToInternalId[$productData['ProductGroup']['value']])
+                    ->setBnpProductsubgroup($externalIdToInternalId[$productData['ProductSubGroup']['value']])
+
+                    ->setBnpComposition($externalIdToInternalId[$productData['Composition']['value']])
+                    ->setBnpConcept($externalIdToInternalId[$productData['Concept']['value']])
 
                     ->setUrlKey($productData['HeaderWebs']['value']['en'] . '_' . $productItem['CinoNumber']['value'])
                 ;
