@@ -855,12 +855,14 @@ class Bonaparte_ImportExport_Model_Custom_Import_Products extends Bonaparte_Impo
         $this->_attributeIdd = $this->_getAttributeID('bnp_size');
         $this->_allWebsiteIDs = Mage::getModel('core/website')->getCollection()->getAllIds();
         $numberOfFiles = count($this->_data);
-        $counter = 1;
+        $counter = 0;
         foreach($this->_data as $productConfig) {
+            if ($counter++<294) continue;
             $productData = array();
             $this->_extractConfiguration($productConfig->getNode(), $productData);
-            $this->_logMessage($counter++ . ' / '. $numberOfFiles . ' - Adding product file');
+            $this->_logMessage($counter . ' / '. $numberOfFiles . ' - Adding product file');
             $this->_addProduct($productData);
+            if ($counter==1000) break;
         }
         $this->_logMessage('ALL DONE!!!'. "\n");
     }
