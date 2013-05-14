@@ -106,6 +106,23 @@ class Bonaparte_ImportExport_Model_Custom_Import_Attributes extends Bonaparte_Im
     const OPTION_ID_VALUE_SEPARATOR = '_';
 
     /**
+     * Custom attribute codes
+     *
+     * @var string
+     */
+    const CUSTOM_ATTRIBUTE_CODE_COLOR = 'bnp_color';
+    const CUSTOM_ATTRIBUTE_CODE_FITTING = 'bnp_fitting';
+    const CUSTOM_ATTRIBUTE_CODE_COMPOSITION = 'bnp_composition';
+    const CUSTOM_ATTRIBUTE_CODE_CONCEPT = 'bnp_concept';
+    const CUSTOM_ATTRIBUTE_CODE_PROGRAM = 'bnp_program';
+    const CUSTOM_ATTRIBUTE_CODE_PRODUCT_MAIN_GROUP = 'bnp_productmaingroup';
+    const CUSTOM_ATTRIBUTE_CODE_PRODUCT_GROUP = 'bnp_productgroup';
+    const CUSTOM_ATTRIBUTE_CODE_PRODUCT_SUB_GROUP = 'bnp_productsubgroup';
+    const CUSTOM_ATTRIBUTE_CODE_CATALOGUE = 'bnp_catalogue';
+    const CUSTOM_ATTRIBUTE_CODE_SEASON = 'bnp_season';
+    const CUSTOM_ATTRIBUTE_CODE_WASH_ICON = 'bnp_washicon';
+
+    /**
      * Attributes that have a specific frontend input different than "select"
      *
      * @var array
