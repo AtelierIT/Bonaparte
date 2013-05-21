@@ -194,6 +194,19 @@
     Order allow,deny
     Allow from all
 
+
+############################################
+## Because of php5 limitation of max_input_var to 1000
+## when changing in admin area a category with more than 1000 products it reduces the number to 1000
+## enable this to change that
+#<LocationMatch "/(index\.php\/)?admin/">
+#    <IfModule mod_php5.c>
+    php_value max_input_vars 100000
+ #   </IfModule>
+#</LocationMatch>
+
+
+
 ###########################################
 ## Deny access to release notes to prevent disclosure of the installed Magento version
 

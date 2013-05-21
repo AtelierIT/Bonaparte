@@ -13,7 +13,7 @@
     <adminhtml_custom_products>
         <reference name="content">
             <block type="core/template" name="bonaparte_importexport_products" template="importexport/products.phtml"></block>
-            <block type="Bonaparte_ImportExport/adminhtml_example" name="bonaparte_importexport_example" />
+            <block type="Bonaparte_ImportExport/adminhtml_catalogue" name="bonaparte_importexport_catalogue" />
         </reference>
     </adminhtml_custom_products>
 </layout>

@@ -23,8 +23,8 @@ class Bonaparte_ImportExport_Model_Custom_Import_Products extends Bonaparte_Impo
      *
      * @var string
      */
-    const CONFIGURATION_FILE_PATH = '/chroot/home/stagebon/upload/xml/product';       // server configuration
-//    const CONFIGURATION_FILE_PATH = '/dump_files/xml/test6';         // local developer station
+//    const CONFIGURATION_FILE_PATH = '/chroot/home/stagebon/upload/xml/product';       // server configuration
+    const CONFIGURATION_FILE_PATH = '/dump_files/xml/test6';         // local developer station
 
 
     /**
@@ -32,8 +32,8 @@ class Bonaparte_ImportExport_Model_Custom_Import_Products extends Bonaparte_Impo
      *
      * @var string
      */
-    const PICTURE_BASE_PATH = '/chroot/home/stagebon/upload/pictures/';
-//    const PICTURE_BASE_PATH = '/dump_files/pictures/';
+//    const PICTURE_BASE_PATH = '/chroot/home/stagebon/upload/pictures/';
+    const PICTURE_BASE_PATH = '/dump_files/pictures/';
 
 
     /**
@@ -90,9 +90,9 @@ class Bonaparte_ImportExport_Model_Custom_Import_Products extends Bonaparte_Impo
     {
         $this->_logMessage('Start PRODUCT IMPORT');
         $this->_configurationFilePath = array();
-        $configFilesPath = self::CONFIGURATION_FILE_PATH;//server
+//        $configFilesPath = self::CONFIGURATION_FILE_PATH;//server
 //     to be changed on local computer
-//      $configFilesPath = Mage::getBaseDir() . self::CONFIGURATION_FILE_PATH;
+      $configFilesPath = Mage::getBaseDir() . self::CONFIGURATION_FILE_PATH;
 
         $files = scandir($configFilesPath);
         $this->_logMessage('There are ' . (count($files)-2) . 'files');
@@ -242,8 +242,8 @@ class Bonaparte_ImportExport_Model_Custom_Import_Products extends Bonaparte_Impo
     private function _getProductImageReady()
     {
 
-        //$images = scandir(Mage::getBaseDir().self::PICTURE_BASE_PATH); //localhost
-        $images = scandir(self::PICTURE_BASE_PATH); //STAGE
+        $images = scandir(Mage::getBaseDir().self::PICTURE_BASE_PATH); //localhost
+//        $images = scandir(self::PICTURE_BASE_PATH); //STAGE
         $_mediaBase = Mage::getBaseDir('media').'/catalog/product/';
 
         $pictureNumber = count($images);
@@ -260,8 +260,8 @@ class Bonaparte_ImportExport_Model_Custom_Import_Products extends Bonaparte_Impo
             if(!file_exists($path)) {
                 if (!file_exists($secondDir)) mkdir($secondDir, 0775, true);
                 $this->_logMessage('Creating ' . $counter++ . ' of ' . $pictureNumber . ' - from ' . self::PICTURE_BASE_PATH.$image . ' - to ' . $path);
-                copy(self::PICTURE_BASE_PATH.$image, $path); // Stage version
-                //copy(Mage::getBaseDir().self::PICTURE_BASE_PATH.$image, $path); //localhost version
+//                copy(self::PICTURE_BASE_PATH.$image, $path); // Stage version
+                copy(Mage::getBaseDir().self::PICTURE_BASE_PATH.$image, $path); //localhost version
 
             }
             else $this->_logMessage('Existing ' . $counter++ . ' of ' . $pictureNumber . ' - ' . $image);
@@ -334,8 +334,8 @@ class Bonaparte_ImportExport_Model_Custom_Import_Products extends Bonaparte_Impo
         $cino_picture_directory = Mage::getBaseDir('media') . '/cino/';
 //        $cino_picture_directory = Mage::getBaseDir() . '/dump_files/temp/';
 
-        $pictureBasePath = '/chroot/home/stagebon/upload/pictures/';
-//        $pictureBasePath = Mage::getBaseDir() . '/dump_files/pictures/';
+//        $pictureBasePath = '/chroot/home/stagebon/upload/pictures/';
+        $pictureBasePath = Mage::getBaseDir() . '/dump_files/pictures/';
 
 //        $mediaAttributes = array('image','thumbnail','small_image');
         $this->_logMessage('Creating ' . count($productData['Items']['value']) . ' from this file');
@@ -842,9 +842,9 @@ class Bonaparte_ImportExport_Model_Custom_Import_Products extends Bonaparte_Impo
         $this->_smallImageId = $this->_getAttributeID('small_image');
         $this->_thumbnailId = $this->_getAttributeID('thumbnail');
 
-        $this->_logMessage('Getting the pictures ready');
-        $this->_getProductImageReady();
-        $this->_logMessage('Finished');
+//        $this->_logMessage('Getting the pictures ready');
+//        $this->_getProductImageReady();
+//        $this->_logMessage('Finished');
 
         $this->_logMessage('Inventory parsing start');
         $this->_productInventory = $this->_getProductInventory();
@@ -857,7 +857,7 @@ class Bonaparte_ImportExport_Model_Custom_Import_Products extends Bonaparte_Impo
         $numberOfFiles = count($this->_data);
         $counter = 0;
         foreach($this->_data as $productConfig) {
-            if ($counter++<294) continue;
+//            if ($counter++<294) continue;
             $productData = array();
             $this->_extractConfiguration($productConfig->getNode(), $productData);
             $this->_logMessage($counter . ' / '. $numberOfFiles . ' - Adding product file');

@@ -2,7 +2,7 @@
 <config>
     <modules>
         <Bonaparte_ImportExport>
-            <version>0.1.4</version>
+            <version>0.1.5</version>
         </Bonaparte_ImportExport>
     </modules>
     <global>
@@ -33,6 +33,9 @@
                     <External_Relation_Attribute_Option>
                         <table>bonaparte_importexport_external_relation_attribute_option</table>
                     </External_Relation_Attribute_Option>
+                    <Catalogue>
+                        <table>bonaparte_importexport_catalogue</table>
+                    </Catalogue>
                 </entities>
                 <!-- -/- -->
             </Bonaparte_ImportExport_Mysql4>
