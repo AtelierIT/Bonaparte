@@ -85,11 +85,18 @@ class Bonaparte_ImportExport_Model_Custom_Import_Attributes extends Bonaparte_Im
     const OPTION_KEY_PREFIX = 'option';
 
     /**
-     * Codes retrieved from xml configuration for the attributes
+     * Codes retrieved from xml configuration for the attribute catalog adcode
      *
      * @var string
      */
     const ATTRIBUTE_EXTERNAL_CODE_CATALOG_ADCODE = 'CatalogAdcode';
+
+    /**
+     * Codes retrieved from xml configuration for the attribute size
+     *
+     * @var string
+     */
+    const ATTRIBUTE_EXTERNAL_CODE_SIZE = 'Size';
 
     /**
      * Separator used between the option id and option value when needed
@@ -97,6 +104,23 @@ class Bonaparte_ImportExport_Model_Custom_Import_Attributes extends Bonaparte_Im
      * @var string
      */
     const OPTION_ID_VALUE_SEPARATOR = '_';
+
+    /**
+     * Custom attribute codes
+     *
+     * @var string
+     */
+    const CUSTOM_ATTRIBUTE_CODE_COLOR = 'bnp_color';
+    const CUSTOM_ATTRIBUTE_CODE_FITTING = 'bnp_fitting';
+    const CUSTOM_ATTRIBUTE_CODE_COMPOSITION = 'bnp_composition';
+    const CUSTOM_ATTRIBUTE_CODE_CONCEPT = 'bnp_concept';
+    const CUSTOM_ATTRIBUTE_CODE_PROGRAM = 'bnp_program';
+    const CUSTOM_ATTRIBUTE_CODE_PRODUCT_MAIN_GROUP = 'bnp_productmaingroup';
+    const CUSTOM_ATTRIBUTE_CODE_PRODUCT_GROUP = 'bnp_productgroup';
+    const CUSTOM_ATTRIBUTE_CODE_PRODUCT_SUB_GROUP = 'bnp_productsubgroup';
+    const CUSTOM_ATTRIBUTE_CODE_CATALOGUE = 'bnp_catalogue';
+    const CUSTOM_ATTRIBUTE_CODE_SEASON = 'bnp_season';
+    const CUSTOM_ATTRIBUTE_CODE_WASH_ICON = 'bnp_washicon';
 
     /**
      * Attributes that have a specific frontend input different than "select"
@@ -294,6 +318,11 @@ class Bonaparte_ImportExport_Model_Custom_Import_Attributes extends Bonaparte_Im
                 $internalId = $labelValueDatabaseOptions[$optionLabels[$externalOptionId]];
             }
 
+            // skip relation creation if there is no internal id
+            if(empty($internalId)) {
+                continue;
+            }
+
             Mage::getModel('Bonaparte_ImportExport/External_Relation_Attribute_Option')
                 ->setType(Bonaparte_ImportExport_Model_External_Relation_Attribute_Option::TYPE_ATTRIBUTE_OPTION)
                 ->setExternalId($externalOptionId)
@@ -423,7 +452,7 @@ class Bonaparte_ImportExport_Model_Custom_Import_Attributes extends Bonaparte_Im
             $this->_logMessage('Adding attribute options(' . count($attributeConfigurationData) . ')');
 
             $counter = 0;
-            $optionValues = $optionIds = array();
+            $optionLabels = $optionValues = $optionIds = array();
             foreach ($attributeConfigurationData as $optionId => $optionValue) {
                 $this->_logMessage('.', false);
 
@@ -447,8 +476,14 @@ class Bonaparte_ImportExport_Model_Custom_Import_Attributes extends Bonaparte_Im
                     }
                 }
 
+                $optionValue = (is_array($optionValue))?$optionValue[2]:$optionValue;
+
+                if($attributeCode == self::ATTRIBUTE_EXTERNAL_CODE_SIZE) {
+                    $optionId = $optionValue;
+                }
+
                 $optionIds[] = $optionId;
-                $optionLabels[$optionId] = (is_array($optionValue))?$optionValue[2]:$optionValue;
+                $optionLabels[$optionId] = $optionValue;
                 $counter++;
             }
 
