@@ -32,6 +32,8 @@ class Bonaparte_ImportExport_Model_Custom_Import_Prices extends Bonaparte_Import
      */
     private $_skuAdCodes = array();
 
+    private $_priceRow = array ('price','reg_price');
+
     /**
      * Construct import model
      */
@@ -74,11 +76,16 @@ class Bonaparte_ImportExport_Model_Custom_Import_Prices extends Bonaparte_Import
         $temporaryData = array();
         while($line = fgets($fileHandler)) {
             $row++;
-            $this->_logMessage('Row ' . $row);
+            //$this->_logMessage('Row ' . $row);
             $line = explode(';', $line);
             $priceData = array();
             foreach($dataKeys as $key => $value) {
-                $priceData[$value] = $line[$key];
+                if (in_array($value,$this->_priceRow)) {
+                    $priceData[$value] = intval($line[$key]);
+                }else{
+                    $priceData[$value] = $line[$key];
+                }
+
             }
             unset($key, $value);
 
@@ -94,7 +101,7 @@ class Bonaparte_ImportExport_Model_Custom_Import_Prices extends Bonaparte_Import
                         }
                     }
                     $this->_data[$currentSKU] = array(
-                        'regular' => $data['price'],
+                        'regular' => $data['reg_price']?$data['reg_price']:$lowestPrice,
                         'special' => $lowestPrice
                     );
                     unset($data, $lowestPrice);
@@ -111,6 +118,16 @@ class Bonaparte_ImportExport_Model_Custom_Import_Prices extends Bonaparte_Import
     }
 
     /**
+     * Add price and special price to configurable product
+     * @param $sku
+     * @param $regularprice
+     * @param $specialPrice
+     */
+//    public function _addPriceToConfigurableProduct($sku, $regularPrice, $specialPrice){
+//        $model = Mage::getModel('catalog/product')->loadByAttribute('sku', $sku);
+//
+//    }
+    /**
      * Specific category functionality
      */
     public function start($options = array())
@@ -125,11 +142,17 @@ class Bonaparte_ImportExport_Model_Custom_Import_Prices extends Bonaparte_Import
 
         $row = 0;
         foreach($this->_data as $sku => $price) {
-            $this->_logMemoryUsage();
+
+            //$this->_logMemoryUsage();
             $countrySku = $sku;
             $sku = explode('-', $sku);
+
+            // skip first 12000 SKUs
+            //if (intval($sku[0])<12000) continue;
+            //$configurableProductSKU = $sku[0] . 'c';
             $countryCode = strtolower($sku[2]);
             $sku = $sku[0] . '-' . $sku[1];
+
 
             $this->_logMessage('Sku: ' . $sku . "\n" );
 
