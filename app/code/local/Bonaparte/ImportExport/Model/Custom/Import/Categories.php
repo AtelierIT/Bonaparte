@@ -35,11 +35,16 @@ class Bonaparte_ImportExport_Model_Custom_Import_Categories extends Bonaparte_Im
      */
     protected function _construct()
     {
+        $this->_logMessage('Reading configuration');
+
         $this->_configurationFilePath = Mage::getBaseDir() . self::CONFIGURATION_FILE_PATH;
         $this->_initialize();
 
         $this->_data = array();
+
         $this->_extractNode($this->getConfig(), $this->_data);
+
+        $this->_logMessage('Finished reading configuration');
     }
 
     /**
@@ -61,9 +66,6 @@ class Bonaparte_ImportExport_Model_Custom_Import_Categories extends Bonaparte_Im
         }
 
         foreach ($folder as $node) {
-
-
-
             $attributeId = $node->getAttribute('groupId');
             $name = (array)$node->locale;
             $categoryStructure[$attributeId] = array(
@@ -81,51 +83,51 @@ class Bonaparte_ImportExport_Model_Custom_Import_Categories extends Bonaparte_Im
      * @param mixed (integer|Mage_Catalog_Model_Category) $parentId
      * @param array $children
      */
-    private function _addCategory($parentId, $children)
+    private function _addCategory($parent, $children)
     {
-        if (!($parentId instanceof Mage_Catalog_Model_Category)) {
-            $collection = Mage::getModel('catalog/category')->getCollection();
-            $collection->addAttributeToFilter('old_id', $parentId);
-            $collection->load();
-            $parent = array_pop($collection->getItems());
-        } else {
-            $parent = $parentId;
-        }
-
+        $parentId = $parent->getId();
         foreach ($children as $oldCategoryId => $data) {
-            $category = Mage::getModel('catalog/category');
-            $categoryCollection = $category->getCollection()
+            $category = Mage::getModel('catalog/category')->getCollection()
                 ->addAttributeToFilter('old_id', $oldCategoryId)
-                ->load();
+                ->addAttributeToFilter('parent_id', $parentId)
+                ->load()
+                ->getFirstItem();
 
-            $name = $data['name'];
-            if(is_array($name)) {
-                $name = $data['name'][$this->_languageIndex];
-            }
-
-            $parent->setPathIds(null);
-            $category->setData(array(
-                'name' => $name,
+            $categoryData = array(
+                'name' => (is_array($data['name'])) ? $data['name'][$this->_languageIndex] : $data['name'],
                 'is_active' => 1,
                 'include_in_menu' => 1,
-                'is_anchor' => 0,
+                'is_anchor' => 1,
                 'url_key' => '',
-                'description' => '',
-                'old_id' => $oldCategoryId
-            ))
-                ->setAttributeSetId($category->getDefaultAttributeSetId())
-                ->setStoreId(0)
-                ->setPath(implode('/', $parent->getPathIds()))
-                ->setParentId($parent->getId())
-                ->save();
+                'description' => 'parent is ' . $parentId
+            );
 
-            unset($categoryCollection, $collection);
+            $actionLabel = 'Updating';
+            if(!$category->getId()) {
+                $parent->setPathIds(null);
+                // Create category object
+                $category = Mage::getModel('catalog/category')
+                    ->setStoreId(0)
+                    ->setPath(implode('/', $parent->getPathIds()))
+                    ->setParentId($parentId)
+                    ->setAttributeSetId($category->getDefaultAttributeSetId());
 
-            $category->clearInstance();
+                $actionLabel = 'Adding';
+                $categoryData['old_id'] = $oldCategoryId;
+            }
+
+            $this->_logMessage(
+                $actionLabel
+                    . ' category '
+                    . $categoryData['name'] . ' for ' . $this->_languages[$this->_languageIndex] . ' root category'
+            );
+
+            $category->addData($categoryData)->save();
+
             $parent->clearInstance();
 
             if (!empty($data['children'])) {
-                $this->_addCategory($oldCategoryId, $data['children']);
+                $this->_addCategory($category, $data['children']);
             }
         }
     }
@@ -138,53 +140,87 @@ class Bonaparte_ImportExport_Model_Custom_Import_Categories extends Bonaparte_Im
     private function _removeDuplicates($children)
     {
         foreach ($children as $externalCategoryId => $data) {
-            $categoryCollection = Mage::getModel('catalog/category')->getCollection()
-                ->addAttributeToFilter('old_id', $externalCategoryId)
-                ->load();
-            
-            foreach ($categoryCollection as $duplicateCategory) {
-                $duplicateCategory->delete();
-                $duplicateCategory->clearInstance();
-            }
-            unset($categoryCollection);
-
             if (!empty($data['children'])) {
                 $this->_removeDuplicates($data['children']);
             }
+
+            $this->_removeCategory($externalCategoryId, 'old_id');
+        }
+    }
+
+    /**
+     * Remove category
+     *
+     * @param string $id
+     * @param string $field
+     *
+     * @return void
+     */
+    private function _removeCategory($id, $field) {
+        $categoryCollection = Mage::getModel('catalog/category')->getCollection()
+            ->addAttributeToFilter($field, $id)
+            ->load();
+
+        if(!$categoryCollection->count()) {
+            return;
+        }
+
+        $this->_logMessage('Removing category with ' . $field . ': ' . $id);
+
+        foreach ($categoryCollection as $duplicateCategory) {
+            try {
+                $duplicateCategory->delete();
+            } catch(Exception $e) {
+                $this->_logMessage('Can\'t remove ' . $id . ' because ' . $e->getMessage());
+            }
+
+            $duplicateCategory->clearInstance();
+            echo '.';
         }
     }
 
     /**
      * Specific category functionality
+     *
+     * @param array $options
      */
     public function start($options = array())
     {
-        // before importing remove last imported categories
-        $this->_removeDuplicates($this->_data);
+        $this->_logMessage('Started importing categories');
+        $startTime = time();
+        if($options['remove_categories_with_identical_code']) {
+            // before importing remove last imported categories
+            $this->_logMessage('Removing child categories');
+            $this->_removeDuplicates($this->_data);
+            $this->_logMessage('Finished removing child categories');
+        }
 
         foreach ($this->_languages as $languageIndex => $language) {
             $name = $language . ' root category';
 
-            // also remove all language root categories
-            $categoryCollection = Mage::getModel('catalog/category')->getCollection()
-                ->addAttributeToFilter('name', $name)
-                ->load();
-
-            foreach ($categoryCollection as $duplicateCategory) {
-                $duplicateCategory->delete();
-                $duplicateCategory->clearInstance();
+            if($options['remove_categories_with_identical_code']) {
+                // also remove all language root categories
+                $this->_removeCategory($name, 'name');
             }
-
-            unset($categoryCollection);
 
             $this->_languageIndex = $languageIndex;
 
-            // Create category object
-            $category = Mage::getModel('catalog/category')
-                ->setStoreId(0)
-                ->addData(array(
+            $category = Mage::getModel('catalog/category')->getCollection()
+                ->addAttributeToFilter('name', $name)
+                ->load()
+                ->getFirstItem();
+
+            if(!$category->getId()) {
+                // Create category object
+                $category = Mage::getModel('catalog/category')
+                    ->setStoreId(0)
+                    ->setParentId('1')
+                    ->setPath('1');
+                $category->setAttributeSetId($category->getDefaultAttributeSetId());
+            }
+
+            $category->addData(array(
                     'name' => $name,
-                    'path' => '1',
                     'description' => 'Category ' . $language,
                     'meta_title' => 'Meta Title',
                     'meta_keywords' => 'Meta Keywords',
@@ -195,16 +231,21 @@ class Bonaparte_ImportExport_Model_Custom_Import_Categories extends Bonaparte_Im
                 ));
 
             try {
+                $this->_logMessage('Creating ' . $name);
                 $category->save();
+                $this->_logMessage('Done');
             } catch (Exception $e) {
-                echo $e->getMessage();
+                $this->_logMessage('Error while creating ' . $name . ':' . $e->getMessage());
                 exit;
             }
 
+            $this->_logMessage('Adding categories for ' . $name);
             $this->_addCategory($category, $this->_data);
         }
 
-        echo 'DONE ';
+        $this->_logExecutionTime();
+        $this->_logMemoryUsed();
+        $this->_logMessage('Import finished!' . "\n");
     }
 
 }
