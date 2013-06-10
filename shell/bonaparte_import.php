@@ -55,6 +55,7 @@ Usage:  php -f bonaparte_import.php -- [options]
 
   --type <type>                                         attributes|categories|products|prices
   --remove_attributes_with_identical_attribute_code     only for attributes
+  --remove_categories_with_identical_code               only for categories
 
 USAGE;
     }
