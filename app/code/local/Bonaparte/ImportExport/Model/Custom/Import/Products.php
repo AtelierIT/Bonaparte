@@ -29,18 +29,23 @@ class Bonaparte_ImportExport_Model_Custom_Import_Products extends Bonaparte_Impo
      *
      * @var string
      */
-    const CONFIGURATION_FILE_PATH = '/chroot/home/stagebon/upload/xml/product';       // server configuration
-//    const CONFIGURATION_FILE_PATH = '/dump_files/xml/test6';         // local developer station
-//    const CONFIGURATION_FILE_PATH = '/var/www/bonaparte/magento/dump_files/xml/test6'; // local developer station
+//    const CONFIGURATION_FILE_PATH = '/chroot/home/stagebon/upload/xml/product';       // server configuration
+    const CONFIGURATION_FILE_PATH = '/var/www/bonaparte/magento/dump_files/xml/test6'; // local developer station
 
     /**
      * Path to the product pictures source files
      *
      * @var string
      */
-    const PICTURE_BASE_PATH = '/chroot/home/stagebon/upload/pictures/';
-//    const PICTURE_BASE_PATH = '/dump_files/pictures/';
+//    const PICTURE_BASE_PATH = '/chroot/home/stagebon/upload/pictures/';
+    const PICTURE_BASE_PATH = '/var/www/bonaparte/magento/dump_files/pictures/';
 
+    /**
+     * Path to the missing pictures file
+     *
+     * @var string
+     */
+    const MISSING_PICTURES_BASE_PATH = '/dump_files/missing_pictures.csv';
 
     /**
      * Contains all sizes that need to be translated to short ERP name
@@ -111,6 +116,8 @@ class Bonaparte_ImportExport_Model_Custom_Import_Products extends Bonaparte_Impo
 
     private $_newProductCounter = 0;
     private $_productEntityTypeId = 0;
+    private $_missingPictureFilePath = '';
+    private $_fileHandlerPictures;
 
     /**
      * Maps the website code the its store view id
@@ -127,12 +134,7 @@ class Bonaparte_ImportExport_Model_Custom_Import_Products extends Bonaparte_Impo
     {
         $this->_logMessage('Start PRODUCT IMPORT');
         $this->_configurationFilePath = array();
-
-        $configFilesPath = self::CONFIGURATION_FILE_PATH; //server
-
-//     to be changed on local computer
-//      $configFilesPath = Mage::getBaseDir() . self::CONFIGURATION_FILE_PATH;
-
+        $configFilesPath = self::CONFIGURATION_FILE_PATH;
         $files = scandir($configFilesPath);
         $this->_logMessage('There are ' . (count($files) - 2) . 'files');
         foreach ($files as $fileName) {
@@ -170,6 +172,7 @@ class Bonaparte_ImportExport_Model_Custom_Import_Products extends Bonaparte_Impo
 
         $productsStructure = new Varien_Simplexml_Config(Mage::getBaseDir() . self::CONFIGURATION_FILE_STRUCTURE);
         $this->_getProductFolder($productsStructure);
+//        $this->_missingPictureFilePath = Mage::getBaseDir() . self::MISSING_PICTURES_BASE_PATH;
     }
 
     /**
@@ -324,8 +327,7 @@ class Bonaparte_ImportExport_Model_Custom_Import_Products extends Bonaparte_Impo
     {
 
 
-//      $images = scandir(Mage::getBaseDir().self::PICTURE_BASE_PATH); //localhost
-        $images = scandir(self::PICTURE_BASE_PATH); //STAGE
+        $images = scandir(self::PICTURE_BASE_PATH);
         $_mediaBase = Mage::getBaseDir('media') . '/catalog/product/';
 
         $pictureNumber = count($images);
@@ -443,8 +445,7 @@ class Bonaparte_ImportExport_Model_Custom_Import_Products extends Bonaparte_Impo
         $attr_id = $this->_attributeIdd;
         $cino_picture_directory = Mage::getBaseDir('media') . '/cino/';
 
-        $pictureBasePath = '/chroot/home/stagebon/upload/pictures/';
-        //$pictureBasePath = Mage::getBaseDir() . '/dump_files/pictures/';
+        $pictureBasePath = self::PICTURE_BASE_PATH;
 
         //$mediaAttributes = array('image','thumbnail','small_image');
 
@@ -594,7 +595,7 @@ class Bonaparte_ImportExport_Model_Custom_Import_Products extends Bonaparte_Impo
                         ->setStatus(Mage_Catalog_Model_Product_Status::STATUS_ENABLED)
                         ->setTypeId(Mage_Catalog_Model_Product_Type::TYPE_SIMPLE);
                     $this->_newProductCounter++;
-                    $productQTY = (!is_null($this->_productInventory[$productSKU])) ? $this->_productInventory[$productSKU] : "99999";
+                    $productQTY = (!is_null($this->_productInventory[$productSKU])) ? $this->_productInventory[$productSKU] : "0";
 
                     $sProduct->setStockData(array(
                         'is_in_stock' => (($productQTY > 0) ? 1 : 0),
@@ -659,9 +660,18 @@ class Bonaparte_ImportExport_Model_Custom_Import_Products extends Bonaparte_Impo
                     );
 
                     // adding the item images
+
                     foreach ($productItem['Resources']['value'] as $resource) {
                         $isLeadPicture = 0;
-                        if ($productItem['LeadPicture']['value'][0]['id']==$resource['id']) $isLeadPicture = 1;
+                        if (count($productItem['LeadPicture']['value'])==2 && $resource['ImageType']['value']=="packshots")
+                        {
+                            if ($productItem['LeadPicture']['value'][0]['id']==$resource['id'])
+                                {
+                                $isLeadPicture = 1;
+                            } elseif ($productItem['LeadPicture']['value'][1]['id']==$resource['id']) {
+                                $isLeadPicture = 1;
+                            }
+                        }elseif (count($productItem['LeadPicture']['value'])==1 && $productItem['LeadPicture']['value'][0]['id']==$resource['id']) $isLeadPicture = 1;
                         $picturePath = $pictureBasePath . $resource['OriginalFilename']['value'];
                         if (file_exists($picturePath) && ($resource['OriginalFilename']['value'] != '')) {
                             try {
@@ -675,21 +685,21 @@ class Bonaparte_ImportExport_Model_Custom_Import_Products extends Bonaparte_Impo
                         }
                     }
                     // adding the BNP 'style' images
-                    foreach ($productData['Resources']['value'] as $resource) {
-                        $isLeadPicture = 0;
-                        if ($productItem['LeadPicture']['value'][0]['id']==$resource['id']) $isLeadPicture = 1;
-                        $picturePath = $pictureBasePath . $resource['OriginalFilename']['value'];
-                        if (file_exists($picturePath) && ($resource['OriginalFilename']['value'] != '')) {
-                            try {
-                                $this->_addProductImage($sProductId, $resource['OriginalFilename']['value'], $isLeadPicture);
-                                $this->_logMessage('O', false);
-                            } catch (Exception $e) {
-                                echo $e->getMessage();
-                            }
-                        } else {
-                            $this->_logMessage('X', false);
-                        }
-                    }
+//                    foreach ($productData['Resources']['value'] as $resource) {
+//                        $isLeadPicture = 0;
+//                        if ($productItem['LeadPicture']['value'][0]['id']==$resource['id']) $isLeadPicture = 1;
+//                        $picturePath = $pictureBasePath . $resource['OriginalFilename']['value'];
+//                        if (file_exists($picturePath) && ($resource['OriginalFilename']['value'] != '')) {
+//                            try {
+//                                $this->_addProductImage($sProductId, $resource['OriginalFilename']['value'], $isLeadPicture);
+//                                $this->_logMessage('O', false);
+//                            } catch (Exception $e) {
+//                                echo $e->getMessage();
+//                            }
+//                        } else {
+//                            $this->_logMessage('X', false);
+//                        }
+//                    }
 
                     // adding the different attribute values per store view
                     $productShortDescriptionn = array();
@@ -697,54 +707,113 @@ class Bonaparte_ImportExport_Model_Custom_Import_Products extends Bonaparte_Impo
                         $temp = explode('.',$description);
                         $productShortDescriptionn [$key] = $temp[0].'.';
                     }
-                    $sql = "INSERT INTO catalog_product_entity_text (entity_type_id, attribute_id, store_id, entity_id, value) VALUES (" . $this->_productEntityTypeId . "," . $this->_shortDescriptionId . "," . $this->_websiteStoreView['uk'] . "," . $sProductId . ",'" . mysql_real_escape_string($productShortDescriptionn['en']) . "')ON DUPLICATE KEY UPDATE `value` = '". mysql_real_escape_string($productShortDescriptionn['en']) ."';
-                            INSERT INTO catalog_product_entity_text (entity_type_id, attribute_id, store_id, entity_id, value) VALUES (" . $this->_productEntityTypeId . "," . $this->_descriptionId . "," . $this->_websiteStoreView['uk'] . "," . $sProductId . ",'" . mysql_real_escape_string($productData['DescriptionCatalogues']['value']['en']) . "')ON DUPLICATE KEY UPDATE `value` = '". mysql_real_escape_string($productData['DescriptionCatalogues']['value']['en']) ."';
-                           INSERT INTO catalog_product_entity_varchar (entity_type_id, attribute_id, store_id, entity_id, value) VALUES (" . $this->_productEntityTypeId . "," . $this->_metaDescriptionId . "," . $this->_websiteStoreView['uk'] . "," . $sProductId . ",'" . mysql_real_escape_string($productShortDescriptionn['en']) . "')ON DUPLICATE KEY UPDATE `value` = '". mysql_real_escape_string($productShortDescriptionn['en']) ."';
-                           INSERT INTO catalog_product_entity_varchar (entity_type_id, attribute_id, store_id, entity_id, value) VALUES (" . $this->_productEntityTypeId . "," . $this->_metaTitleId . "," . $this->_websiteStoreView['uk'] . "," . $sProductId . ",'" . mysql_real_escape_string($productData['HeaderWebs']['value']['en']) . "')ON DUPLICATE KEY UPDATE `value` = '". mysql_real_escape_string($productData['HeaderWebs']['value']['en']) ."';
-                           INSERT INTO catalog_product_entity_varchar (entity_type_id, attribute_id, store_id, entity_id, value) VALUES (" . $this->_productEntityTypeId . "," . $this->_nameId . "," . $this->_websiteStoreView['uk'] . "," . $sProductId . ",'" . mysql_real_escape_string($productData['HeaderWebs']['value']['en']) . "')ON DUPLICATE KEY UPDATE `value` = '". mysql_real_escape_string($productData['HeaderWebs']['value']['en']) ."';
+                    $sql = "INSERT INTO catalog_product_entity_text (entity_type_id, attribute_id, store_id, entity_id, value) VALUES (:entity_type_id,:short_descr_id,:store_id,:entity_id,:short_description)ON DUPLICATE KEY UPDATE `value` = :short_description;
+                            INSERT INTO catalog_product_entity_text (entity_type_id, attribute_id, store_id, entity_id, value) VALUES (:entity_type_id,:descr_id,:store_id,:entity_id,:description)ON DUPLICATE KEY UPDATE `value` = :description;
+                           INSERT INTO catalog_product_entity_varchar (entity_type_id, attribute_id, store_id, entity_id, value) VALUES (:entity_type_id,:meta_descr_id,:store_id,:entity_id,:meta_description)ON DUPLICATE KEY UPDATE `value` = :meta_description;
+                           INSERT INTO catalog_product_entity_varchar (entity_type_id, attribute_id, store_id, entity_id, value) VALUES (:entity_type_id,:meta_title_id,:store_id,:entity_id,:meta_title)ON DUPLICATE KEY UPDATE `value` = :meta_title;
+                           INSERT INTO catalog_product_entity_varchar (entity_type_id, attribute_id, store_id, entity_id, value) VALUES (:entity_type_id,:name_id,:store_id,:entity_id,:short_description)ON DUPLICATE KEY UPDATE `value` = :name;
                             ";
-                    $connW->query($sql);
+                    $binds = array(
+                        'entity_type_id'    => $this->_productEntityTypeId,
+                        'short_descr_id'    => $this->_shortDescriptionId,
+                        'descr_id'          => $this->_descriptionId,
+                        'meta_descr_id'     => $this->_metaDescriptionId,
+                        'meta_title_id'     => $this->_metaTitleId,
+                        'name_id'           => $this->_nameId,
+                        'store_id'          => $this->_websiteStoreView['uk'],
+                        'entity_id'         => $sProductId,
+                        'short_description' => $productShortDescriptionn['en'],
+                        'description'       => $productData['DescriptionCatalogues']['value']['en'],
+                        'meta_description'  => $productShortDescriptionn['en'],
+                        'meta_title'        => $productData['HeaderWebs']['value']['en'],
+                        'name'              => $productData['HeaderWebs']['value']['en'],
+                    );
+                    $connW->query($sql, $binds);
 
-                    $sql = "INSERT INTO catalog_product_entity_text (entity_type_id, attribute_id, store_id, entity_id, value) VALUES (" . $this->_productEntityTypeId . "," . $this->_shortDescriptionId . "," . $this->_websiteStoreView['dk'] . "," . $sProductId . ",'" . mysql_real_escape_string($productShortDescriptionn['da']) . "')ON DUPLICATE KEY UPDATE `value` = '". mysql_real_escape_string($productShortDescriptionn['da']) ."';
-                            INSERT INTO catalog_product_entity_text (entity_type_id, attribute_id, store_id, entity_id, value) VALUES (" . $this->_productEntityTypeId . "," . $this->_descriptionId . "," . $this->_websiteStoreView['dk'] . "," . $sProductId . ",'" . mysql_real_escape_string($productData['DescriptionCatalogues']['value']['da']) . "')ON DUPLICATE KEY UPDATE `value` = '". mysql_real_escape_string($productData['DescriptionCatalogues']['value']['da']) ."';
-                           INSERT INTO catalog_product_entity_varchar (entity_type_id, attribute_id, store_id, entity_id, value) VALUES (" . $this->_productEntityTypeId . "," . $this->_metaDescriptionId . "," . $this->_websiteStoreView['dk'] . "," . $sProductId . ",'" . mysql_real_escape_string($productShortDescriptionn['da']) . "')ON DUPLICATE KEY UPDATE `value` = '". mysql_real_escape_string($productShortDescriptionn['da']) ."';
-                           INSERT INTO catalog_product_entity_varchar (entity_type_id, attribute_id, store_id, entity_id, value) VALUES (" . $this->_productEntityTypeId . "," . $this->_metaTitleId . "," . $this->_websiteStoreView['dk'] . "," . $sProductId . ",'" . mysql_real_escape_string($productData['HeaderWebs']['value']['da']) . "')ON DUPLICATE KEY UPDATE `value` = '". mysql_real_escape_string($productData['HeaderWebs']['value']['da']) ."';
-                           INSERT INTO catalog_product_entity_varchar (entity_type_id, attribute_id, store_id, entity_id, value) VALUES (" . $this->_productEntityTypeId . "," . $this->_nameId . "," . $this->_websiteStoreView['dk'] . "," . $sProductId . ",'" . mysql_real_escape_string($productData['HeaderWebs']['value']['da']) . "')ON DUPLICATE KEY UPDATE `value` = '". mysql_real_escape_string($productData['HeaderWebs']['value']['da']) ."';
-                            ";
-                    $connW->query($sql);
+                    $binds = array(
+                        'entity_type_id'    => $this->_productEntityTypeId,
+                        'short_descr_id'    => $this->_shortDescriptionId,
+                        'descr_id'          => $this->_descriptionId,
+                        'meta_descr_id'     => $this->_metaDescriptionId,
+                        'meta_title_id'     => $this->_metaTitleId,
+                        'name_id'           => $this->_nameId,
+                        'store_id'          => $this->_websiteStoreView['dk'],
+                        'entity_id'         => $sProductId,
+                        'short_description' => $productShortDescriptionn['da'],
+                        'description'       => $productData['DescriptionCatalogues']['value']['da'],
+                        'meta_description'  => $productShortDescriptionn['da'],
+                        'meta_title'        => $productData['HeaderWebs']['value']['da'],
+                        'name'              => $productData['HeaderWebs']['value']['da'],
+                    );
+                    $connW->query($sql, $binds);
 
-                    $sql = "INSERT INTO catalog_product_entity_text (entity_type_id, attribute_id, store_id, entity_id, value) VALUES (" . $this->_productEntityTypeId . "," . $this->_shortDescriptionId . "," . $this->_websiteStoreView['ch'] . "," . $sProductId . ",'" . mysql_real_escape_string($productShortDescriptionn['de_CH']) . "')ON DUPLICATE KEY UPDATE `value` = '". mysql_real_escape_string($productShortDescriptionn['de_CH']) ."';
-                            INSERT INTO catalog_product_entity_text (entity_type_id, attribute_id, store_id, entity_id, value) VALUES (" . $this->_productEntityTypeId . "," . $this->_descriptionId . "," . $this->_websiteStoreView['ch'] . "," . $sProductId . ",'" . mysql_real_escape_string($productData['DescriptionCatalogues']['value']['de_CH']) . "')ON DUPLICATE KEY UPDATE `value` = '". mysql_real_escape_string($productData['DescriptionCatalogues']['value']['de_CH']) ."';
-                           INSERT INTO catalog_product_entity_varchar (entity_type_id, attribute_id, store_id, entity_id, value) VALUES (" . $this->_productEntityTypeId . "," . $this->_metaDescriptionId . "," . $this->_websiteStoreView['ch'] . "," . $sProductId . ",'" . mysql_real_escape_string($productShortDescriptionn['de_CH']) . "')ON DUPLICATE KEY UPDATE `value` = '". mysql_real_escape_string($productShortDescriptionn['de_CH']) ."';
-                           INSERT INTO catalog_product_entity_varchar (entity_type_id, attribute_id, store_id, entity_id, value) VALUES (" . $this->_productEntityTypeId . "," . $this->_metaTitleId . "," . $this->_websiteStoreView['ch'] . "," . $sProductId . ",'" . mysql_real_escape_string($productData['HeaderWebs']['value']['de_CH']) . "')ON DUPLICATE KEY UPDATE `value` = '". mysql_real_escape_string($productData['HeaderWebs']['value']['de_CH']) ."';
-                           INSERT INTO catalog_product_entity_varchar (entity_type_id, attribute_id, store_id, entity_id, value) VALUES (" . $this->_productEntityTypeId . "," . $this->_nameId . "," . $this->_websiteStoreView['ch'] . "," . $sProductId . ",'" . mysql_real_escape_string($productData['HeaderWebs']['value']['de_CH']) . "')ON DUPLICATE KEY UPDATE `value` = '". mysql_real_escape_string($productData['HeaderWebs']['value']['de_CH']) ."';
-                            ";
-                    $connW->query($sql);
+                    $binds = array(
+                        'entity_type_id'    => $this->_productEntityTypeId,
+                        'short_descr_id'    => $this->_shortDescriptionId,
+                        'descr_id'          => $this->_descriptionId,
+                        'meta_descr_id'     => $this->_metaDescriptionId,
+                        'meta_title_id'     => $this->_metaTitleId,
+                        'name_id'           => $this->_nameId,
+                        'store_id'          => $this->_websiteStoreView['ch'],
+                        'entity_id'         => $sProductId,
+                        'short_description' => $productShortDescriptionn['de_CH'],
+                        'description'       => $productData['DescriptionCatalogues']['value']['de_CH'],
+                        'meta_description'  => $productShortDescriptionn['de_CH'],
+                        'meta_title'        => $productData['HeaderWebs']['value']['de_CH'],
+                        'name'              => $productData['HeaderWebs']['value']['de_CH'],
+                    );
+                    $connW->query($sql, $binds);
 
-                    $sql = "INSERT INTO catalog_product_entity_text (entity_type_id, attribute_id, store_id, entity_id, value) VALUES (" . $this->_productEntityTypeId . "," . $this->_shortDescriptionId . "," . $this->_websiteStoreView['de'] . "," . $sProductId . ",'" . mysql_real_escape_string($productShortDescriptionn['de']) . "')ON DUPLICATE KEY UPDATE `value` = '". mysql_real_escape_string($productShortDescriptionn['de']) ."';
-                            INSERT INTO catalog_product_entity_text (entity_type_id, attribute_id, store_id, entity_id, value) VALUES (" . $this->_productEntityTypeId . "," . $this->_descriptionId . "," . $this->_websiteStoreView['de'] . "," . $sProductId . ",'" . mysql_real_escape_string($productData['DescriptionCatalogues']['value']['de']) . "')ON DUPLICATE KEY UPDATE `value` = '". mysql_real_escape_string($productData['DescriptionCatalogues']['value']['de']) ."';
-                           INSERT INTO catalog_product_entity_varchar (entity_type_id, attribute_id, store_id, entity_id, value) VALUES (" . $this->_productEntityTypeId . "," . $this->_metaDescriptionId . "," . $this->_websiteStoreView['de'] . "," . $sProductId . ",'" . mysql_real_escape_string($productShortDescriptionn['de']) . "')ON DUPLICATE KEY UPDATE `value` = '". mysql_real_escape_string($productShortDescriptionn['de']) ."';
-                           INSERT INTO catalog_product_entity_varchar (entity_type_id, attribute_id, store_id, entity_id, value) VALUES (" . $this->_productEntityTypeId . "," . $this->_metaTitleId . "," . $this->_websiteStoreView['de'] . "," . $sProductId . ",'" . mysql_real_escape_string($productData['HeaderWebs']['value']['de']) . "')ON DUPLICATE KEY UPDATE `value` = '". mysql_real_escape_string($productData['HeaderWebs']['value']['de']) ."';
-                           INSERT INTO catalog_product_entity_varchar (entity_type_id, attribute_id, store_id, entity_id, value) VALUES (" . $this->_productEntityTypeId . "," . $this->_nameId . "," . $this->_websiteStoreView['de'] . "," . $sProductId . ",'" . mysql_real_escape_string($productData['HeaderWebs']['value']['de']) . "')ON DUPLICATE KEY UPDATE `value` = '". mysql_real_escape_string($productData['HeaderWebs']['value']['de']) ."';
-                            ";
-                    $connW->query($sql);
+                    $binds = array(
+                        'entity_type_id'    => $this->_productEntityTypeId,
+                        'short_descr_id'    => $this->_shortDescriptionId,
+                        'descr_id'          => $this->_descriptionId,
+                        'meta_descr_id'     => $this->_metaDescriptionId,
+                        'meta_title_id'     => $this->_metaTitleId,
+                        'name_id'           => $this->_nameId,
+                        'store_id'          => $this->_websiteStoreView['de'],
+                        'entity_id'         => $sProductId,
+                        'short_description' => $productShortDescriptionn['de'],
+                        'description'       => $productData['DescriptionCatalogues']['value']['de'],
+                        'meta_description'  => $productShortDescriptionn['de'],
+                        'meta_title'        => $productData['HeaderWebs']['value']['de'],
+                        'name'              => $productData['HeaderWebs']['value']['de'],
+                    );
+                    $connW->query($sql, $binds);
 
-                    $sql = "INSERT INTO catalog_product_entity_text (entity_type_id, attribute_id, store_id, entity_id, value) VALUES (" . $this->_productEntityTypeId . "," . $this->_shortDescriptionId . "," . $this->_websiteStoreView['nl'] . "," . $sProductId . ",'" . mysql_real_escape_string($productShortDescriptionn['nl']) . "')ON DUPLICATE KEY UPDATE `value` = '". mysql_real_escape_string($productShortDescriptionn['nl']) ."';
-                            INSERT INTO catalog_product_entity_text (entity_type_id, attribute_id, store_id, entity_id, value) VALUES (" . $this->_productEntityTypeId . "," . $this->_descriptionId . "," . $this->_websiteStoreView['nl'] . "," . $sProductId . ",'" . mysql_real_escape_string($productData['DescriptionCatalogues']['value']['nl']) . "')ON DUPLICATE KEY UPDATE `value` = '". mysql_real_escape_string($productData['DescriptionCatalogues']['value']['nl']) ."';
-                           INSERT INTO catalog_product_entity_varchar (entity_type_id, attribute_id, store_id, entity_id, value) VALUES (" . $this->_productEntityTypeId . "," . $this->_metaDescriptionId . "," . $this->_websiteStoreView['nl'] . "," . $sProductId . ",'" . mysql_real_escape_string($productShortDescriptionn['nl']) . "')ON DUPLICATE KEY UPDATE `value` = '". mysql_real_escape_string($productShortDescriptionn['nl']) ."';
-                           INSERT INTO catalog_product_entity_varchar (entity_type_id, attribute_id, store_id, entity_id, value) VALUES (" . $this->_productEntityTypeId . "," . $this->_metaTitleId . "," . $this->_websiteStoreView['nl'] . "," . $sProductId . ",'" . mysql_real_escape_string($productData['HeaderWebs']['value']['nl']) . "')ON DUPLICATE KEY UPDATE `value` = '". mysql_real_escape_string($productData['HeaderWebs']['value']['nl']) ."';
-                           INSERT INTO catalog_product_entity_varchar (entity_type_id, attribute_id, store_id, entity_id, value) VALUES (" . $this->_productEntityTypeId . "," . $this->_nameId . "," . $this->_websiteStoreView['nl'] . "," . $sProductId . ",'" . mysql_real_escape_string($productData['HeaderWebs']['value']['nl']) . "')ON DUPLICATE KEY UPDATE `value` = '". mysql_real_escape_string($productData['HeaderWebs']['value']['nl']) ."';
-                            ";
-                    $connW->query($sql);
+                    $binds = array(
+                        'entity_type_id'    => $this->_productEntityTypeId,
+                        'short_descr_id'    => $this->_shortDescriptionId,
+                        'descr_id'          => $this->_descriptionId,
+                        'meta_descr_id'     => $this->_metaDescriptionId,
+                        'meta_title_id'     => $this->_metaTitleId,
+                        'name_id'           => $this->_nameId,
+                        'store_id'          => $this->_websiteStoreView['nl'],
+                        'entity_id'         => $sProductId,
+                        'short_description' => $productShortDescriptionn['nl'],
+                        'description'       => $productData['DescriptionCatalogues']['value']['nl'],
+                        'meta_description'  => $productShortDescriptionn['nl'],
+                        'meta_title'        => $productData['HeaderWebs']['value']['nl'],
+                        'name'              => $productData['HeaderWebs']['value']['nl'],
+                    );
+                    $connW->query($sql, $binds);
 
-                    $sql = "INSERT INTO catalog_product_entity_text (entity_type_id, attribute_id, store_id, entity_id, value) VALUES (" . $this->_productEntityTypeId . "," . $this->_shortDescriptionId . "," . $this->_websiteStoreView['se'] . "," . $sProductId . ",'" . mysql_real_escape_string($productShortDescriptionn['sv']) . "')ON DUPLICATE KEY UPDATE `value` = '". mysql_real_escape_string($productShortDescriptionn['sv']) ."';
-                            INSERT INTO catalog_product_entity_text (entity_type_id, attribute_id, store_id, entity_id, value) VALUES (" . $this->_productEntityTypeId . "," . $this->_descriptionId . "," . $this->_websiteStoreView['se'] . "," . $sProductId . ",'" . mysql_real_escape_string($productData['DescriptionCatalogues']['value']['sv']) . "')ON DUPLICATE KEY UPDATE `value` = '". mysql_real_escape_string($productData['DescriptionCatalogues']['value']['sv']) ."';
-                           INSERT INTO catalog_product_entity_varchar (entity_type_id, attribute_id, store_id, entity_id, value) VALUES (" . $this->_productEntityTypeId . "," . $this->_metaDescriptionId . "," . $this->_websiteStoreView['se'] . "," . $sProductId . ",'" . mysql_real_escape_string($productShortDescriptionn['sv']) . "')ON DUPLICATE KEY UPDATE `value` = '". mysql_real_escape_string($productShortDescriptionn['sv']) ."';
-                           INSERT INTO catalog_product_entity_varchar (entity_type_id, attribute_id, store_id, entity_id, value) VALUES (" . $this->_productEntityTypeId . "," . $this->_metaTitleId . "," . $this->_websiteStoreView['se'] . "," . $sProductId . ",'" . mysql_real_escape_string($productData['HeaderWebs']['value']['sv']) . "')ON DUPLICATE KEY UPDATE `value` = '". mysql_real_escape_string($productData['HeaderWebs']['value']['sv']) ."';
-                           INSERT INTO catalog_product_entity_varchar (entity_type_id, attribute_id, store_id, entity_id, value) VALUES (" . $this->_productEntityTypeId . "," . $this->_nameId . "," . $this->_websiteStoreView['se'] . "," . $sProductId . ",'" . mysql_real_escape_string($productData['HeaderWebs']['value']['sv']) . "')ON DUPLICATE KEY UPDATE `value` = '". mysql_real_escape_string($productData['HeaderWebs']['value']['sv']) ."';
-
-                    ";
-                    $connW->query($sql);
+                    $binds = array(
+                        'entity_type_id'    => $this->_productEntityTypeId,
+                        'short_descr_id'    => $this->_shortDescriptionId,
+                        'descr_id'          => $this->_descriptionId,
+                        'meta_descr_id'     => $this->_metaDescriptionId,
+                        'meta_title_id'     => $this->_metaTitleId,
+                        'name_id'           => $this->_nameId,
+                        'store_id'          => $this->_websiteStoreView['se'],
+                        'entity_id'         => $sProductId,
+                        'short_description' => $productShortDescriptionn['se'],
+                        'description'       => $productData['DescriptionCatalogues']['value']['se'],
+                        'meta_description'  => $productShortDescriptionn['se'],
+                        'meta_title'        => $productData['HeaderWebs']['value']['se'],
+                        'name'              => $productData['HeaderWebs']['value']['se'],
+                    );
+                    $connW->query($sql, $binds);
 
                     $sProduct->clearInstance();
 
@@ -866,6 +935,7 @@ class Bonaparte_ImportExport_Model_Custom_Import_Products extends Bonaparte_Impo
                         }
                     } else {
                         $this->_logMessage('X', false);
+                        fputcsv($this->_fileHandlerPictures,array($productData['StyleNbr']['value'],$productItem['CinoNumber']['value'],$resource['OriginalFilename']['value']?$resource['OriginalFilename']['value']:'empty OriginalFilename tag'));
                     }
                     $resourceList[$resource['id']] = $resource['OriginalFilename']['value'];
                 }
@@ -913,20 +983,20 @@ class Bonaparte_ImportExport_Model_Custom_Import_Products extends Bonaparte_Impo
 
 
                 // adding the BNP 'style' images
-                foreach ($productData['Resources']['value'] as $resource) {
-                    $picturePath = $pictureBasePath . $resource['OriginalFilename']['value'];
-                    if (file_exists($picturePath) && ($resource['OriginalFilename']['value'] != '')) {
-                        try {
-                            $this->_addProductImage($cProductId, $resource['OriginalFilename']['value'], 0);
-//                              $cProduct->addImageToMediaGallery($picturePath,$mediaAttributes, false, false);
-                            $this->_logMessage('O', false);
-                        } catch (Exception $e) {
-                            echo $e->getMessage();
-                        }
-                    } else {
-                        $this->_logMessage('X', false);
-                    }
-                }
+//                foreach ($productData['Resources']['value'] as $resource) {
+//                    $picturePath = $pictureBasePath . $resource['OriginalFilename']['value'];
+//                    if (file_exists($picturePath) && ($resource['OriginalFilename']['value'] != '')) {
+//                        try {
+//                            $this->_addProductImage($cProductId, $resource['OriginalFilename']['value'], 0);
+////                              $cProduct->addImageToMediaGallery($picturePath,$mediaAttributes, false, false);
+//                            $this->_logMessage('O', false);
+//                        } catch (Exception $e) {
+//                            echo $e->getMessage();
+//                        }
+//                    } else {
+//                        $this->_logMessage('X', false);
+//                    }
+//                }
 
 
                 // adding the different attribute values per store view
@@ -936,55 +1006,162 @@ class Bonaparte_ImportExport_Model_Custom_Import_Products extends Bonaparte_Impo
                     $productShortDescriptionn [$key] = $temp[0].'.';
                 }
 
-                $sql = "INSERT INTO catalog_product_entity_text (entity_type_id, attribute_id, store_id, entity_id, value) VALUES (" . $this->_productEntityTypeId . "," . $this->_shortDescriptionId . "," . $this->_websiteStoreView['uk'] . "," . $cProductId . ",'" . $productShortDescriptionn['en'] . "')ON DUPLICATE KEY UPDATE `value` = '". $productShortDescriptionn['en'] ."';
-                            INSERT INTO catalog_product_entity_text (entity_type_id, attribute_id, store_id, entity_id, value) VALUES (" . $this->_productEntityTypeId . "," . $this->_descriptionId . "," . $this->_websiteStoreView['uk'] . "," . $cProductId . ",'" . $productData['DescriptionCatalogues']['value']['en'] . "')ON DUPLICATE KEY UPDATE `value` = '". $productData['DescriptionCatalogues']['value']['en'] ."';
-                           INSERT INTO catalog_product_entity_varchar (entity_type_id, attribute_id, store_id, entity_id, value) VALUES (" . $this->_productEntityTypeId . "," . $this->_metaDescriptionId . "," . $this->_websiteStoreView['uk'] . "," . $cProductId . ",'" . $productShortDescriptionn['en'] . "')ON DUPLICATE KEY UPDATE `value` = '". $productShortDescriptionn['en'] ."';
-                           INSERT INTO catalog_product_entity_varchar (entity_type_id, attribute_id, store_id, entity_id, value) VALUES (" . $this->_productEntityTypeId . "," . $this->_metaTitleId . "," . $this->_websiteStoreView['uk'] . "," . $cProductId . ",'" . $productData['HeaderWebs']['value']['en'] . "')ON DUPLICATE KEY UPDATE `value` = '". $productData['HeaderWebs']['value']['en'] ."';
-                           INSERT INTO catalog_product_entity_varchar (entity_type_id, attribute_id, store_id, entity_id, value) VALUES (" . $this->_productEntityTypeId . "," . $this->_nameId . "," . $this->_websiteStoreView['uk'] . "," . $cProductId . ",'" . $productData['HeaderWebs']['value']['en'] . "')ON DUPLICATE KEY UPDATE `value` = '". $productData['HeaderWebs']['value']['en'] ."';
+//                $sql = "INSERT INTO catalog_product_entity_text (entity_type_id, attribute_id, store_id, entity_id, value) VALUES (" . $this->_productEntityTypeId . "," . $this->_shortDescriptionId . "," . $this->_websiteStoreView['uk'] . "," . $cProductId . ",'" . mysql_real_escape_string($productShortDescriptionn['en']) . "')ON DUPLICATE KEY UPDATE `value` = '". mysql_real_escape_string($productShortDescriptionn['en']) ."';
+//                            INSERT INTO catalog_product_entity_text (entity_type_id, attribute_id, store_id, entity_id, value) VALUES (" . $this->_productEntityTypeId . "," . $this->_descriptionId . "," . $this->_websiteStoreView['uk'] . "," . $cProductId . ",'" . mysql_real_escape_string($productData['DescriptionCatalogues']['value']['en']) . "')ON DUPLICATE KEY UPDATE `value` = '". mysql_real_escape_string($productData['DescriptionCatalogues']['value']['en']) ."';
+//                           INSERT INTO catalog_product_entity_varchar (entity_type_id, attribute_id, store_id, entity_id, value) VALUES (" . $this->_productEntityTypeId . "," . $this->_metaDescriptionId . "," . $this->_websiteStoreView['uk'] . "," . $cProductId . ",'" . mysql_real_escape_string($productShortDescriptionn['en']) . "')ON DUPLICATE KEY UPDATE `value` = '". mysql_real_escape_string($productShortDescriptionn['en']) ."';
+//                           INSERT INTO catalog_product_entity_varchar (entity_type_id, attribute_id, store_id, entity_id, value) VALUES (" . $this->_productEntityTypeId . "," . $this->_metaTitleId . "," . $this->_websiteStoreView['uk'] . "," . $cProductId . ",'" . mysql_real_escape_string($productData['HeaderWebs']['value']['en']) . "')ON DUPLICATE KEY UPDATE `value` = '". mysql_real_escape_string($productData['HeaderWebs']['value']['en']) ."';
+//                           INSERT INTO catalog_product_entity_varchar (entity_type_id, attribute_id, store_id, entity_id, value) VALUES (" . $this->_productEntityTypeId . "," . $this->_nameId . "," . $this->_websiteStoreView['uk'] . "," . $cProductId . ",'" . mysql_real_escape_string($productData['HeaderWebs']['value']['en']) . "')ON DUPLICATE KEY UPDATE `value` = '". mysql_real_escape_string($productData['HeaderWebs']['value']['en']) ."';
+//                            ";
+//                $connW->query($sql);
+//
+//                $sql = "INSERT INTO catalog_product_entity_text (entity_type_id, attribute_id, store_id, entity_id, value) VALUES (" . $this->_productEntityTypeId . "," . $this->_shortDescriptionId . "," . $this->_websiteStoreView['dk'] . "," . $cProductId . ",'" . mysql_real_escape_string($productShortDescriptionn['da']) . "')ON DUPLICATE KEY UPDATE `value` = '". mysql_real_escape_string($productShortDescriptionn['da']) ."';
+//                            INSERT INTO catalog_product_entity_text (entity_type_id, attribute_id, store_id, entity_id, value) VALUES (" . $this->_productEntityTypeId . "," . $this->_descriptionId . "," . $this->_websiteStoreView['dk'] . "," . $cProductId . ",'" . mysql_real_escape_string($productData['DescriptionCatalogues']['value']['da']) . "')ON DUPLICATE KEY UPDATE `value` = '". mysql_real_escape_string($productData['DescriptionCatalogues']['value']['da']) ."';
+//                           INSERT INTO catalog_product_entity_varchar (entity_type_id, attribute_id, store_id, entity_id, value) VALUES (" . $this->_productEntityTypeId . "," . $this->_metaDescriptionId . "," . $this->_websiteStoreView['dk'] . "," . $cProductId . ",'" . mysql_real_escape_string($productShortDescriptionn['da']) . "')ON DUPLICATE KEY UPDATE `value` = '". mysql_real_escape_string($productShortDescriptionn['da']) ."';
+//                           INSERT INTO catalog_product_entity_varchar (entity_type_id, attribute_id, store_id, entity_id, value) VALUES (" . $this->_productEntityTypeId . "," . $this->_metaTitleId . "," . $this->_websiteStoreView['dk'] . "," . $cProductId . ",'" . mysql_real_escape_string($productData['HeaderWebs']['value']['da']) . "')ON DUPLICATE KEY UPDATE `value` = '". mysql_real_escape_string($productData['HeaderWebs']['value']['da']) ."';
+//                           INSERT INTO catalog_product_entity_varchar (entity_type_id, attribute_id, store_id, entity_id, value) VALUES (" . $this->_productEntityTypeId . "," . $this->_nameId . "," . $this->_websiteStoreView['dk'] . "," . $cProductId . ",'" . mysql_real_escape_string($productData['HeaderWebs']['value']['da']) . "')ON DUPLICATE KEY UPDATE `value` = '". mysql_real_escape_string($productData['HeaderWebs']['value']['da']) ."';
+//                            ";
+//                $connW->query($sql);
+//
+//                $sql = "INSERT INTO catalog_product_entity_text (entity_type_id, attribute_id, store_id, entity_id, value) VALUES (" . $this->_productEntityTypeId . "," . $this->_shortDescriptionId . "," . $this->_websiteStoreView['ch'] . "," . $cProductId . ",'" . mysql_real_escape_string($productShortDescriptionn['de_CH']) . "')ON DUPLICATE KEY UPDATE `value` = '". mysql_real_escape_string($productShortDescriptionn['de_CH']) ."';
+//                            INSERT INTO catalog_product_entity_text (entity_type_id, attribute_id, store_id, entity_id, value) VALUES (" . $this->_productEntityTypeId . "," . $this->_descriptionId . "," . $this->_websiteStoreView['ch'] . "," . $cProductId . ",'" . mysql_real_escape_string($productData['DescriptionCatalogues']['value']['de_CH']) . "')ON DUPLICATE KEY UPDATE `value` = '". mysql_real_escape_string($productData['DescriptionCatalogues']['value']['de_CH']) ."';
+//                           INSERT INTO catalog_product_entity_varchar (entity_type_id, attribute_id, store_id, entity_id, value) VALUES (" . $this->_productEntityTypeId . "," . $this->_metaDescriptionId . "," . $this->_websiteStoreView['ch'] . "," . $cProductId . ",'" . mysql_real_escape_string($productShortDescriptionn['de_CH']) . "')ON DUPLICATE KEY UPDATE `value` = '". mysql_real_escape_string($productShortDescriptionn['de_CH']) ."';
+//                           INSERT INTO catalog_product_entity_varchar (entity_type_id, attribute_id, store_id, entity_id, value) VALUES (" . $this->_productEntityTypeId . "," . $this->_metaTitleId . "," . $this->_websiteStoreView['ch'] . "," . $cProductId . ",'" . mysql_real_escape_string($productData['HeaderWebs']['value']['de_CH']) . "')ON DUPLICATE KEY UPDATE `value` = '". mysql_real_escape_string($productData['HeaderWebs']['value']['de_CH']) ."';
+//                           INSERT INTO catalog_product_entity_varchar (entity_type_id, attribute_id, store_id, entity_id, value) VALUES (" . $this->_productEntityTypeId . "," . $this->_nameId . "," . $this->_websiteStoreView['ch'] . "," . $cProductId . ",'" . mysql_real_escape_string($productData['HeaderWebs']['value']['de_CH']) . "')ON DUPLICATE KEY UPDATE `value` = '". mysql_real_escape_string($productData['HeaderWebs']['value']['de_CH']) ."';
+//                            ";
+//                $connW->query($sql);
+//
+//                $sql = "INSERT INTO catalog_product_entity_text (entity_type_id, attribute_id, store_id, entity_id, value) VALUES (" . $this->_productEntityTypeId . "," . $this->_shortDescriptionId . "," . $this->_websiteStoreView['de'] . "," . $cProductId . ",'" . mysql_real_escape_string($productShortDescriptionn['de']) . "')ON DUPLICATE KEY UPDATE `value` = '". mysql_real_escape_string($productShortDescriptionn['de']) ."';
+//                            INSERT INTO catalog_product_entity_text (entity_type_id, attribute_id, store_id, entity_id, value) VALUES (" . $this->_productEntityTypeId . "," . $this->_descriptionId . "," . $this->_websiteStoreView['de'] . "," . $cProductId . ",'" . mysql_real_escape_string($productData['DescriptionCatalogues']['value']['de']) . "')ON DUPLICATE KEY UPDATE `value` = '". mysql_real_escape_string($productData['DescriptionCatalogues']['value']['de']) ."';
+//                           INSERT INTO catalog_product_entity_varchar (entity_type_id, attribute_id, store_id, entity_id, value) VALUES (" . $this->_productEntityTypeId . "," . $this->_metaDescriptionId . "," . $this->_websiteStoreView['de'] . "," . $cProductId . ",'" . mysql_real_escape_string($productShortDescriptionn['de']) . "')ON DUPLICATE KEY UPDATE `value` = '". mysql_real_escape_string($productShortDescriptionn['de']) ."';
+//                           INSERT INTO catalog_product_entity_varchar (entity_type_id, attribute_id, store_id, entity_id, value) VALUES (" . $this->_productEntityTypeId . "," . $this->_metaTitleId . "," . $this->_websiteStoreView['de'] . "," . $cProductId . ",'" . mysql_real_escape_string($productData['HeaderWebs']['value']['de']) . "')ON DUPLICATE KEY UPDATE `value` = '". mysql_real_escape_string($productData['HeaderWebs']['value']['de']) ."';
+//                           INSERT INTO catalog_product_entity_varchar (entity_type_id, attribute_id, store_id, entity_id, value) VALUES (" . $this->_productEntityTypeId . "," . $this->_nameId . "," . $this->_websiteStoreView['de'] . "," . $cProductId . ",'" . mysql_real_escape_string($productData['HeaderWebs']['value']['de']) . "')ON DUPLICATE KEY UPDATE `value` = '". mysql_real_escape_string($productData['HeaderWebs']['value']['de']) ."';
+//                            ";
+//                $connW->query($sql);
+//
+//                $sql = "INSERT INTO catalog_product_entity_text (entity_type_id, attribute_id, store_id, entity_id, value) VALUES (" . $this->_productEntityTypeId . "," . $this->_shortDescriptionId . "," . $this->_websiteStoreView['nl'] . "," . $cProductId . ",'" . mysql_real_escape_string($productShortDescriptionn['nl']) . "')ON DUPLICATE KEY UPDATE `value` = '". mysql_real_escape_string($productShortDescriptionn['nl']) ."';
+//                            INSERT INTO catalog_product_entity_text (entity_type_id, attribute_id, store_id, entity_id, value) VALUES (" . $this->_productEntityTypeId . "," . $this->_descriptionId . "," . $this->_websiteStoreView['nl'] . "," . $cProductId . ",'" . mysql_real_escape_string($productData['DescriptionCatalogues']['value']['nl']) . "')ON DUPLICATE KEY UPDATE `value` = '". mysql_real_escape_string($productData['DescriptionCatalogues']['value']['nl']) ."';
+//                           INSERT INTO catalog_product_entity_varchar (entity_type_id, attribute_id, store_id, entity_id, value) VALUES (" . $this->_productEntityTypeId . "," . $this->_metaDescriptionId . "," . $this->_websiteStoreView['nl'] . "," . $cProductId . ",'" . mysql_real_escape_string($productShortDescriptionn['nl']) . "')ON DUPLICATE KEY UPDATE `value` = '". mysql_real_escape_string($productShortDescriptionn['nl']) ."';
+//                           INSERT INTO catalog_product_entity_varchar (entity_type_id, attribute_id, store_id, entity_id, value) VALUES (" . $this->_productEntityTypeId . "," . $this->_metaTitleId . "," . $this->_websiteStoreView['nl'] . "," . $cProductId . ",'" . mysql_real_escape_string($productData['HeaderWebs']['value']['nl']) . "')ON DUPLICATE KEY UPDATE `value` = '". mysql_real_escape_string($productData['HeaderWebs']['value']['nl']) ."';
+//                           INSERT INTO catalog_product_entity_varchar (entity_type_id, attribute_id, store_id, entity_id, value) VALUES (" . $this->_productEntityTypeId . "," . $this->_nameId . "," . $this->_websiteStoreView['nl'] . "," . $cProductId . ",'" . mysql_real_escape_string($productData['HeaderWebs']['value']['nl']) . "')ON DUPLICATE KEY UPDATE `value` = '". mysql_real_escape_string($productData['HeaderWebs']['value']['nl']) ."';
+//                            ";
+//                $connW->query($sql);
+//
+//                $sql = "INSERT INTO catalog_product_entity_text (entity_type_id, attribute_id, store_id, entity_id, value) VALUES (" . $this->_productEntityTypeId . "," . $this->_shortDescriptionId . "," . $this->_websiteStoreView['se'] . "," . $cProductId . ",'" . mysql_real_escape_string($productShortDescriptionn['sv']) . "')ON DUPLICATE KEY UPDATE `value` = '". mysql_real_escape_string($productShortDescriptionn['sv']) ."';
+//                            INSERT INTO catalog_product_entity_text (entity_type_id, attribute_id, store_id, entity_id, value) VALUES (" . $this->_productEntityTypeId . "," . $this->_descriptionId . "," . $this->_websiteStoreView['se'] . "," . $cProductId . ",'" . mysql_real_escape_string($productData['DescriptionCatalogues']['value']['sv']) . "')ON DUPLICATE KEY UPDATE `value` = '". mysql_real_escape_string($productData['DescriptionCatalogues']['value']['sv']) ."';
+//                           INSERT INTO catalog_product_entity_varchar (entity_type_id, attribute_id, store_id, entity_id, value) VALUES (" . $this->_productEntityTypeId . "," . $this->_metaDescriptionId . "," . $this->_websiteStoreView['se'] . "," . $cProductId . ",'" . mysql_real_escape_string($productShortDescriptionn['sv']) . "')ON DUPLICATE KEY UPDATE `value` = '". mysql_real_escape_string($productShortDescriptionn['sv']) ."';
+//                           INSERT INTO catalog_product_entity_varchar (entity_type_id, attribute_id, store_id, entity_id, value) VALUES (" . $this->_productEntityTypeId . "," . $this->_metaTitleId . "," . $this->_websiteStoreView['se'] . "," . $cProductId . ",'" . mysql_real_escape_string($productData['HeaderWebs']['value']['sv']) . "')ON DUPLICATE KEY UPDATE `value` = '". mysql_real_escape_string($productData['HeaderWebs']['value']['sv']) ."';
+//                           INSERT INTO catalog_product_entity_varchar (entity_type_id, attribute_id, store_id, entity_id, value) VALUES (" . $this->_productEntityTypeId . "," . $this->_nameId . "," . $this->_websiteStoreView['se'] . "," . $cProductId . ",'" . mysql_real_escape_string($productData['HeaderWebs']['value']['sv']) . "')ON DUPLICATE KEY UPDATE `value` = '". mysql_real_escape_string($productData['HeaderWebs']['value']['sv']) ."';
+//
+//                    ";
+//                $connW->query($sql);
+
+                $sql = "INSERT INTO catalog_product_entity_text (entity_type_id, attribute_id, store_id, entity_id, value) VALUES (:entity_type_id,:short_descr_id,:store_id,:entity_id,:short_description)ON DUPLICATE KEY UPDATE `value` = :short_description;
+                            INSERT INTO catalog_product_entity_text (entity_type_id, attribute_id, store_id, entity_id, value) VALUES (:entity_type_id,:descr_id,:store_id,:entity_id,:description)ON DUPLICATE KEY UPDATE `value` = :description;
+                           INSERT INTO catalog_product_entity_varchar (entity_type_id, attribute_id, store_id, entity_id, value) VALUES (:entity_type_id,:meta_descr_id,:store_id,:entity_id,:meta_description)ON DUPLICATE KEY UPDATE `value` = :meta_description;
+                           INSERT INTO catalog_product_entity_varchar (entity_type_id, attribute_id, store_id, entity_id, value) VALUES (:entity_type_id,:meta_title_id,:store_id,:entity_id,:meta_title)ON DUPLICATE KEY UPDATE `value` = :meta_title;
+                           INSERT INTO catalog_product_entity_varchar (entity_type_id, attribute_id, store_id, entity_id, value) VALUES (:entity_type_id,:name_id,:store_id,:entity_id,:short_description)ON DUPLICATE KEY UPDATE `value` = :name;
                             ";
-                $connW->query($sql);
+                $binds = array(
+                    'entity_type_id'    => $this->_productEntityTypeId,
+                    'short_descr_id'    => $this->_shortDescriptionId,
+                    'descr_id'          => $this->_descriptionId,
+                    'meta_descr_id'     => $this->_metaDescriptionId,
+                    'meta_title_id'     => $this->_metaTitleId,
+                    'name_id'           => $this->_nameId,
+                    'store_id'          => $this->_websiteStoreView['uk'],
+                    'entity_id'         => $cProductId,
+                    'short_description' => $productShortDescriptionn['en'],
+                    'description'       => $productData['DescriptionCatalogues']['value']['en'],
+                    'meta_description'  => $productShortDescriptionn['en'],
+                    'meta_title'        => $productData['HeaderWebs']['value']['en'],
+                    'name'              => $productData['HeaderWebs']['value']['en'],
+                );
+                $connW->query($sql, $binds);
 
-                $sql = "INSERT INTO catalog_product_entity_text (entity_type_id, attribute_id, store_id, entity_id, value) VALUES (" . $this->_productEntityTypeId . "," . $this->_shortDescriptionId . "," . $this->_websiteStoreView['dk'] . "," . $cProductId . ",'" . $productShortDescriptionn['da'] . "')ON DUPLICATE KEY UPDATE `value` = '". $productShortDescriptionn['da'] ."';
-                            INSERT INTO catalog_product_entity_text (entity_type_id, attribute_id, store_id, entity_id, value) VALUES (" . $this->_productEntityTypeId . "," . $this->_descriptionId . "," . $this->_websiteStoreView['dk'] . "," . $cProductId . ",'" . $productData['DescriptionCatalogues']['value']['da'] . "')ON DUPLICATE KEY UPDATE `value` = '". $productData['DescriptionCatalogues']['value']['da'] ."';
-                           INSERT INTO catalog_product_entity_varchar (entity_type_id, attribute_id, store_id, entity_id, value) VALUES (" . $this->_productEntityTypeId . "," . $this->_metaDescriptionId . "," . $this->_websiteStoreView['dk'] . "," . $cProductId . ",'" . $productShortDescriptionn['da'] . "')ON DUPLICATE KEY UPDATE `value` = '". $productShortDescriptionn['da'] ."';
-                           INSERT INTO catalog_product_entity_varchar (entity_type_id, attribute_id, store_id, entity_id, value) VALUES (" . $this->_productEntityTypeId . "," . $this->_metaTitleId . "," . $this->_websiteStoreView['dk'] . "," . $cProductId . ",'" . $productData['HeaderWebs']['value']['da'] . "')ON DUPLICATE KEY UPDATE `value` = '". $productData['HeaderWebs']['value']['da'] ."';
-                           INSERT INTO catalog_product_entity_varchar (entity_type_id, attribute_id, store_id, entity_id, value) VALUES (" . $this->_productEntityTypeId . "," . $this->_nameId . "," . $this->_websiteStoreView['dk'] . "," . $cProductId . ",'" . $productData['HeaderWebs']['value']['da'] . "')ON DUPLICATE KEY UPDATE `value` = '". $productData['HeaderWebs']['value']['da'] ."';
-                            ";
-                $connW->query($sql);
+                $binds = array(
+                    'entity_type_id'    => $this->_productEntityTypeId,
+                    'short_descr_id'    => $this->_shortDescriptionId,
+                    'descr_id'          => $this->_descriptionId,
+                    'meta_descr_id'     => $this->_metaDescriptionId,
+                    'meta_title_id'     => $this->_metaTitleId,
+                    'name_id'           => $this->_nameId,
+                    'store_id'          => $this->_websiteStoreView['dk'],
+                    'entity_id'         => $cProductId,
+                    'short_description' => $productShortDescriptionn['da'],
+                    'description'       => $productData['DescriptionCatalogues']['value']['da'],
+                    'meta_description'  => $productShortDescriptionn['da'],
+                    'meta_title'        => $productData['HeaderWebs']['value']['da'],
+                    'name'              => $productData['HeaderWebs']['value']['da'],
+                );
+                $connW->query($sql, $binds);
 
-                $sql = "INSERT INTO catalog_product_entity_text (entity_type_id, attribute_id, store_id, entity_id, value) VALUES (" . $this->_productEntityTypeId . "," . $this->_shortDescriptionId . "," . $this->_websiteStoreView['ch'] . "," . $cProductId . ",'" . $productShortDescriptionn['de_CH'] . "')ON DUPLICATE KEY UPDATE `value` = '". $productShortDescriptionn['de_CH'] ."';
-                            INSERT INTO catalog_product_entity_text (entity_type_id, attribute_id, store_id, entity_id, value) VALUES (" . $this->_productEntityTypeId . "," . $this->_descriptionId . "," . $this->_websiteStoreView['ch'] . "," . $cProductId . ",'" . $productData['DescriptionCatalogues']['value']['de_CH'] . "')ON DUPLICATE KEY UPDATE `value` = '". $productData['DescriptionCatalogues']['value']['de_CH'] ."';
-                           INSERT INTO catalog_product_entity_varchar (entity_type_id, attribute_id, store_id, entity_id, value) VALUES (" . $this->_productEntityTypeId . "," . $this->_metaDescriptionId . "," . $this->_websiteStoreView['ch'] . "," . $cProductId . ",'" . $productShortDescriptionn['de_CH'] . "')ON DUPLICATE KEY UPDATE `value` = '". $productShortDescriptionn['de_CH'] ."';
-                           INSERT INTO catalog_product_entity_varchar (entity_type_id, attribute_id, store_id, entity_id, value) VALUES (" . $this->_productEntityTypeId . "," . $this->_metaTitleId . "," . $this->_websiteStoreView['ch'] . "," . $cProductId . ",'" . $productData['HeaderWebs']['value']['de_CH'] . "')ON DUPLICATE KEY UPDATE `value` = '". $productData['HeaderWebs']['value']['de_CH'] ."';
-                           INSERT INTO catalog_product_entity_varchar (entity_type_id, attribute_id, store_id, entity_id, value) VALUES (" . $this->_productEntityTypeId . "," . $this->_nameId . "," . $this->_websiteStoreView['ch'] . "," . $cProductId . ",'" . $productData['HeaderWebs']['value']['de_CH'] . "')ON DUPLICATE KEY UPDATE `value` = '". $productData['HeaderWebs']['value']['de_CH'] ."';
-                            ";
-                $connW->query($sql);
+                $binds = array(
+                    'entity_type_id'    => $this->_productEntityTypeId,
+                    'short_descr_id'    => $this->_shortDescriptionId,
+                    'descr_id'          => $this->_descriptionId,
+                    'meta_descr_id'     => $this->_metaDescriptionId,
+                    'meta_title_id'     => $this->_metaTitleId,
+                    'name_id'           => $this->_nameId,
+                    'store_id'          => $this->_websiteStoreView['ch'],
+                    'entity_id'         => $cProductId,
+                    'short_description' => $productShortDescriptionn['de_CH'],
+                    'description'       => $productData['DescriptionCatalogues']['value']['de_CH'],
+                    'meta_description'  => $productShortDescriptionn['de_CH'],
+                    'meta_title'        => $productData['HeaderWebs']['value']['de_CH'],
+                    'name'              => $productData['HeaderWebs']['value']['de_CH'],
+                );
+                $connW->query($sql, $binds);
 
-                $sql = "INSERT INTO catalog_product_entity_text (entity_type_id, attribute_id, store_id, entity_id, value) VALUES (" . $this->_productEntityTypeId . "," . $this->_shortDescriptionId . "," . $this->_websiteStoreView['de'] . "," . $cProductId . ",'" . $productShortDescriptionn['de'] . "')ON DUPLICATE KEY UPDATE `value` = '". $productShortDescriptionn['de'] ."';
-                            INSERT INTO catalog_product_entity_text (entity_type_id, attribute_id, store_id, entity_id, value) VALUES (" . $this->_productEntityTypeId . "," . $this->_descriptionId . "," . $this->_websiteStoreView['de'] . "," . $cProductId . ",'" . $productData['DescriptionCatalogues']['value']['de'] . "')ON DUPLICATE KEY UPDATE `value` = '". $productData['DescriptionCatalogues']['value']['de'] ."';
-                           INSERT INTO catalog_product_entity_varchar (entity_type_id, attribute_id, store_id, entity_id, value) VALUES (" . $this->_productEntityTypeId . "," . $this->_metaDescriptionId . "," . $this->_websiteStoreView['de'] . "," . $cProductId . ",'" . $productShortDescriptionn['de'] . "')ON DUPLICATE KEY UPDATE `value` = '". $productShortDescriptionn['de'] ."';
-                           INSERT INTO catalog_product_entity_varchar (entity_type_id, attribute_id, store_id, entity_id, value) VALUES (" . $this->_productEntityTypeId . "," . $this->_metaTitleId . "," . $this->_websiteStoreView['de'] . "," . $cProductId . ",'" . $productData['HeaderWebs']['value']['de'] . "')ON DUPLICATE KEY UPDATE `value` = '". $productData['HeaderWebs']['value']['de'] ."';
-                           INSERT INTO catalog_product_entity_varchar (entity_type_id, attribute_id, store_id, entity_id, value) VALUES (" . $this->_productEntityTypeId . "," . $this->_nameId . "," . $this->_websiteStoreView['de'] . "," . $cProductId . ",'" . $productData['HeaderWebs']['value']['de'] . "')ON DUPLICATE KEY UPDATE `value` = '". $productData['HeaderWebs']['value']['de'] ."';
-                            ";
-                $connW->query($sql);
+                $binds = array(
+                    'entity_type_id'    => $this->_productEntityTypeId,
+                    'short_descr_id'    => $this->_shortDescriptionId,
+                    'descr_id'          => $this->_descriptionId,
+                    'meta_descr_id'     => $this->_metaDescriptionId,
+                    'meta_title_id'     => $this->_metaTitleId,
+                    'name_id'           => $this->_nameId,
+                    'store_id'          => $this->_websiteStoreView['de'],
+                    'entity_id'         => $cProductId,
+                    'short_description' => $productShortDescriptionn['de'],
+                    'description'       => $productData['DescriptionCatalogues']['value']['de'],
+                    'meta_description'  => $productShortDescriptionn['de'],
+                    'meta_title'        => $productData['HeaderWebs']['value']['de'],
+                    'name'              => $productData['HeaderWebs']['value']['de'],
+                );
+                $connW->query($sql, $binds);
 
-                $sql = "INSERT INTO catalog_product_entity_text (entity_type_id, attribute_id, store_id, entity_id, value) VALUES (" . $this->_productEntityTypeId . "," . $this->_shortDescriptionId . "," . $this->_websiteStoreView['nl'] . "," . $cProductId . ",'" . $productShortDescriptionn['nl'] . "')ON DUPLICATE KEY UPDATE `value` = '". $productShortDescriptionn['nl'] ."';
-                            INSERT INTO catalog_product_entity_text (entity_type_id, attribute_id, store_id, entity_id, value) VALUES (" . $this->_productEntityTypeId . "," . $this->_descriptionId . "," . $this->_websiteStoreView['nl'] . "," . $cProductId . ",'" . $productData['DescriptionCatalogues']['value']['nl'] . "')ON DUPLICATE KEY UPDATE `value` = '". $productData['DescriptionCatalogues']['value']['nl'] ."';
-                           INSERT INTO catalog_product_entity_varchar (entity_type_id, attribute_id, store_id, entity_id, value) VALUES (" . $this->_productEntityTypeId . "," . $this->_metaDescriptionId . "," . $this->_websiteStoreView['nl'] . "," . $cProductId . ",'" . $productShortDescriptionn['nl'] . "')ON DUPLICATE KEY UPDATE `value` = '". $productShortDescriptionn['nl'] ."';
-                           INSERT INTO catalog_product_entity_varchar (entity_type_id, attribute_id, store_id, entity_id, value) VALUES (" . $this->_productEntityTypeId . "," . $this->_metaTitleId . "," . $this->_websiteStoreView['nl'] . "," . $cProductId . ",'" . $productData['HeaderWebs']['value']['nl'] . "')ON DUPLICATE KEY UPDATE `value` = '". $productData['HeaderWebs']['value']['nl'] ."';
-                           INSERT INTO catalog_product_entity_varchar (entity_type_id, attribute_id, store_id, entity_id, value) VALUES (" . $this->_productEntityTypeId . "," . $this->_nameId . "," . $this->_websiteStoreView['nl'] . "," . $cProductId . ",'" . $productData['HeaderWebs']['value']['nl'] . "')ON DUPLICATE KEY UPDATE `value` = '". $productData['HeaderWebs']['value']['nl'] ."';
-                            ";
-                $connW->query($sql);
+                $binds = array(
+                    'entity_type_id'    => $this->_productEntityTypeId,
+                    'short_descr_id'    => $this->_shortDescriptionId,
+                    'descr_id'          => $this->_descriptionId,
+                    'meta_descr_id'     => $this->_metaDescriptionId,
+                    'meta_title_id'     => $this->_metaTitleId,
+                    'name_id'           => $this->_nameId,
+                    'store_id'          => $this->_websiteStoreView['nl'],
+                    'entity_id'         => $cProductId,
+                    'short_description' => $productShortDescriptionn['nl'],
+                    'description'       => $productData['DescriptionCatalogues']['value']['nl'],
+                    'meta_description'  => $productShortDescriptionn['nl'],
+                    'meta_title'        => $productData['HeaderWebs']['value']['nl'],
+                    'name'              => $productData['HeaderWebs']['value']['nl'],
+                );
+                $connW->query($sql, $binds);
 
-                $sql = "INSERT INTO catalog_product_entity_text (entity_type_id, attribute_id, store_id, entity_id, value) VALUES (" . $this->_productEntityTypeId . "," . $this->_shortDescriptionId . "," . $this->_websiteStoreView['se'] . "," . $cProductId . ",'" . $productShortDescriptionn['sv'] . "')ON DUPLICATE KEY UPDATE `value` = '". $productShortDescriptionn['sv'] ."';
-                            INSERT INTO catalog_product_entity_text (entity_type_id, attribute_id, store_id, entity_id, value) VALUES (" . $this->_productEntityTypeId . "," . $this->_descriptionId . "," . $this->_websiteStoreView['se'] . "," . $cProductId . ",'" . $productData['DescriptionCatalogues']['value']['sv'] . "')ON DUPLICATE KEY UPDATE `value` = '". $productData['DescriptionCatalogues']['value']['sv'] ."';
-                           INSERT INTO catalog_product_entity_varchar (entity_type_id, attribute_id, store_id, entity_id, value) VALUES (" . $this->_productEntityTypeId . "," . $this->_metaDescriptionId . "," . $this->_websiteStoreView['se'] . "," . $cProductId . ",'" . $productShortDescriptionn['sv'] . "')ON DUPLICATE KEY UPDATE `value` = '". $productShortDescriptionn['sv'] ."';
-                           INSERT INTO catalog_product_entity_varchar (entity_type_id, attribute_id, store_id, entity_id, value) VALUES (" . $this->_productEntityTypeId . "," . $this->_metaTitleId . "," . $this->_websiteStoreView['se'] . "," . $cProductId . ",'" . $productData['HeaderWebs']['value']['sv'] . "')ON DUPLICATE KEY UPDATE `value` = '". $productData['HeaderWebs']['value']['sv'] ."';
-                           INSERT INTO catalog_product_entity_varchar (entity_type_id, attribute_id, store_id, entity_id, value) VALUES (" . $this->_productEntityTypeId . "," . $this->_nameId . "," . $this->_websiteStoreView['se'] . "," . $cProductId . ",'" . $productData['HeaderWebs']['value']['sv'] . "')ON DUPLICATE KEY UPDATE `value` = '". $productData['HeaderWebs']['value']['sv'] ."';
-
-                    ";
-                $connW->query($sql);
-
+                $binds = array(
+                    'entity_type_id'    => $this->_productEntityTypeId,
+                    'short_descr_id'    => $this->_shortDescriptionId,
+                    'descr_id'          => $this->_descriptionId,
+                    'meta_descr_id'     => $this->_metaDescriptionId,
+                    'meta_title_id'     => $this->_metaTitleId,
+                    'name_id'           => $this->_nameId,
+                    'store_id'          => $this->_websiteStoreView['se'],
+                    'entity_id'         => $cProductId,
+                    'short_description' => $productShortDescriptionn['se'],
+                    'description'       => $productData['DescriptionCatalogues']['value']['se'],
+                    'meta_description'  => $productShortDescriptionn['se'],
+                    'meta_title'        => $productData['HeaderWebs']['value']['se'],
+                    'name'              => $productData['HeaderWebs']['value']['se'],
+                );
+                $connW->query($sql, $binds);
 
                 $cProduct->clearInstance();
             } catch (Exception $e) {
@@ -1113,9 +1290,9 @@ class Bonaparte_ImportExport_Model_Custom_Import_Products extends Bonaparte_Impo
         $this->_smallImageId = $this->_getAttributeID('small_image');
         $this->_thumbnailId = $this->_getAttributeID('thumbnail');
 
-        //$this->_logMessage('Getting the pictures ready');
-        //$this->_getProductImageReady();
-        //$this->_logMessage('Finished');
+        $this->_logMessage('Getting the pictures ready');
+        $this->_getProductImageReady();
+        $this->_logMessage('Finished');
 
         $this->_logMessage('Inventory parsing start');
         $this->_productInventory = $this->_getProductInventory();
@@ -1139,6 +1316,9 @@ class Bonaparte_ImportExport_Model_Custom_Import_Products extends Bonaparte_Impo
         $counter = 0;
         $this->_activeCatalogues = $this->_getActiveCatalogues();
 
+        $this->_missingPictureFilePath = Mage::getBaseDir() . self::MISSING_PICTURES_BASE_PATH;
+        $this->_fileHandlerPictures = fopen($this->_missingPictureFilePath, 'w');
+
         foreach ($this->_data as $productConfig) {
             $toImport=0;
             $counter++;
@@ -1157,8 +1337,9 @@ class Bonaparte_ImportExport_Model_Custom_Import_Products extends Bonaparte_Impo
             }else{
                 $this->_logMessage($counter . ' / ' . $numberOfFiles . ' - Skipping product file');
             }
-            //if ($counter==1000) break;
+            //if ($counter==10) break;
         }
+        fclose($this->_fileHandlerPictures);
         $this->_logMessage('ALL DONE!!!' . "\n");
         $this->_logMessage('There were ' . $this->_newProductCounter . ' products created!' . "\n");
     }
