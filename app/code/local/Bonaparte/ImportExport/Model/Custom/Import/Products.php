@@ -457,21 +457,34 @@ class Bonaparte_ImportExport_Model_Custom_Import_Products extends Bonaparte_Impo
             $productSizes = array();
             $this->_logMessage($productCounter++ . ' Configuring product details ...');
             // first step is to check if the size is custom or not
-            if (in_array($productItem['Sizess']['value']['en'], array('50X100', '70X140', 'ne size', 'one size', 'One size', 'One Size', 'ONE SIZE', 'onesize', 'Onesize', 'ONESIZE'))) {
-                $productSizes = array('cst_' . $productItem['Sizess']['value']['en']);
-            } elseif (!$this->_customSizes[$productItem['Sizess']['value']['en']]) {
-                $productItemSizess = $productItem['Sizess']['value']['en'] == $productItem['Sizess']['value']['de'] ? $productItem['Sizess']['value']['en'] : $productItem['Sizess']['value']['en'] . '-' . $productItem['Sizess']['value']['de'];
-                $productSizesTemp = explode("-", $productItemSizess);
-                foreach ($productSizesTemp as $productSizeTemp)
-                    if (!$this->_customSizes[$productSizeTemp]) {
-                        $productSizes[] = $productSizeTemp;
+            //if (in_array($productItem['Sizess']['value']['en'], array('50X100', '70X140', 'ne size', 'one size', 'One size', 'One Size', 'ONE SIZE', 'onesize', 'Onesize', 'ONESIZE'))) {
+            //    $productSizes = array('cst_' . $productItem['Sizess']['value']['en']);
+            //} elseif (!$this->_customSizes[$productItem['Sizess']['value']['en']]) {
+            //    $productItemSizess = $productItem['Sizess']['value']['en'] == $productItem['Sizess']['value']['de'] ? $productItem['Sizess']['value']['en'] : $productItem['Sizess']['value']['en'] . '-' . $productItem['Sizess']['value']['de'];
+            //    $productSizesTemp = explode("-", $productItemSizess);
+            //    foreach ($productSizesTemp as $productSizeTemp)
+            //        if (!$this->_customSizes[$productSizeTemp]) {
+            //            $productSizes[] = $productSizeTemp;
+            //        } else {
+            //            $productSizes[] = $this->_customSizes[$productSizeTemp];
+            //        }
+            //
+            //} else {
+            //    $productSizes = array($this->_customSizes[$productItem['Sizess']['value']['en']]);
+            //}
+
+            foreach ($productItem['Prices']['value']['Catalogue'][0]['value'] as $productSizeTemp => $sizeCountry)
+                if (!$this->_customSizes[$productSizeTemp]) {
+                    $productSizes[] = $productSizeTemp;
+                } else {
+                    if (in_array($productSizeTemp, array('50X100', '70X140', 'ne size', 'one size', 'One size', 'One Size', 'ONE SIZE', 'onesize', 'Onesize', 'ONESIZE'))) {
+                           $productSizes = array('cst_' . $productSizeTemp);
                     } else {
                         $productSizes[] = $this->_customSizes[$productSizeTemp];
                     }
+                }
 
-            } else {
-                $productSizes = array($this->_customSizes[$productItem['Sizess']['value']['en']]);
-            }
+
             $justUK = 0;
             if ($productItem['Sizess']['value']['en'] != $productItem['Sizess']['value']['de']) $justUK = 1;
 
@@ -588,7 +601,6 @@ class Bonaparte_ImportExport_Model_Custom_Import_Products extends Bonaparte_Impo
                         ->setSku($productSKU)
                         ->setAttributeSetId($this->_attributeSetIdd)
 						->setPrice("1000.00")
-						->setMetaKeywords('MetaKeywords test')
 						->setVisibility(Mage_Catalog_Model_Product_Visibility::VISIBILITY_NOT_VISIBLE)
 						->setTaxClassId(0) //none
 						->setWeight(1)
@@ -603,28 +615,40 @@ class Bonaparte_ImportExport_Model_Custom_Import_Products extends Bonaparte_Impo
                     ));
                 };
 
-                if (!$justUK) {
-                    $sProduct -> setWebsiteIds($this->_allWebsiteIDs);
-                }elseif($sizeCounter<=(count($productSizes)/2)){
-                    $sProduct -> setWebsiteIds(array($this->_allWebsiteIDs['base'],$this->_allWebsiteIDs['uk']));
-                }else{
-                    $sProduct -> setWebsiteIds(array($this->_allWebsiteIDs['base'],$this->_allWebsiteIDs['dk'],$this->_allWebsiteIDs['ch'],$this->_allWebsiteIDs['de'],$this->_allWebsiteIDs['nl'],$this->_allWebsiteIDs['se']));
+
+                switch (count($productItem['Prices']['value']['Catalogue'][0]['value'][$productSize])) {
+                    case '6':
+                        $sProduct -> setWebsiteIds($this->_allWebsiteIDs);
+                        break;
+                    case '5':
+                        $sProduct -> setWebsiteIds(array($this->_allWebsiteIDs['base'],$this->_allWebsiteIDs['dk'],$this->_allWebsiteIDs['ch'],$this->_allWebsiteIDs['de'],$this->_allWebsiteIDs['nl'],$this->_allWebsiteIDs['se']));
+                        break;
+                    case '1':
+                        $sProduct -> setWebsiteIds(array($this->_allWebsiteIDs['base'],$this->_allWebsiteIDs['uk']));
+                        break;
                 }
+                //if (!$justUK) {....
+                //    $sProduct -> setWebsiteIds($this->_allWebsiteIDs);
+                //}elseif($sizeCounter<=($productSizes)/2)){
+                //    $sProduct -> setWebsiteIds(array($this->_allWebsiteIDs['base'],$this->_allWebsiteIDs['uk']));
+                //}else{
+                //    $sProduct -> setWebsiteIds(array($this->_allWebsiteIDs['base'],$this->_allWebsiteIDs['dk'],$this->_allWebsiteIDs['ch'],$this->_allWebsiteIDs['de'],$this->_allWebsiteIDs['nl'],$this->_allWebsiteIDs['se']));
+                //}
 
 
                 $sProduct
-                    ->setCategoryIds($category_idss)
-                    ->setBnpColor($externalIdToInternalId[$productItem['Color']['value'] . '_' . Bonaparte_ImportExport_Model_Custom_Import_Attributes::CUSTOM_ATTRIBUTE_CODE_COLOR])
-                    ->setBnpFitting($externalIdToInternalId[$productData['Fitting']['value'] . '_' . Bonaparte_ImportExport_Model_Custom_Import_Attributes::CUSTOM_ATTRIBUTE_CODE_FITTING])
-
-                    ->setMetaTitle($productData['HeaderWebs']['value']['en'])
-                    ->setMetaDescription($productData['DescriptionCatalogues']['value']['en'])
                     ->setName($productData['HeaderWebs']['value']['en'])
                     ->setDescription($productData['DescriptionCatalogues']['value']['en'])
-
                     ->setShortDescription($productShortDescription[0] . '.')
-                    ->setUrlKey($productData['HeaderWebs']['value']['en'] . '_' . $productItem['CinoNumber']['value'] . '_' . $productSize)
 
+                    ->setMetaTitle($productData['HeaderWebs']['value']['en'])
+                    ->setMetaKeywords('')
+                    ->setMetaDescription($productData['DescriptionCatalogues']['value']['en'])
+
+                    ->setCategoryIds($category_idss)
+
+                    ->setBnpColor($externalIdToInternalId[$productItem['Color']['value'] . '_' . Bonaparte_ImportExport_Model_Custom_Import_Attributes::CUSTOM_ATTRIBUTE_CODE_COLOR])
+                    ->setBnpFitting($externalIdToInternalId[$productData['Fitting']['value'] . '_' . Bonaparte_ImportExport_Model_Custom_Import_Attributes::CUSTOM_ATTRIBUTE_CODE_FITTING])
                     ->setBnpCatalogue(implode(',', $bnpCatalogueLabelIds))
                     ->setBnpSeason(implode(',', $bnpSeasonLabelIds))
                     ->setBnpWashicon(implode(',', $bnpWashiconLabelIds))
@@ -635,9 +659,10 @@ class Bonaparte_ImportExport_Model_Custom_Import_Products extends Bonaparte_Impo
                     ->setBnpProductmaingroup($externalIdToInternalId[$productData['ProductMainGroup']['value'] . '_' . Bonaparte_ImportExport_Model_Custom_Import_Attributes::CUSTOM_ATTRIBUTE_CODE_PRODUCT_MAIN_GROUP])
                     ->setBnpProductgroup($externalIdToInternalId[$productData['ProductGroup']['value'] . '_' . Bonaparte_ImportExport_Model_Custom_Import_Attributes::CUSTOM_ATTRIBUTE_CODE_PRODUCT_GROUP])
                     ->setBnpProductsubgroup($externalIdToInternalId[$productData['ProductSubGroup']['value'] . '_' . Bonaparte_ImportExport_Model_Custom_Import_Attributes::CUSTOM_ATTRIBUTE_CODE_PRODUCT_SUB_GROUP])
-
                     ->setBnpComposition($externalIdToInternalId[$productData['Composition']['value'] . '_' . Bonaparte_ImportExport_Model_Custom_Import_Attributes::CUSTOM_ATTRIBUTE_CODE_COMPOSITION])
                     ->setBnpConcept($externalIdToInternalId[$productData['Concept']['value'] . '_' . Bonaparte_ImportExport_Model_Custom_Import_Attributes::CUSTOM_ATTRIBUTE_CODE_CONCEPT])
+
+                    ->setUrlKey($productData['HeaderWebs']['value']['en'] . '_' . $productItem['CinoNumber']['value'] . '_' . $productSize)
 
                     ->setData($configurable_attribute, $configurableAttributeOptionId);
 
@@ -891,13 +916,22 @@ class Bonaparte_ImportExport_Model_Custom_Import_Products extends Bonaparte_Impo
             };
 
             $cProduct
-                ->setCategoryIds($category_idss)
+
                 ->setName($productData['HeaderWebs']['value']['en'])
-                ->setShortDescription($productShortDescription[0] . '.')
                 ->setDescription($productData['DescriptionCatalogues']['value']['en'])
-                
+                ->setShortDescription($productShortDescription[0] . '.')
+
+                ->setMetaTitle($productData['HeaderWebs']['value']['en'])
+                ->setMetaKeywords('')
+                ->setMetaDescription($productData['DescriptionCatalogues']['value']['en'])
+
+                ->setCategoryIds($category_idss)
+
                 ->setBnpColor($externalIdToInternalId[$productItem['Color']['value'] . '_' . Bonaparte_ImportExport_Model_Custom_Import_Attributes::CUSTOM_ATTRIBUTE_CODE_COLOR])
                 ->setBnpFitting($externalIdToInternalId[$productData['Fitting']['value'] . '_' . Bonaparte_ImportExport_Model_Custom_Import_Attributes::CUSTOM_ATTRIBUTE_CODE_FITTING])
+                ->setBnpCatalogue(implode(',', $bnpCatalogueLabelIds))
+                ->setBnpSeason(implode(',', $bnpSeasonLabelIds))
+                ->setBnpWashicon(implode(',', $bnpWashiconLabelIds))
                 ->setBnpColorgroup($this->_getAttributeLabelId("bnp_colorgroup", $productItem['ColorGroup']['value']))
                 ->setBnpMeasurechartabrv($productData['MeasureChartAbrv']['value'])
                 ->setBnpMeasurementchart($productItem['MeasurementChart']['value'])
@@ -905,7 +939,6 @@ class Bonaparte_ImportExport_Model_Custom_Import_Products extends Bonaparte_Impo
                 ->setBnpProductmaingroup($externalIdToInternalId[$productData['ProductMainGroup']['value'] . '_' . Bonaparte_ImportExport_Model_Custom_Import_Attributes::CUSTOM_ATTRIBUTE_CODE_PRODUCT_MAIN_GROUP])
                 ->setBnpProductgroup($externalIdToInternalId[$productData['ProductGroup']['value'] . '_' . Bonaparte_ImportExport_Model_Custom_Import_Attributes::CUSTOM_ATTRIBUTE_CODE_PRODUCT_GROUP])
                 ->setBnpProductsubgroup($externalIdToInternalId[$productData['ProductSubGroup']['value'] . '_' . Bonaparte_ImportExport_Model_Custom_Import_Attributes::CUSTOM_ATTRIBUTE_CODE_PRODUCT_SUB_GROUP])
-
                 ->setBnpComposition($externalIdToInternalId[$productData['Composition']['value'] . '_' . Bonaparte_ImportExport_Model_Custom_Import_Attributes::CUSTOM_ATTRIBUTE_CODE_COMPOSITION])
                 ->setBnpConcept($externalIdToInternalId[$productData['Concept']['value'] . '_' . Bonaparte_ImportExport_Model_Custom_Import_Attributes::CUSTOM_ATTRIBUTE_CODE_CONCEPT])
 
@@ -1209,11 +1242,14 @@ class Bonaparte_ImportExport_Model_Custom_Import_Products extends Bonaparte_Impo
                             foreach ($stringXML->Catalogue as $subElement) {
                                 $subValue = array();
                                 foreach ($subElement->Country as $country) {
-                                    $subValue[] = array(
-                                        'code' => $country->getAttribute('code'),
-                                        'currency' => $country->getAttribute('currency'),
-                                        'size' => (string)$country->Size
-                                    );
+//                                    $subValue[] = array(
+//                                        'code' => ,
+//                                        'currency' => $country->getAttribute('currency'),
+//                                        'size' => (string)$country->Size
+//                                    );
+                                    foreach ($country->Size as $sizePrice){
+                                        $subValue[$sizePrice->getAttribute('name')][]=$country->getAttribute('code');
+                                    }
                                 }
                                 $value['Catalogue'][] = array(
                                     'name' => $subElement->getAttribute('name'),
@@ -1290,9 +1326,9 @@ class Bonaparte_ImportExport_Model_Custom_Import_Products extends Bonaparte_Impo
         $this->_smallImageId = $this->_getAttributeID('small_image');
         $this->_thumbnailId = $this->_getAttributeID('thumbnail');
 
-        $this->_logMessage('Getting the pictures ready');
-        $this->_getProductImageReady();
-        $this->_logMessage('Finished');
+//        $this->_logMessage('Getting the pictures ready');
+//        $this->_getProductImageReady();
+//        $this->_logMessage('Finished');
 
         $this->_logMessage('Inventory parsing start');
         $this->_productInventory = $this->_getProductInventory();
@@ -1341,7 +1377,7 @@ class Bonaparte_ImportExport_Model_Custom_Import_Products extends Bonaparte_Impo
         }
         fclose($this->_fileHandlerPictures);
         $this->_logMessage('ALL DONE!!!' . "\n");
-        $this->_logMessage('There were ' . $this->_newProductCounter . ' products created!' . "\n");
+        $this->_logMessage('There were ' . $this->_newProductCounter . ' new products created!' . "\n");
     }
 
 }
