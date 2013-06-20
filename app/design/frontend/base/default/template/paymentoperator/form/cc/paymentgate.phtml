@@ -1,0 +1,33 @@
+<?php
+/**
+ * Copyright (c) 2008-2010 dotSource GmbH.
+ * All rights reserved.
+ * http://www.dotsource.de
+ *
+ * Contributors:
+ * ewohllebe - initial contents
+**/
+/* @var $this Dotsource_Paymentoperator_Block_Form_Cc_Paymentgate */
+?>
+<fieldset class="form-list">
+    <?php $_code = $this->getMethodCode() ?>
+    <ul id="payment_form_<?php echo $_code ?>" style="display:none">
+            <?php if($this->isPrefillinformationActive() && $this->hasPreviousPaymentInformation()) : ?>
+            <li class="control">
+                <input type="radio" id="<?php echo $_code ?>_use_previous" name="payment[<?php echo $_code ?>_cc_prefill_information]" title="<?php echo $this->htmlEscape($this->getUsePreviousCCText()); ?>" value="1" <?php if($this->getIsUsePreviousPaymentInformation()): ?> checked="checked"<?php endif; ?> />
+                <label for="<?php echo $_code ?>_use_previous"><?php echo $this->htmlEscape($this->getUsePreviousCCText()); ?></label>
+            </li>
+            <li class="control">
+                <input type="radio" id="<?php echo $_code ?>_use_new" name="payment[<?php echo $_code ?>_cc_prefill_information]" title="<?php echo $this->htmlEscape($this->getUseNewCCText()); ?>" value="0" <?php if(!$this->getIsUsePreviousPaymentInformation()): ?> checked="checked"<?php endif; ?> />
+                <label for="<?php echo $_code ?>_use_new"><?php echo $this->htmlEscape($this->getUseNewCCText()); ?></label>
+            </li>
+            <?php else : ?>
+            <li style="display:none">
+                <input type="hidden" id="<?php echo $_code ?>_use_previous" name="payment[<?php echo $_code ?>_cc_prefill_information]" value="0" />
+            </li>
+            <?php endif; ?>
+            <li>
+                <?php echo $this->__('At the end of the checkout process you will be redirected to the payment site.'); ?>
+            </li>
+    </ul>
+</fieldset>

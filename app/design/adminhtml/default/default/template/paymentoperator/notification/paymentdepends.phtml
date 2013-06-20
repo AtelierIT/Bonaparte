@@ -1,0 +1,16 @@
+<?php
+/**
+ * Copyright (c) 2008-2011 dotSource GmbH.
+ * All rights reserved.
+ * http://www.dotsource.de
+ *
+ * Contributors:
+ * Erik Wohllebe - initial contents
+ */
+/* @var $this Dotsource_Paymentoperator_Block_Adminhtml_Notification_Paymentdepends */
+?>
+<?php foreach ($this->getDependsMessages() as $title => $messages) : ?>
+<div class="notification-global notification-global-notice">
+    <strong><?php echo $title; ?>:</strong> <?php echo implode(' ', $messages); ?>
+</div>
+<?php endforeach; ?>

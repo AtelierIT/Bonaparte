@@ -1,0 +1,32 @@
+<?php
+/**
+ * Copyright (c) 2008-2010 dotSource GmbH.
+ * All rights reserved.
+ * http://www.dotsource.de
+ *
+ * Contributors:
+ * ewohllebe - initial contents
+**/
+/* @var $this Dotsource_Paymentoperator_Block_Form_Eft */
+?>
+<?php $_code=$this->getMethodCode() ?>
+<ul class="form-list" id="payment_form_<?php echo $_code ?>" style="display:none;">
+    <li>
+        <label for="<?php echo $_code ?>_eft_owner" class="required"><em>*</em><?php echo $this->__('Account holder') ?></label>
+        <div class="input-box">
+            <input type="text" id="<?php echo $_code ?>_eft_owner" name="payment[eft_owner]" title="<?php echo $this->__('Account holder') ?>" class="input-text required-entry" value="<?php echo $this->getEftOwner() ?>" />
+        </div>
+    </li>
+    <li>
+        <label for="<?php echo $_code ?>_eft_ban" class="required"><em>*</em><?php echo $this->__('Bank account number') ?></label>
+        <div class="input-box">
+            <input type="text" id="<?php echo $_code ?>_eft_ban" name="payment[eft_ban]" title="<?php echo $this->__('Bank account number') ?>" class="input-text required-entry validate-number" value="<?php echo $this->getEftBan() ?>" />
+        </div>
+    </li>
+    <li>
+        <label for="<?php echo $_code ?>_eft_bcn" class="required"><em>*</em><?php echo $this->__('Bank code number') ?></label>
+        <div class="input-box">
+            <input type="text" id="<?php echo $_code ?>_eft_bcn" name="payment[eft_bcn]" title="<?php echo $this->__('Bank code number') ?>" class="input-text required-entry validate-number" value="<?php echo $this->getEftBcn() ?>" />
+        </div>
+    </li>
+</ul>

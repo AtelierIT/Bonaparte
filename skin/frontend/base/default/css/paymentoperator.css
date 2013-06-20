@@ -1,0 +1,66 @@
+@CHARSET "UTF-8";
+
+.paymentoperator-billpay-ratepay-form .table-first-column {
+    width:270px;
+}
+.paymentoperator-billpay-ratepay-form .table-second-column {
+    width:15px;
+}
+.paymentoperator-billpay-ratepay-form .table-last-column {
+    width:60px;
+    text-align:right;
+}
+.paymentoperator-font-bold {
+    font-weight: bold;
+}
+.paymentoperator-border-top-one-px-solid {
+    border-top: 1px black solid;
+}
+.paymentoperator-ratepay-headline {
+    font-size: 15px;
+    font-weight: bold;
+}
+ul#payment_form_paymentoperator_billpay_ratepay li.paymentoperator-ratepay-list-left,
+ul#payment_form_paymentoperator_billpay_ratepay li.paymentoperator-ratepay-list-right {
+	width: 265px;
+	background: #eee;
+	border: 1px solid #a3aeb3;
+	padding: 8px 13px;
+}
+ul#payment_form_paymentoperator_billpay_ratepay li.paymentoperator-ratepay-list-left {
+    float: left;
+}
+ul#payment_form_paymentoperator_billpay_ratepay li.paymentoperator-ratepay-list-right {
+    float: right;
+}
+ul#payment_form_paymentoperator_billpay_ratepay .paymentoperator-ratepay-select-rates {
+    width: 100px !important;
+}
+
+ul#payment_form_paymentoperator_billpay_ratepay #paymentoperator-billpay-rates-collect-container {
+    height: 29px;
+}
+
+#checkout-step-payment .form-list p {
+    padding: 0 0 10px 0;
+}
+#container_paymentoperator_billpay_directdebit_billpay_general_terms label,
+#container_paymentoperator_billpay_purchaseonaccount_billpay_general_terms label{
+	padding: 0;
+}
+ul#payment_form_paymentoperator_billpay_ratepay label {
+    text-align:left;
+	padding: 0px;
+}
+ul#payment_form_paymentoperator_billpay_ratepay .dob-day .dob, ul#payment_form_paymentoperator_billpay_ratepay .dob-month .dob{
+    width:46px;
+}
+ul#payment_form_paymentoperator_billpay_ratepay .dob-year .dob{
+	width: 130px;
+}
+#opc-payment .paymentlogo {
+    padding-right: 7px;
+}
+#opc-payment .paymentlogo-container {
+    padding-top: 10px;
+}

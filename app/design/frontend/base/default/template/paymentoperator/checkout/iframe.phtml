@@ -1,0 +1,21 @@
+<?php
+/**
+ * Copyright (c) 2008-2010 dotSource GmbH.
+ * All rights reserved.
+ * http://www.dotsource.de
+ *
+ * Contributors:
+ * ewohllebe - initial contents
+**/
+/* @var $this Dotsource_Paymentoperator_Block_Checkout_Iframe */
+?>
+<div class="page-title">
+    <h3><?php //echo $this->escapeHtml($this->getIframeTitle()); ?></h3>
+</div>
+<iframe id="ccgateway-iframe" src="<?php echo $this->getIframeUrl(); ?>" width="100%" height="600" frameborder="0" scrolling="no" ALLOWTRANSPARENCY="true">
+    <p>
+        <?php echo $this->__("Your browser doesn't support iframes."); ?>
+        <br />
+        <a href="<?php echo $this->getIframeUrl(); ?>"><?php echo $this->__('Please click here to open the credit card payment gateway in the current window.'); ?></a>
+    </p>
+</iframe>

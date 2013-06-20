@@ -1,0 +1,17 @@
+<?php
+/**
+ * Copyright (c) 2008-2011 dotSource GmbH.
+ * All rights reserved.
+ * http://www.dotsource.de
+ *
+ * Contributors:
+ * sklein - initial contents
+ */
+
+/* @var $this Dotsource_Paymentoperator_Block_Info_Billpay_Purchaseonaccount_Infotext */
+?>
+<?php
+if ($this->getInvoiceReference()) {
+    echo $this->__('Please transfer the total amount stating the Billpay Transaction number as type of use (%s) within the payment deadline until the %s to the above-mentioned account.', $this->getInvoiceReference(), $this->getInvoiceDate());
+}
+?>

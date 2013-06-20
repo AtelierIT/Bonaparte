@@ -1,0 +1,21 @@
+<?php
+/**
+ * Copyright (c) 2008-2010 dotSource GmbH.
+ * All rights reserved.
+ * http://www.dotsource.de
+ *
+ * Created:
+ * 07.03.2012 17:38:44
+ *
+ * Contributors:
+ * mbloss - initial contents
+ */
+?>
+<fieldset class="form-list">
+    <?php $_code = $this->getMethodCode() ?>
+    <ul id="payment_form_<?php echo $_code ?>" style="display:none">
+        <li>
+            <?php echo $this->__('At the end of the checkout process you will be redirected to the payment site.'); ?>
+        </li>
+    </ul>
+</fieldset>

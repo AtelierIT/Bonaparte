@@ -1,0 +1,120 @@
+<?php
+/**
+ * Magento
+ *
+ * NOTICE OF LICENSE
+ *
+ * This source file is subject to the Academic Free License (AFL 3.0)
+ * that is bundled with this package in the file LICENSE_AFL.txt.
+ * It is also available through the world-wide-web at this URL:
+ * http://opensource.org/licenses/afl-3.0.php
+ * If you did not receive a copy of the license and are unable to
+ * obtain it through the world-wide-web, please send an email
+ * to license@magentocommerce.com so we can send you a copy immediately.
+ *
+ * DISCLAIMER
+ *
+ * Do not edit or add to this file if you wish to upgrade Magento to newer
+ * versions in the future. If you wish to customize Magento for your
+ * needs please refer to http://www.magentocommerce.com for more information.
+ *
+ * @category    design
+ * @package     default_default
+ * @copyright   Copyright (c) 2009 Irubin Consulting Inc. DBA Varien (http://www.varien.com)
+ * @license     http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
+ */
+?>
+<script type="text/javascript">
+//<![CDATA[
+var AllCountriesModel = Class.create();
+AllCountriesModel.prototype = {
+
+    initialize : function()
+    {
+        this.reload = false;
+        this.bindAllCountriesRelation();
+    },
+
+    bindAllCountriesRelation : function(parentId)
+    {
+        if(parentId) {
+            // todo: fix bug in IE
+            var applyAllCountriesElements = $$('#'+parentId+' .allow-all-countries');
+        } else {
+            var applyAllCountriesElements = $$('.allow-all-countries');
+        }
+
+        for(var i=0;i<applyAllCountriesElements.length; i++) {
+        	//anmelden der Select-Box fuer das change-event:
+            Event.observe(applyAllCountriesElements[i], 'change', this.checkSpecificCountryChoice.bind(this));
+            this.initSpecificCountryChoice(applyAllCountriesElements[i]);
+        }
+    },
+
+    initSpecificCountryChoice : function(element)
+    {
+        var applyCountryChoiceElement = element;
+        if (applyCountryChoiceElement && applyCountryChoiceElement.id) {
+            var showMethodElement = $(applyCountryChoiceElement.id.replace(/allowedcountries/, 'countriesiso3'));
+            if( showMethodElement ){
+				if( applyCountryChoiceElement.value == "<?php echo Dotsource_Paymentoperator_Model_System_Config_Source_AllowedcountriesAction::ALLOW_ANY_COUNTRIES ?>" ||
+					applyCountryChoiceElement.value == "<?php echo Dotsource_Paymentoperator_Model_System_Config_Source_AllowedcountriesAction::RESTRICT_ANY_COUNTRIES ?>"
+				  ){
+					this.showElement(showMethodElement.up(1));
+				}
+				else{
+					this.hideElement(showMethodElement.up(1));
+				}
+        	}
+        }
+    },
+
+    //Event-Handler-Methode:
+    checkSpecificCountryChoice : function(event)
+    {
+        var applyCountryChoiceElement = Event.element(event);
+        if (applyCountryChoiceElement && applyCountryChoiceElement.id) {
+            var showMethodElement = $(applyCountryChoiceElement.id.replace(/allowedcountries/, 'countriesiso3'));
+            if( showMethodElement ){
+            	if( applyCountryChoiceElement.value == "<?php echo Dotsource_Paymentoperator_Model_System_Config_Source_AllowedcountriesAction::ALLOW_ANY_COUNTRIES ?>" ||
+    					applyCountryChoiceElement.value == "<?php echo Dotsource_Paymentoperator_Model_System_Config_Source_AllowedcountriesAction::RESTRICT_ANY_COUNTRIES ?>"
+    			  ){
+					this.showElement(showMethodElement.up(1));
+				}
+				else{
+					this.hideElement(showMethodElement.up(1));
+				}
+        	}
+        }
+    },
+
+    unselectSpecificMoment : function(element)
+    {
+          for (var i=0; i<element.options.length; i++) {
+            if (element.options[i].selected) {
+              element.options[i].selected=false;;
+            }
+        }
+    },
+
+    showElement : function(elm)
+    {
+        if (elm) {
+            if (!elm.down('.shipping-skip-show')) {
+                elm.show();
+            }
+        }
+    },
+
+    hideElement : function(elm)
+    {
+        if (elm) {
+            if (!elm.down('.shipping-skip-hide')) {
+                elm.hide();
+            }
+        }
+    }
+}
+allCountriesModel = new AllCountriesModel();
+//]]>
+</script>

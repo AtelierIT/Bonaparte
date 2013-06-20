@@ -1,0 +1,25 @@
+<?xml version="1.0"?>
+<config>
+    <modules>
+        <Bonaparte_Catalog>
+            <version>0.1.0</version>
+        </Bonaparte_Catalog>
+    </modules>
+    <global>
+        <helpers>
+            <Bonaparte_Catalog>
+                <class>Bonaparte_Catalog_Helper</class>
+            </Bonaparte_Catalog>
+        </helpers>
+        <blocks>
+            <Bonaparte_Catalog>
+                <class>Bonaparte_Catalog_Block</class>
+            </Bonaparte_Catalog>
+            <catalog>
+                <rewrite>
+                    <product_view>Bonaparte_Catalog_Block_Product_View</product_view>
+                </rewrite>
+            </catalog>
+        </blocks>
+    </global>
+</config>

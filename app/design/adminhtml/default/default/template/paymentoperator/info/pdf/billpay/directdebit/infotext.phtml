@@ -1,0 +1,16 @@
+<?php
+/**
+ * Copyright (c) 2008-2011 dotSource GmbH.
+ * All rights reserved.
+ * http://www.dotsource.de
+ *
+ * Contributors:
+ * sklein - initial contents
+ */
+
+/* @var $this Dotsource_Paymentoperator_Block_Info_Billpay_Directdebit_Infotext */
+?>
+<?php
+$text = $this->__('The total amount will be charged from the specified account in the next few days through the Billpay GmbH.');
+echo Mage::helper('core/string')->splitInjection($text, 50,' ', '}}rotarapes_wor_fdp{{');
+?>

@@ -1,0 +1,18 @@
+<?php
+/**
+ * Copyright (c) 2008-2010 dotSource GmbH.
+ * All rights reserved.
+ * http://www.dotsource.de
+ *
+ * Contributors:
+ * ewohllebe - initial contents
+*/
+/* @var $this Dotsource_Paymentoperator_Block_Adminhtml_Notification_Secureurl */
+?>
+<?php $_url = $this->getConfigUrl(); ?>
+<?php if ($_url) : ?>
+<div class="notification-global notification-global-notice">
+    <?php echo $this->escapeHtml($this->__('Your secure base url is not secure. Please use an url starting with "https://". Otherwise the PaymentOperator payment module is not activated.')); ?>
+    <?php echo $this->__('Please change this <a href="%s">configuration</a>.', $this->urlEscape($_url)); ?>
+</div>
+<?php endif; ?>

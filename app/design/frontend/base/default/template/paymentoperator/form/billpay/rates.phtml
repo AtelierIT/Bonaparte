@@ -1,0 +1,83 @@
+<?php
+/**
+ * Copyright (c) 2008-2011 dotSource GmbH.
+ * All rights reserved.
+ * http://www.dotsource.de
+ *
+ * Contributors:
+ * sklein - initial contents
+ */
+?>
+<?php
+/* @var $this           Mage_Core_Block_Template */
+/* @var $paymentMethod  Dotsource_Paymentoperator_Model_Payment_Billpay_Ratepay */
+/* @var $helper         Mage_Core_Helper_Data */
+$term           = $this->getTerm();
+$condition      = $this->getCondition();
+$paymentPlan    = $this->getPaymentPlan();
+$paymentMethod  = $this->getPaymentMethod();
+$shippingCosts  = $paymentMethod->getOracle()->getBaseShippingAmount();
+$discountAmount = $paymentMethod->getOracle()->getBaseDiscountAmount();
+$helper         = Mage::helper('core');
+?>
+<div id="rate-term-<?php echo $term; ?>" class="paymentoperator-billpay-ratepay-form">
+<div class="paymentoperator-ratepay-headline"><?php echo $this->__('Your part payment in %s rates:', $term); ?></div>
+<table>
+<tbody>
+<tr>
+    <td class="table-first-column"><?php echo $this->__('Shopping Cart Value'); ?></td>
+    <td class="table-second-column">=</td>
+    <td class="table-last-column"><?php echo $helper->formatPrice($condition['base_sub_total'], false); ?></td>
+</tr>
+<tr>
+    <td><?php echo $this->__('Surcharge')?></td>
+    <td colspan="2">+</td>
+</tr>
+<tr>
+    <td>(<?php echo $helper->formatPrice($condition['base_sub_total'], false); ?> x <?php echo $condition['monthly_interest_rate'] ?> x <?php echo $term; ?>) / 100</td>
+    <td>=</td>
+    <td class="table-last-column""><?php echo $helper->formatPrice($condition['surcharge'], false); ?></td>
+</tr>
+<tr>
+    <td><?php echo $this->__('Handling Fee'); ?></td>
+    <td>+</td>
+    <td class="table-last-column"><?php echo $helper->formatPrice($condition['fee'], false); ?></td>
+</tr>
+<tr>
+    <td><?php echo $this->__('Shipping costs'); ?></td>
+    <td>+</td>
+    <td class="table-last-column"><?php echo $helper->formatPrice($shippingCosts, false); ?></td>
+</tr>
+<tr>
+    <td><?php echo $this->__('Coupons'); ?></td>
+    <td>+</td>
+    <td class="table-last-column"><?php echo $helper->formatPrice($discountAmount, false); ?></td>
+</tr>
+<tr>
+    <td class="paymentoperator-font-bold paymentoperator-border-top-one-px-solid"><?php echo $this->__('Grand Total Ratepay'); ?></td>
+    <td class="paymentoperator-border-top-one-px-solid">=</td>
+    <td class="paymentoperator-font-bold table-last-column paymentoperator-border-top-one-px-solid"><?php echo $helper->formatPrice($condition['base_billpay_grand_total'], false); ?></td>
+</tr>
+<tr><td>&nbsp;</td></tr>
+<tr>
+    <td><?php echo $this->__('Divided by the number of rates'); ?></td>
+    <td></td>
+    <td class="table-last-column"><?php echo $this->__('%s rates', $term)?></td>
+</tr>
+<tr>
+    <td colspan="2"><?php echo $this->__('The first rate (incl. fees) amounts'); ?></td>
+    <td class="table-last-column"><?php echo $helper->formatPrice($paymentPlan[0]['rate_amount'], false); ?></td>
+</tr>
+<tr>
+    <td><?php echo $this->__('Each successive rate amounts'); ?></td>
+    <td></td>
+    <td class="table-last-column"><?php echo $helper->formatPrice($paymentPlan[1]['rate_amount'], false); ?></td>
+</tr>
+<tr>
+    <td class="paymentoperator-font-bold paymentoperator-border-top-one-px-solid"><?php echo $this->__('Annual percentage rate'); ?></td>
+    <td class="paymentoperator-border-top-one-px-solid" style="border-top:1px black solid;">=</td>
+    <td class="paymentoperator-font-bold table-last-column paymentoperator-border-top-one-px-solid"><?php echo $condition['annual']; ?>%</td>
+</tr>
+</tbody>
+</table>
+</div>

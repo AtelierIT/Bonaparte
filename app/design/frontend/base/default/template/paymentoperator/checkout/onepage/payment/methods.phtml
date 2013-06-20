@@ -1,0 +1,55 @@
+<?php
+/**
+ * Copyright (c) 2008-2012 dotSource GmbH.
+ * All rights reserved.
+ * http://www.dotsource.de
+ *
+ * Contributors:
+ * Erik Wohllebe - initial contents
+ *
+ * @var $this Dotsource_Paymentoperator_Block_Rewrite_Checkout_Onepage_Payment_Methods
+ */
+?>
+<dl class="sp-methods" id="checkout-payment-method-load">
+<?php
+    $methods        = $this->getMethods();
+    $oneMethod      = count($methods) <= 1;
+    $lastLogoHtml   = null;
+?>
+<?php
+    foreach ($methods as $_method):
+        $_code              = $_method->getCode();
+        $currentLogoHtml    = $this->getLogoHtml($_method);
+?>
+    <dt>
+        <?php if ($lastLogoHtml != $currentLogoHtml) :?>
+        <div class="paymentlogo-container">
+            <?php echo $currentLogoHtml; ?>
+            <?php $lastLogoHtml = $currentLogoHtml; ?>
+        </div>
+        <?php endif; ?>
+    <?php if(!$oneMethod): ?>
+        <input id="p_method_<?php echo $_code ?>" value="<?php echo $_code ?>" type="radio" name="payment[method]" title="<?php echo $this->htmlEscape($_method->getTitle()) ?>" onclick="payment.switchMethod('<?php echo $_code ?>')"<?php if($this->getSelectedMethodCode()==$_code): ?> checked="checked"<?php endif; ?> class="radio" />
+    <?php else: ?>
+        <span class="no-display"><input id="p_method_<?php echo $_code ?>" value="<?php echo $_code ?>" type="radio" name="payment[method]" checked="checked" class="radio" /></span>
+        <?php $oneMethod = $_code; ?>
+    <?php endif; ?>
+        <label for="p_method_<?php echo $_code ?>"><?php echo $this->getMethodTitle($_method) ?> <?php echo $this->getMethodLabelAfterHtml($_method) ?></label>
+    </dt>
+    <?php if ($html = $this->getPaymentMethodFormHtml($_method)): ?>
+    <dd>
+        <?php echo $html; ?>
+    </dd>
+    <?php endif; ?>
+<?php endforeach; ?>
+</dl>
+<?php echo $this->getChildChildHtml('additional'); ?>
+<script type="text/javascript">
+//<![CDATA[
+<?php echo $this->getChildChildHtml('scripts'); ?>
+payment.init();
+<?php if (is_string($oneMethod)): ?>
+    payment.switchMethod('<?php echo $oneMethod ?>');
+<?php endif; ?>
+//]]>
+</script>

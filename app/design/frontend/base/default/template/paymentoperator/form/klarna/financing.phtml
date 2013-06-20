@@ -1,0 +1,73 @@
+<?php
+/**
+ * Copyright (c) 2008-2011 dotSource GmbH.
+ * All rights reserved.
+ * http://www.dotsource.de
+ *
+ * Contributors:
+ * Erik Wohllebe - initial contents
+ */
+/* @var $this Dotsource_Paymentoperator_Block_Form_Klarna_Abstract */
+?>
+<?php $_code = $this->getMethodCode() ?>
+<ul class="form-list" id="payment_form_<?php echo $_code ?>" style="display:none;">
+    <?php if($this->getMethod()->isGenderNeeded()): ?>
+        <li>
+            <label for="<?php echo $_code ?>_gender" class="required"><em>*</em><?php echo $this->__('Gender'); ?></label>
+            <div class="input-box">
+                <select class="validate-select" title="<?php echo $this->__('Gender'); ?>" name="payment[klarna_gender]" id="<?php echo $_code ?>_gender">
+                    <option value=""></option>
+                    <option value="<?php echo Dotsource_Paymentoperator_Model_Payment_Klarna_Abstract::GENDER_MALE ?>" <?php if(Dotsource_Paymentoperator_Model_Payment_Klarna_Abstract::GENDER_MALE === $this->getKlarnaGender()): ?> selected="selected"<?php endif; ?>><?php echo $this->getMethod()->getGenderLabel(Dotsource_Paymentoperator_Model_Payment_Klarna_Abstract::GENDER_MALE); ?></option>
+                    <option value="<?php echo Dotsource_Paymentoperator_Model_Payment_Klarna_Abstract::GENDER_FEMALE ?>" <?php if(Dotsource_Paymentoperator_Model_Payment_Klarna_Abstract::GENDER_FEMALE === $this->getKlarnaGender()): ?> selected="selected"<?php endif; ?>><?php echo $this->getMethod()->getGenderLabel(Dotsource_Paymentoperator_Model_Payment_Klarna_Abstract::GENDER_FEMALE); ?></option>
+                </select>
+            </div>
+        </li>
+    <?php endif; ?>
+
+    <?php if($this->getMethod()->isDobNeeded()): ?>
+        <li>
+            <label for="<?php echo $_code ?>_dob_day" class="required"><em>*</em><?php echo $this->__('Date of Birth'); ?></label>
+            <div class="input-box customer-dob <?php echo $_code ?>-dob">
+                <div class="dob-day">
+                    <input type="text" class="input-text validate-custom" title="<?php echo $this->__('Day'); ?>" value="<?php echo $this->getKlarnaDobDay(); ?>" name="payment[klarna_dob_day]" id="<?php echo $_code ?>_dob_day" maxlength="2" />
+                    <label for="<?php echo $_code ?>_dob_day">DD</label>
+                </div>
+                <div class="dob-month">
+                    <input type="text" class="input-text validate-custom" title="<?php echo $this->__('Month'); ?>" value="<?php echo $this->getKlarnaDobMonth(); ?>" name="payment[klarna_dob_month]" id="<?php echo $_code ?>_dob_month" maxlength="2" />
+                    <label for="<?php echo $_code ?>_dob_month">MM</label>
+                </div>
+                <div class="dob-year">
+                    <input type="text" class="input-text validate-custom" title="<?php echo $this->__('Year'); ?>" value="<?php echo $this->getKlarnaDobYear(); ?>" name="payment[klarna_dob_year]" id="<?php echo $_code ?>_dob_year" maxlength="4" />
+                    <label for="<?php echo $_code ?>_dob_year"><?php echo $this->__('YYYY'); ?></label>
+                </div>
+                <div class="dob-full">
+                    <input type="hidden" id="<?php echo $_code ?>_dob_full" value="" />
+                </div>
+                <div style="display: none;" class="validation-advice"></div>
+            </div>
+            <script type="text/javascript">
+            //<![CDATA[
+                var customer_dob = new Varien.DOB('.<?php echo $_code ?>-dob', true, '%d.%m.%y');
+            //]]>
+            </script>
+        </li>
+    <?php endif; ?>
+
+    <?php if ($this->getMethod()->isSsnNeeded() || $this->getMethod()->isCommercialRegisterNumberNeeded()): ?>
+        <li>
+            <label for="<?php echo $_code ?>_ssn" class="required"><em>*</em><?php echo $this->getMethod()->getSsnLabel(); ?></label>
+            <div class="input-box">
+                <input type="text" id="<?php echo $_code ?>_ssn" name="payment[klarna_ssn]" maxlength="<?php echo $this->getKlarnaSsnMaxLength(); ?>" title="<?php echo $this->getMethod()->getSsnLabel(); ?>" class="input-text required-entry validate-digits" value="<?php echo $this->getKlarnaSsn(); ?>" />
+            </div>
+        </li>
+    <?php endif ?>
+
+    <?php if ($this->getMethod()->isAnnualSalaryNeeded()): ?>
+        <li>
+            <label for="<?php echo $_code ?>_annual_salary" class="required"><em>*</em><?php echo $this->__('Annual Salary'); ?></label>
+            <div class="input-box">
+                <input type="text" id="<?php echo $_code ?>_annual_salary" name="payment[klarna_annual_salary]" title="<?php echo $this->__('Annual Salary') ?>" class="input-text required-entry validate-digits" value="<?php echo $this->getKlarnaAnnualSalary(); ?>" />
+            </div>
+        </li>
+    <?php endif; ?>
+</ul>

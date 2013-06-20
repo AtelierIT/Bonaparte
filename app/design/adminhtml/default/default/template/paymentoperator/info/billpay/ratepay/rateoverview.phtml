@@ -1,0 +1,37 @@
+<?php
+/**
+ * Copyright (c) 2008-2011 dotSource GmbH.
+ * All rights reserved.
+ * http://www.dotsource.de
+ *
+ * Contributors:
+ * Erik Wohllebe - initial contents
+ */
+
+/* @var $this Dotsource_Paymentoperator_Block_Info_Billpay_Ratepay_Rateoverview */
+?>
+<table>
+    <thead>
+        <tr>
+            <td width="33%"><?php echo $this->__("Rate No."); ?></td>
+            <td width="33%"><?php echo $this->__("Amount"); ?></td>
+            <td width="33%"><?php echo $this->__("Due Date"); ?></td>
+        </tr>
+    </thead>
+    <tbody>
+        <?php foreach ($this->getPaymentPlan() as $paymentPlanInformation): ?>
+        <tr>
+            <td><?php echo $this->__($this->formatRateNumber($paymentPlanInformation['rate_number'])); ?></td>
+            <td><?php echo $this->formatRatePrice($paymentPlanInformation['rate_amount']); ?></td>
+            <td><?php echo $this->formatRateDate($paymentPlanInformation['due_date']) ?></td>
+        </tr>
+        <?php endforeach; ?>
+    </tbody>
+    <?php if (!$paymentPlanInformation['due_date']) : ?>
+    <tfoot>
+        <tr>
+            <td colspan="3"><?php echo $this->__("The due date will be available after the shop owner create the invoice."); ?></td>
+        </tr>
+    </tfoot>
+    <?php endif; ?>
+</table>

@@ -1,0 +1,181 @@
+<?php
+/**
+ * Copyright (c) 2008-2011 dotSource GmbH.
+ * All rights reserved.
+ * http://www.dotsource.de
+ *
+ * Contributors:
+ * Erik Wohllebe - initial contents
+ */
+?>
+<?php
+/* @var $this Dotsource_Paymentoperator_Block_Form_Billpay_Ratepay */
+$_code                  = $this->getMethodCode();
+$salutationKey          = Dotsource_Paymentoperator_Model_Payment_Billpay_Abstract::KEY_SALUTATION;
+$companyNameKey         = Dotsource_Paymentoperator_Model_Payment_Billpay_Abstract::KEY_COMPANY_NAME;
+$companyLegalFormKey    = Dotsource_Paymentoperator_Model_Payment_Billpay_Abstract::KEY_COMPANY_LEGAL_FORM;
+$dobKey                 = Dotsource_Paymentoperator_Model_Payment_Billpay_Abstract::KEY_DOB;
+$dobDayKey              = Dotsource_Paymentoperator_Model_Payment_Billpay_Abstract::KEY_DOB_DD;
+$dobMonthKey            = Dotsource_Paymentoperator_Model_Payment_Billpay_Abstract::KEY_DOB_MM;
+$dobYearKey             = Dotsource_Paymentoperator_Model_Payment_Billpay_Abstract::KEY_DOB_YYYY;
+$termsKey               = Dotsource_Paymentoperator_Model_Payment_Billpay_Abstract::KEY_GENERAL_TERMS;
+$paymentTermsKey        = Dotsource_Paymentoperator_Model_Payment_Billpay_Abstract::KEY_TERM;
+$termsLink              = "<a alt='".$this->__('terms and conditions')."' href='https://www.billpay.de/api/agb/' target='_blank'>".$this->__('terms and conditions')."</a>";
+$privacyLink            = "<a alt='".$this->__('privacy policy')."' href='https://www.billpay.de/api/agb/#datenschutz' target='_blank'>".$this->__('privacy policy')."</a>";
+?>
+<ul class="form-list" id="payment_form_<?php echo $_code ?>" style="display:none;">
+    <li class="paymentoperator-ratepay-list-left no-margin">
+        <ul>
+            <li id="<?php echo $this->getContainerName($salutationKey); ?>">
+                <label for="<?php echo $this->getFieldName($salutationKey); ?>" class="required"><em>*</em><?php echo $this->__('Salutation'); ?></label>
+                <div class="input-box">
+                    <select id="<?php echo $this->getFieldName($salutationKey); ?>" class="validate-select" title="<?php echo $this->__('Salutation'); ?>" name="payment[<?php echo $this->getFieldName($salutationKey); ?>]">
+                        <option value=""><?php echo $this->__('-- Please select --'); ?></option>
+                        <?php foreach ($this->getAvailableSalutations() as $key => $value) :?>
+                            <option value="<?php echo $key; ?>" <?php if ($key === $this->getSalutation()):?> selected="selected" <?php endif;?>><?php echo $value; ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+            </li>
+            <?php if($this->isCompanyAllowed()) : ?>
+            <li id="<?php echo $this->getContainerName($companyNameKey); ?>">
+                <label for="<?php echo $this->getFieldName($companyNameKey); ?>" class="required"><em>*</em><?php echo $this->__('Company Name'); ?></label>
+                <div class="input-box">
+                    <input type="text" id="<?php echo $this->getFieldName($companyNameKey); ?>" name="payment[<?php echo $this->getFieldName($companyNameKey); ?>]" title="<?php echo $this->__('Company Name') ?>" class="input-text required-entry company" value="<?php echo $this->escapeHtml($this->getCompanyName()); ?>" />
+                </div>
+            </li>
+            <li id="<?php echo $this->getContainerName($companyLegalFormKey); ?>">
+                <label for="<?php echo $this->getFieldName($companyLegalFormKey); ?>" class="required"><em>*</em><?php echo $this->__('Company Legal Form'); ?></label>
+                <div class="input-box">
+                    <select id="<?php echo $this->getFieldName($companyLegalFormKey); ?>" class="validate-select company" title="<?php echo $this->__('Company Legal Form'); ?>" name="payment[<?php echo $this->getFieldName($companyLegalFormKey); ?>]" >
+                        <option value=""><?php echo $this->__('-- Please select --'); ?></option>
+                        <?php foreach ($this->getAvailableCompanyLegalForms() as $key => $value) :?>
+                            <option value="<?php echo $key; ?>" <?php if ($key === $this->getCompanyLegalForm()):?> selected="selected" <?php endif;?>><?php echo $value; ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+            </li>
+            <?php endif; ?>
+            <li id="<?php echo $this->getContainerName($dobKey); ?>">
+                <label for="<?php echo $_code ?>_dob_day" class="required"><em>*</em><?php echo $this->__('Date of Birth'); ?></label>
+                <div class="input-box customer-dob <?php echo $_code ?>-dob">
+                    <div class="dob-day">
+                        <input type="text" id="<?php echo $this->getFieldName($dobDayKey); ?>" class="input-text validate-custom dob" title="<?php echo $this->__('Day'); ?>" value="<?php echo $this->escapeHtml($this->getBillpayDobDay()); ?>" name="payment[<?php echo $this->getFieldName($dobDayKey); ?>]" maxlength="2" />
+                        <label for="<?php echo $this->getFieldName($dobDayKey); ?>">DD</label>
+                    </div>
+                    <div class="dob-month">
+                        <input type="text" id="<?php echo $this->getFieldName($dobMonthKey); ?>" class="input-text validate-custom dob" title="<?php echo $this->__('Month'); ?>" value="<?php echo $this->escapeHtml($this->getBillpayDobMonth()); ?>" name="payment[<?php echo $this->getFieldName($dobMonthKey); ?>]" maxlength="2" />
+                        <label for="<?php echo $this->getFieldName($dobMonthKey); ?>">MM</label>
+                    </div>
+                    <div class="dob-year">
+                        <input type="text" id="<?php echo $this->getFieldName($dobYearKey); ?>" class="input-text validate-custom dob" title="<?php echo $this->__('Year'); ?>" value="<?php echo $this->escapeHtml($this->getBillpayDobYear()); ?>" name="payment[<?php echo $this->getFieldName($dobYearKey); ?>]" maxlength="4" />
+                        <label for="<?php echo $this->getFieldName($dobYearKey); ?>"><?php echo $this->__('YYYY'); ?></label>
+                    </div>
+                    <div class="dob-full">
+                        <input type="hidden" id="<?php echo $this->getFieldName($dobKey); ?>" class="dob" name="<?php echo $this->getFieldName($dobKey); ?>" value="" />
+                    </div>
+                    <div style="display: none;" class="validation-advice"></div>
+                </div>
+                <script type="text/javascript">
+                //<![CDATA[
+                    var customer_dob = new Varien.DOB('.<?php echo $_code ?>-dob', true, '%d.%m.%y');
+                //]]>
+                </script>
+            </li>
+            <?php echo $this->getChildHtml('billpay_additional_payment_information'); ?>
+            <li id="<?php echo $this->getContainerName($termsKey); ?>" class="no-margin">
+                <p>
+                    <input type="checkbox" id="<?php echo $this->getFieldName($termsKey); ?>" name="payment[<?php echo $this->getFieldName($termsKey); ?>]" title="<?php echo $this->__('I have read and accept the terms and conditions and the privacy policy of Billpay GmbH.') ?>" class="checkbox required-entry" />
+                    <label style="float:none;" for="<?php echo $this->getFieldName($termsKey); ?>"><?php echo $this->__('I have read and accept the '); ?></label><?php echo $termsLink?><label style="float:none;" for="<?php echo $this->getFieldName($termsKey); ?>"><?php echo $this->__(' and the '); ?></label><?php echo $privacyLink; ?><label style="float:none;" for="<?php echo $this->getFieldName($termsKey); ?>"><?php echo $this->__(' of Billpay GmbH.'); ?></label>&nbsp;<span style="color:red;">*</span>
+                </p>
+            </li>
+        </ul>
+    </li>
+    <?php if ($_code === Dotsource_Paymentoperator_Model_Payment_Billpay_Ratepay::CODE): ?>
+    <li class="paymentoperator-ratepay-list-right no-margin">
+        <ul>
+            <li class="no-margin">
+                <div class="field-row"><label style="float:none;" for="<?php echo $this->getFieldName($paymentTermsKey); ?>"><?php echo $this->__('Please select the desired number of monthly rates'); ?>:</label>
+                    <div id="paymentoperator-billpay-rates-collect-container">
+                        <select style="display:none;" class="validate-select paymentoperator-ratepay-select-rates left" id="<?php echo $this->getFieldName($paymentTermsKey); ?>" name="payment[<?php echo $this->getFieldName($paymentTermsKey); ?>]" onchange="javascript:switchRatesFunction();">
+                            <option value=""> - </option>
+                        </select>
+                        <input id="paymentoperator-billpay-rates-collect-button" class="right" name="<?php echo $this->__('Get rates'); ?>" type="button" value="<?php echo $this->__('Get rates'); ?>" onclick="getRatesFunction();"/>
+                        <span class="please-wait" id="paymentoperator-billpay-rates-please-wait" style="display: none;">
+                            <img src="<?php echo $this->getSkinUrl('images/opc-ajax-loader.gif') ?>" alt="<?php echo $this->__('Calculate rates...') ?>" title="<?php echo $this->__('Calculate rates...') ?>" class="v-middle" /> <?php echo $this->__('Calculate rates...') ?>
+                        </span>
+                    </div>
+                </div>
+            </li>
+            <li class="no-margin">
+                <div id="rates-table"><?php echo $this->__("Please fill in all information before clicking the button 'Get rates' in order to calculate your personal payment plan.")?></div>
+            </li>
+        </ul>
+    </li>
+    <?php endif; ?>
+    <li style="clear:both;"></li>
+</ul>
+<?php if ($this->getFormDependences()): ?>
+<script type="text/javascript">
+//<![CDATA[
+new FormDependences(<?php echo Zend_Json::encode($this->getFormDependences()); ?>);
+//]]>
+</script>
+<?php endif; ?>
+<?php if ($_code === Dotsource_Paymentoperator_Model_Payment_Billpay_Ratepay::CODE): ?>
+<script type="text/javascript">
+//<![CDATA[
+var paymentForm = new VarienForm('co-payment-form', true);
+var ratePlan;
+
+switchRatesFunction = function() {
+    rate = $('<?php echo $this->getFieldName($paymentTermsKey); ?>').getValue();
+    $('rates-table').update(ratePlan[rate].html);
+}
+
+getRatesFunction = function() {
+    //Wait until the current loader is finished
+    if (checkout.loadWaiting != false) {
+        return;
+    }
+
+    $('<?php echo $this->getFieldName($paymentTermsKey); ?>').removeClassName('validate-select');
+    var validForm = paymentForm.validator.validate();
+    $('<?php echo $this->getFieldName($paymentTermsKey); ?>').addClassName('validate-select');
+
+    if (validForm) {
+        //Set the ajax loader
+        checkout.setLoadWaiting('payment');
+        $('paymentoperator-billpay-rates-collect-button').hide();
+        $('paymentoperator-billpay-rates-please-wait').show();
+
+        //Do the request
+        new Ajax.Request('<?php echo Mage::getUrl('paymentoperator/billpay/rates/');?>', {
+          method:'post',
+          parameters: Form.serialize($('co-payment-form')),
+          onComplete: function() {
+              $('paymentoperator-billpay-rates-please-wait').hide();
+              $('paymentoperator-billpay-rates-collect-button').show();
+              $('<?php echo $this->getFieldName($paymentTermsKey); ?>').show();
+              checkout.setLoadWaiting(false);
+          },
+          onSuccess: function(transport){
+             ratePlan = transport.responseText.evalJSON(true);
+            if (ratePlan.error) {
+                payment.nextStep(transport);
+            } else {
+                $('<?php echo $this->getFieldName($paymentTermsKey); ?>').update('');
+                for (i in ratePlan) {
+                    $('<?php echo $this->getFieldName($paymentTermsKey); ?>').show();
+                    $('<?php echo $this->getFieldName($paymentTermsKey); ?>').options.add(new Option(i, i));
+                }
+                switchRatesFunction();
+                validForm = paymentForm.validator.validate();
+            }
+          }
+        });
+    }
+}
+//]]>
+</script>
+<?php endif; ?>

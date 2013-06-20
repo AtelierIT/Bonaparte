@@ -1,0 +1,22 @@
+<?php
+/**
+ * Copyright (c) 2008-2011 dotSource GmbH.
+ * All rights reserved.
+ * http://www.dotsource.de
+ *
+ * Contributors:
+ * Erik Wohllebe - initial contents
+ */
+/* @var $this Dotsource_Paymentoperator_Block_Translate */
+?>
+<?php if ($this->hasTranslations()) : ?>
+<script type="text/javascript">
+//<![CDATA[
+if(typeof Translator == "object") {
+	<?php foreach ($this->getTranslations() as $text => $translation) : ?>
+    Translator.add('<?php echo $this->jsQuoteEscape($text); ?>', '<?php echo $this->jsQuoteEscape($translation); ?>');
+    <?php endforeach; ?>
+}
+//]]>
+</script>
+<?php endif; ?>
