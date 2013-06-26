@@ -121,6 +121,8 @@ class Bonaparte_ImportExport_Model_Custom_Import_Attributes extends Bonaparte_Im
     const CUSTOM_ATTRIBUTE_CODE_CATALOGUE = 'bnp_catalogue';
     const CUSTOM_ATTRIBUTE_CODE_SEASON = 'bnp_season';
     const CUSTOM_ATTRIBUTE_CODE_WASH_ICON = 'bnp_washicon';
+    const CUSTOM_ATTRIBUTE_CODE_STYLE_NBR = 'bnp_stylenbr';
+    const CUSTOM_ATTRIBUTE_CODE_SIZE_TRANSLATE = 'bnp_sizetranslate';
 
     /**
      * Attributes that have a specific frontend input different than "select"
@@ -130,7 +132,7 @@ class Bonaparte_ImportExport_Model_Custom_Import_Attributes extends Bonaparte_Im
     private $_attributeCodesFrontendInput = array(
         self::ATTRIBUTE_FRONTEND_INPUT_MULTISELECT => array('Catalogue', 'Season', 'WashIcon', 'AdCodes'),
         self::ATTRIBUTE_FRONTEND_INPUT_BOOLEAN => array('AnimalOrigin', 'DisplayComposition'),
-        self::ATTRIBUTE_FRONTEND_INPUT_TEXT => array('MeasurementChart','MeasureChartAbrv')
+        self::ATTRIBUTE_FRONTEND_INPUT_TEXT => array('MeasurementChart','MeasureChartAbrv','StyleNbr','SizeTranslate')
     );
 
     /**
@@ -230,7 +232,8 @@ class Bonaparte_ImportExport_Model_Custom_Import_Attributes extends Bonaparte_Im
             'DisplayComposition' => array(0, 1), // boolean
             'ColorGroup' => array('White', 'Sand', 'Red', 'Yellow', 'Blue', 'Green', 'Purple', 'Brown', 'Grey', 'Black'), // single value
             'AdCodes' => array(), // multiple values
-            'StyleNbr' => array(), // single value
+            'StyleNbr' => array(), // text, needs values
+            'SizeTranslate' => array(), // text, needs values
             'MeasurementChart' => array(), // text, needs values
             'MeasureChartAbrv' => array(), // text, needs values
             'Length' => array(), // single value, needs values
@@ -290,6 +293,9 @@ class Bonaparte_ImportExport_Model_Custom_Import_Attributes extends Bonaparte_Im
      *
      * @param array $databaseOptions
      * @param array $externalOptionIds
+     * @param array $optionLabels
+     * @param $attributeCode
+     *
      */
     private function _createAttributeOptionExternalInternalIdRelation($databaseOptions, $externalOptionIds, $optionLabels, $attributeCode) {
         $this->_logMessage('Relating external id of options to the internal id of options');

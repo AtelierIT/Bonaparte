@@ -48,11 +48,33 @@ class Bonaparte_ImportExport_Model_Custom_Import_Products extends Bonaparte_Impo
     const MISSING_PICTURES_BASE_PATH = '/dump_files/missing_pictures.csv';
 
     /**
+     * Path to temporary import files
+     *
+     * @var string
+     */
+    const RESOURCES_BASE_PATH = '/dump_files/tmp_import_resources.csv';
+    const STYLES_BASE_PATH = '/dump_files/tmp_import_styles.csv';
+
+    /**
+     * Path to the missing pictures file
+     *
+     * @var string
+     */
+    const SIZE_CONFIGURATION_PATH = '/dump_files/sizeConfiguration.properties';
+
+    /**
      * Contains all sizes that need to be translated to short ERP name
      *
      * @var array
      */
     private $_customSizes = array();
+
+    /**
+     * Contains all size translations according to the category
+     *
+     * @var array
+     */
+    private $_sizeTranslate = array();
 
     /**
      * Contains all product QTYs, the keys are product SKUs
@@ -118,6 +140,9 @@ class Bonaparte_ImportExport_Model_Custom_Import_Products extends Bonaparte_Impo
     private $_productEntityTypeId = 0;
     private $_missingPictureFilePath = '';
     private $_fileHandlerPictures;
+    private $_fileHandlerResources;
+    private $_fileHandlerStyles;
+
 
     /**
      * Maps the website code the its store view id
@@ -199,9 +224,6 @@ class Bonaparte_ImportExport_Model_Custom_Import_Products extends Bonaparte_Impo
             }
             $this->_getProductFolder($node);
         }
-
-
-
     }
 
     /**
@@ -284,6 +306,29 @@ class Bonaparte_ImportExport_Model_Custom_Import_Products extends Bonaparte_Impo
         fclose($handle);
 
         return $productInventory;
+    }
+
+    /**
+     * Get the product inventory from file
+     *
+     * @return array
+     */
+    public function _getSizeConfiguration()
+    {
+        $sizeConfig = array();
+        $handle = fopen(Mage::getBaseDir() . self::SIZE_CONFIGURATION_PATH, 'r');
+        while ($data_csv = fgets($handle)) {
+            if (($data_csv[0]=='#') or (trim($data_csv)=='')) continue;
+            $data_csv = explode('=', trim($data_csv));
+            $sizesPairsExploded = explode('/', $data_csv[1]);
+            foreach ($sizesPairsExploded as $sizePair){
+                $explodedSizes = explode (',', $sizePair);
+                $sizeConfig[str_replace('-','_',$data_csv[0])][$explodedSizes[0]]=$explodedSizes[1];
+            }
+        }
+        fclose($handle);
+
+        return $sizeConfig;
     }
 
     /**
@@ -454,8 +499,10 @@ class Bonaparte_ImportExport_Model_Custom_Import_Products extends Bonaparte_Impo
         foreach ($productData['Items']['value'] as $productItem) {
 
             $simpleProducts = array();
-            $productSizes = array();
             $this->_logMessage($productCounter++ . ' Configuring product details ...');
+
+            $productSizes = array();
+
             // first step is to check if the size is custom or not
             //if (in_array($productItem['Sizess']['value']['en'], array('50X100', '70X140', 'ne size', 'one size', 'One size', 'One Size', 'ONE SIZE', 'onesize', 'Onesize', 'ONESIZE'))) {
             //    $productSizes = array('cst_' . $productItem['Sizess']['value']['en']);
@@ -473,25 +520,47 @@ class Bonaparte_ImportExport_Model_Custom_Import_Products extends Bonaparte_Impo
             //    $productSizes = array($this->_customSizes[$productItem['Sizess']['value']['en']]);
             //}
 
-            foreach ($productItem['Prices']['value']['Catalogue'][0]['value'] as $productSizeTemp => $sizeCountry)
-                if (!$this->_customSizes[$productSizeTemp]) {
-                    $productSizes[] = $productSizeTemp;
+            //take the sizes from the <Price> tag
+            //foreach ($productItem['Prices']['value']['Catalogue'][0]['value'] as $productSizeTemp => $sizeCountry)
+            //    if (!$this->_customSizes[$productSizeTemp]) {
+            //        $productSizes[] = $productSizeTemp;
+            //    } else {
+            //        if (in_array($productSizeTemp, array('50X100', '70X140', 'ne size', 'one size', 'One size', 'One Size', 'ONE SIZE', 'onesize', 'Onesize', 'ONESIZE'))) {
+            //               $productSizes = array('cst_' . $productSizeTemp);
+            //        } else {
+            //           $productSizes[] = $this->_customSizes[$productSizeTemp];
+            //        }
+            //    }
+
+            //all products have EU sizes and frontend custom size
+            if (in_array($productItem['Sizess']['value']['da'], array('50X100', '70X140', 'ne size', 'one size', 'One size', 'One Size', 'ONE SIZE', 'onesize', 'Onesize', 'ONESIZE'))) {
+                    $productSizes = array('cst_' . $productItem['Sizess']['value']['da']);
+                } elseif (!$this->_customSizes[$productItem['Sizess']['value']['da']]) {
+                    $productItemSizess = $productItem['Sizess']['value']['da'];
+                    $productSizesTemp = explode("-", $productItemSizess);
+                    foreach ($productSizesTemp as $productSizeTemp)
+                        if (!$this->_customSizes[$productSizeTemp]) {
+                            $productSizes[] = $productSizeTemp;
+                        } else {
+                            $productSizes[] = $this->_customSizes[$productSizeTemp];
+                        }
+
                 } else {
-                    if (in_array($productSizeTemp, array('50X100', '70X140', 'ne size', 'one size', 'One size', 'One Size', 'ONE SIZE', 'onesize', 'Onesize', 'ONESIZE'))) {
-                           $productSizes = array('cst_' . $productSizeTemp);
-                    } else {
-                        $productSizes[] = $this->_customSizes[$productSizeTemp];
-                    }
-                }
+                    $productSizes = array($this->_customSizes[$productItem['Sizess']['value']['da']]);
+            }
 
 
-            $justUK = 0;
-            if ($productItem['Sizess']['value']['en'] != $productItem['Sizess']['value']['de']) $justUK = 1;
+
+
+
+            //$justUK = 0;
+            //if ($productItem['Sizess']['value']['en'] != $productItem['Sizess']['value']['de']) $justUK = 1;
 
             $this->_logMessage('Editing ' . count($productSizes) . ' simple products');
-            if (count($productSizes) == 1) $productOneSize = 1;
-            else $productOneSize = 0;
+            $productOneSize = (count($productSizes) == 1)? 1 : 0;
+
             $sizeCounter = 0;
+            $simpleProductEntityIds = array();
 
             foreach ($productSizes as $productSize) {
                 $this->_logMessage('.', false);
@@ -506,15 +575,15 @@ class Bonaparte_ImportExport_Model_Custom_Import_Products extends Bonaparte_Impo
                 $category_ids = array();
                 $category_idss = array();
 
-//                $prefix_main_group = "";
-//                $prefix_sub_group = "";
-//                if ($productData['Program']['value'] != '') $category_ids[] = $productData['Program']['value'];
-//                if ($productData['ProductMainGroup']['value'] != '') {
-//                    $prefix_main_group = $productData['Program']['value'] ? $productData['Program']['value'] . "_" : "";
-//                    $category_ids[] = $prefix_main_group . $productData['ProductMainGroup']['value']; //tmunteanu add Program to product main group. Ex: M_001 where M = Program and 001 = Main Group
-//                    $prefix_sub_group = $prefix_main_group . $productData['ProductMainGroup']['value'] . "_";
-//                }
-//                if ($productData['ProductGroup']['value'] != '') $category_ids[] = $prefix_sub_group . $productData['ProductGroup']['value'];
+                // $prefix_main_group = "";
+                // $prefix_sub_group = "";
+                // if ($productData['Program']['value'] != '') $category_ids[] = $productData['Program']['value'];
+                // if ($productData['ProductMainGroup']['value'] != '') {
+                //     $prefix_main_group = $productData['Program']['value'] ? $productData['Program']['value'] . "_" : "";
+                //     $category_ids[] = $prefix_main_group . $productData['ProductMainGroup']['value']; //tmunteanu add Program to product main group. Ex: M_001 where M = Program and 001 = Main Group
+                //     $prefix_sub_group = $prefix_main_group . $productData['ProductMainGroup']['value'] . "_";
+                // }
+                // if ($productData['ProductGroup']['value'] != '') $category_ids[] = $prefix_sub_group . $productData['ProductGroup']['value'];
 
                 $category_ids = $this->_productStructure[$productData['StyleNbr']['value']];
                 foreach ($category_ids as $category_id) {
@@ -616,17 +685,18 @@ class Bonaparte_ImportExport_Model_Custom_Import_Products extends Bonaparte_Impo
                 };
 
 
-                switch (count($productItem['Prices']['value']['Catalogue'][0]['value'][$productSize])) {
-                    case '6':
-                        $sProduct -> setWebsiteIds($this->_allWebsiteIDs);
-                        break;
-                    case '5':
-                        $sProduct -> setWebsiteIds(array($this->_allWebsiteIDs['base'],$this->_allWebsiteIDs['dk'],$this->_allWebsiteIDs['ch'],$this->_allWebsiteIDs['de'],$this->_allWebsiteIDs['nl'],$this->_allWebsiteIDs['se']));
-                        break;
-                    case '1':
-                        $sProduct -> setWebsiteIds(array($this->_allWebsiteIDs['base'],$this->_allWebsiteIDs['uk']));
-                        break;
-                }
+                //switch (count($productItem['Prices']['value']['Catalogue'][0]['value'][$productSize])) {
+                //    case '6':
+                //        $sProduct -> setWebsiteIds($this->_allWebsiteIDs);
+                 //       break;
+                //    case '5':
+                //        $sProduct -> setWebsiteIds(array($this->_allWebsiteIDs['base'],$this->_allWebsiteIDs['dk'],$this->_allWebsiteIDs['ch'],$this->_allWebsiteIDs['de'],$this->_allWebsiteIDs['nl'],$this->_allWebsiteIDs['se']));
+                //        break;
+                 //   case '1':
+                 //       $sProduct -> setWebsiteIds(array($this->_allWebsiteIDs['base'],$this->_allWebsiteIDs['uk']));
+                 //       break;
+                //}
+
                 //if (!$justUK) {....
                 //    $sProduct -> setWebsiteIds($this->_allWebsiteIDs);
                 //}elseif($sizeCounter<=($productSizes)/2)){
@@ -635,6 +705,15 @@ class Bonaparte_ImportExport_Model_Custom_Import_Products extends Bonaparte_Impo
                 //    $sProduct -> setWebsiteIds(array($this->_allWebsiteIDs['base'],$this->_allWebsiteIDs['dk'],$this->_allWebsiteIDs['ch'],$this->_allWebsiteIDs['de'],$this->_allWebsiteIDs['nl'],$this->_allWebsiteIDs['se']));
                 //}
 
+                $sProduct -> setWebsiteIds($this->_allWebsiteIDs);
+
+                //UK size translation
+                $sProduct -> setBnpSizetranslate($productSize);
+                foreach ($category_ids as $category_id){
+                    if ($this->_sizeTranslate[$category_id]){
+                        $sProduct -> setBnpSizetranslate($this->_sizeTranslate[$category_id][$productSize]);
+                    }
+                }
 
                 $sProduct
                     ->setName($productData['HeaderWebs']['value']['en'])
@@ -662,6 +741,7 @@ class Bonaparte_ImportExport_Model_Custom_Import_Products extends Bonaparte_Impo
                     ->setBnpComposition($externalIdToInternalId[$productData['Composition']['value'] . '_' . Bonaparte_ImportExport_Model_Custom_Import_Attributes::CUSTOM_ATTRIBUTE_CODE_COMPOSITION])
                     ->setBnpConcept($externalIdToInternalId[$productData['Concept']['value'] . '_' . Bonaparte_ImportExport_Model_Custom_Import_Attributes::CUSTOM_ATTRIBUTE_CODE_CONCEPT])
 
+
                     ->setUrlKey($productData['HeaderWebs']['value']['en'] . '_' . $productItem['CinoNumber']['value'] . '_' . $productSize)
 
                     ->setData($configurable_attribute, $configurableAttributeOptionId);
@@ -683,6 +763,7 @@ class Bonaparte_ImportExport_Model_Custom_Import_Products extends Bonaparte_Impo
                             "label" => $attr_value
                         )
                     );
+                    $simpleProductEntityIds[] = $sProductId;
 
                     // adding the item images
 
@@ -702,6 +783,8 @@ class Bonaparte_ImportExport_Model_Custom_Import_Products extends Bonaparte_Impo
                             try {
                                 $this->_addProductImage($sProductId, $resource['OriginalFilename']['value'], $isLeadPicture);
                                 $this->_logMessage('O', false);
+                                fputcsv($this->_fileHandlerResources,array($sProductId, $resource['ResourceFileId']['value'], $resource['OriginalFilename']['value'], 0,$resource['ImageType']['value'], $isLeadPicture));
+
                             } catch (Exception $e) {
                                 echo $e->getMessage();
                             }
@@ -951,18 +1034,33 @@ class Bonaparte_ImportExport_Model_Custom_Import_Products extends Bonaparte_Impo
                 $cProduct->save();
                 $cProductId = $cProduct->getId();
 
+
+                foreach ($simpleProductEntityIds as $simpleProductEntityId){
+                    fputcsv($this->_fileHandlerStyles, array($productData['StyleNbr']['value'],$cProductId,$simpleProductEntityId));
+                }
+
                 // adding the images
                 $resourceList = array();
 
+
                 foreach ($productItem['Resources']['value'] as $resource) {
                     $isLeadPicture = 0;
-                    if ($productItem['LeadPicture']['value'][0]['id']==$resource['id']) $isLeadPicture = 1;
+                    if (count($productItem['LeadPicture']['value'])==2 && $resource['ImageType']['value']=="packshots")
+                    {
+                        if ($productItem['LeadPicture']['value'][0]['id']==$resource['id'])
+                        {
+                            $isLeadPicture = 1;
+                        } elseif ($productItem['LeadPicture']['value'][1]['id']==$resource['id']) {
+                            $isLeadPicture = 1;
+                        }
+                    }elseif (count($productItem['LeadPicture']['value'])==1 && $productItem['LeadPicture']['value'][0]['id']==$resource['id']) $isLeadPicture = 1;
                     $picturePath = $pictureBasePath . $resource['OriginalFilename']['value'];
                     if (file_exists($picturePath) && ($resource['OriginalFilename']['value'] != '')) {
                         try {
                             $this->_addProductImage($cProductId, $resource['OriginalFilename']['value'], $isLeadPicture);
-//                              $cProduct->addImageToMediaGallery($picturePath,$mediaAttributes, false, false);
                             $this->_logMessage('O', false);
+                            fputcsv($this->_fileHandlerResources,array($cProductId, $resource['ResourceFileId']['value'], $resource['OriginalFilename']['value'], 1,$resource['ImageType']['value'], $isLeadPicture));
+
                         } catch (Exception $e) {
                             echo $e->getMessage();
                         }
@@ -972,6 +1070,27 @@ class Bonaparte_ImportExport_Model_Custom_Import_Products extends Bonaparte_Impo
                     }
                     $resourceList[$resource['id']] = $resource['OriginalFilename']['value'];
                 }
+
+
+
+//                foreach ($productItem['Resources']['value'] as $resource) {
+//                    $isLeadPicture = 0;
+//                    if ($productItem['LeadPicture']['value'][0]['id']==$resource['id']) $isLeadPicture = 1;
+//                    $picturePath = $pictureBasePath . $resource['OriginalFilename']['value'];
+//                    if (file_exists($picturePath) && ($resource['OriginalFilename']['value'] != '')) {
+//                        try {
+//                            $this->_addProductImage($cProductId, $resource['OriginalFilename']['value'], $isLeadPicture);
+////                              $cProduct->addImageToMediaGallery($picturePath,$mediaAttributes, false, false);
+//                            $this->_logMessage('O', false);
+//                        } catch (Exception $e) {
+//                            echo $e->getMessage();
+//                        }
+//                    } else {
+//                        $this->_logMessage('X', false);
+//                        fputcsv($this->_fileHandlerPictures,array($productData['StyleNbr']['value'],$productItem['CinoNumber']['value'],$resource['OriginalFilename']['value']?$resource['OriginalFilename']['value']:'empty OriginalFilename tag'));
+//                    }
+//                    $resourceList[$resource['id']] = $resource['OriginalFilename']['value'];
+//                }
 
                 // create cino pictures
                 $this->_logMessage('Creating lead pictures files ');
@@ -1330,9 +1449,14 @@ class Bonaparte_ImportExport_Model_Custom_Import_Products extends Bonaparte_Impo
 //        $this->_getProductImageReady();
 //        $this->_logMessage('Finished');
 
+        $this->_logMessage('Size parsing start');
+        $this->_sizeTranslate = $this->_getSizeConfiguration();
+        $this->_logMessage('Size parsing end');
+
         $this->_logMessage('Inventory parsing start');
         $this->_productInventory = $this->_getProductInventory();
         $this->_logMessage('Inventory end');
+
 
         $this->_customSizes = $this->_getCustomSize();
         $this->_getAttributeSetID('Default');
@@ -1353,7 +1477,10 @@ class Bonaparte_ImportExport_Model_Custom_Import_Products extends Bonaparte_Impo
         $this->_activeCatalogues = $this->_getActiveCatalogues();
 
         $this->_missingPictureFilePath = Mage::getBaseDir() . self::MISSING_PICTURES_BASE_PATH;
+
         $this->_fileHandlerPictures = fopen($this->_missingPictureFilePath, 'w');
+        $this->_fileHandlerResources = fopen(Mage::getBaseDir() . self::RESOURCES_BASE_PATH, 'w');
+        $this->_fileHandlerStyles = fopen(Mage::getBaseDir() . self::STYLES_BASE_PATH, 'w');
 
         foreach ($this->_data as $productConfig) {
             $toImport=0;
@@ -1376,6 +1503,29 @@ class Bonaparte_ImportExport_Model_Custom_Import_Products extends Bonaparte_Impo
             //if ($counter==10) break;
         }
         fclose($this->_fileHandlerPictures);
+        fclose($this->_fileHandlerResources);
+        fclose($this->_fileHandlerStyles);
+
+        $config  = Mage::getConfig()->getResourceConnectionConfig("default_setup");
+        $this->_logMessage('Importing resources....');
+        if ($fp = popen("mysql -u ".$config->username." -p".$config->password." ".$config->dbname." -e \"LOAD DATA LOCAL INFILE '".Mage::getBaseDir()."/dump_files/tmp_import_resources.csv' INTO TABLE bonaparte_resources FIELDS TERMINATED BY ',';\";", "r"))  {
+            while( !feof($fp) ){
+                echo fread($fp, 1024);
+                flush(); 
+            }
+            fclose($fp);
+            $this->_logMessage('Done!' . "\n");
+        }
+        $this->_logMessage('Importing styles....');
+        if ($fp = popen("mysql -u ".$config->username." -p".$config->password." ".$config->dbname." -e \"LOAD DATA LOCAL INFILE '".Mage::getBaseDir()."/dump_files/tmp_import_styles.csv' INTO TABLE bonaparte_styles FIELDS TERMINATED BY ',';\";", "r"))  {
+            $this->_logMessage('Done!' . "\n");
+            while( !feof($fp) ){
+                echo fread($fp, 1024);
+                flush();
+            }
+            fclose($fp);
+        }
+
         $this->_logMessage('ALL DONE!!!' . "\n");
         $this->_logMessage('There were ' . $this->_newProductCounter . ' new products created!' . "\n");
     }
