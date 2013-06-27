@@ -738,6 +738,12 @@ class Bonaparte_ImportExport_Model_Custom_Import_Products extends Bonaparte_Impo
                 //    $sProduct -> setWebsiteIds(array($this->_allWebsiteIDs['base'],$this->_allWebsiteIDs['dk'],$this->_allWebsiteIDs['ch'],$this->_allWebsiteIDs['de'],$this->_allWebsiteIDs['nl'],$this->_allWebsiteIDs['se']));
                 //}
 
+                foreach($this->_allWebsiteIDs as $code => $websiteId) {
+                    if(!$websiteId) {
+                        unset($this->_allWebsiteIDs[$code]);
+                    }
+                }
+
                 $sProduct -> setWebsiteIds($this->_allWebsiteIDs);
 
                 //UK size translation
@@ -773,7 +779,7 @@ class Bonaparte_ImportExport_Model_Custom_Import_Products extends Bonaparte_Impo
 
                     ->setCategoryIds($category_idss)
 
-                    //->setBnpStylenbr($bnpStylenbrAttributeOptionId)
+                    ->setBnpStylenbr($bnpStylenbrAttributeOptionId)
                     ->setBnpColor($externalIdToInternalId[$productItem['Color']['value'] . '_' . Bonaparte_ImportExport_Model_Custom_Import_Attributes::CUSTOM_ATTRIBUTE_CODE_COLOR])
                     ->setBnpFitting($externalIdToInternalId[$productData['Fitting']['value'] . '_' . Bonaparte_ImportExport_Model_Custom_Import_Attributes::CUSTOM_ATTRIBUTE_CODE_FITTING])
                     ->setBnpCatalogue(implode(',', $bnpCatalogueLabelIds))
@@ -873,120 +879,133 @@ class Bonaparte_ImportExport_Model_Custom_Import_Products extends Bonaparte_Impo
                            INSERT INTO catalog_product_entity_varchar (entity_type_id, attribute_id, store_id, entity_id, value) VALUES (:entity_type_id,:size_translate_id,:store_id,:entity_id,:size_translate)ON DUPLICATE KEY UPDATE `value` = :size_translate;
 
                             ";
-                    $binds = array(
-                        'entity_type_id'    => $this->_productEntityTypeId,
-                        'short_descr_id'    => $this->_shortDescriptionId,
-                        'descr_id'          => $this->_descriptionId,
-                        'meta_descr_id'     => $this->_metaDescriptionId,
-                        'meta_title_id'     => $this->_metaTitleId,
-                        'name_id'           => $this->_nameId,
-                        'size_translate_id' => $this->_sizeTranslateId,
-                        'store_id'          => $this->_websiteStoreView['uk'],
-                        'entity_id'         => $sProductId,
-                        'short_description' => $productShortDescriptionn['en'],
-                        'description'       => $productData['DescriptionCatalogues']['value']['en'],
-                        'meta_description'  => $productShortDescriptionn['en'],
-                        'meta_title'        => $productData['HeaderWebs']['value']['en'],
-                        'name'              => $productData['HeaderWebs']['value']['en'],
-                        'size_translate'    => $uksize
 
-                    );
-                    $connW->query($sql, $binds);
+                    if($this->_websiteStoreView['uk']) {
+                        $binds = array(
+                            'entity_type_id'    => $this->_productEntityTypeId,
+                            'short_descr_id'    => $this->_shortDescriptionId,
+                            'descr_id'          => $this->_descriptionId,
+                            'meta_descr_id'     => $this->_metaDescriptionId,
+                            'meta_title_id'     => $this->_metaTitleId,
+                            'name_id'           => $this->_nameId,
+                            'size_translate_id' => $this->_sizeTranslateId,
+                            'store_id'          => $this->_websiteStoreView['uk'],
+                            'entity_id'         => $sProductId,
+                            'short_description' => $productShortDescriptionn['en'],
+                            'description'       => $productData['DescriptionCatalogues']['value']['en'],
+                            'meta_description'  => $productShortDescriptionn['en'],
+                            'meta_title'        => $productData['HeaderWebs']['value']['en'],
+                            'name'              => $productData['HeaderWebs']['value']['en'],
+                            'size_translate'    => $uksize
 
-                    $binds = array(
-                        'entity_type_id'    => $this->_productEntityTypeId,
-                        'short_descr_id'    => $this->_shortDescriptionId,
-                        'descr_id'          => $this->_descriptionId,
-                        'meta_descr_id'     => $this->_metaDescriptionId,
-                        'meta_title_id'     => $this->_metaTitleId,
-                        'name_id'           => $this->_nameId,
-                        'size_translate_id' => $this->_sizeTranslateId,
-                        'store_id'          => $this->_websiteStoreView['dk'],
-                        'entity_id'         => $sProductId,
-                        'short_description' => $productShortDescriptionn['da'],
-                        'description'       => $productData['DescriptionCatalogues']['value']['da'],
-                        'meta_description'  => $productShortDescriptionn['da'],
-                        'meta_title'        => $productData['HeaderWebs']['value']['da'],
-                        'name'              => $productData['HeaderWebs']['value']['da'],
-                        'size_translate'    => $productSize
-                    );
-                    $connW->query($sql, $binds);
+                        );
+                        $connW->query($sql, $binds);
+                    }
 
-                    $binds = array(
-                        'entity_type_id'    => $this->_productEntityTypeId,
-                        'short_descr_id'    => $this->_shortDescriptionId,
-                        'descr_id'          => $this->_descriptionId,
-                        'meta_descr_id'     => $this->_metaDescriptionId,
-                        'meta_title_id'     => $this->_metaTitleId,
-                        'name_id'           => $this->_nameId,
-                        'size_translate_id' => $this->_sizeTranslateId,
-                        'store_id'          => $this->_websiteStoreView['ch'],
-                        'entity_id'         => $sProductId,
-                        'short_description' => $productShortDescriptionn['de_CH'],
-                        'description'       => $productData['DescriptionCatalogues']['value']['de_CH'],
-                        'meta_description'  => $productShortDescriptionn['de_CH'],
-                        'meta_title'        => $productData['HeaderWebs']['value']['de_CH'],
-                        'name'              => $productData['HeaderWebs']['value']['de_CH'],
-                        'size_translate'    => $productSize
-                    );
-                    $connW->query($sql, $binds);
+                    if($this->_websiteStoreView['dk']) {
+                        $binds = array(
+                            'entity_type_id'    => $this->_productEntityTypeId,
+                            'short_descr_id'    => $this->_shortDescriptionId,
+                            'descr_id'          => $this->_descriptionId,
+                            'meta_descr_id'     => $this->_metaDescriptionId,
+                            'meta_title_id'     => $this->_metaTitleId,
+                            'name_id'           => $this->_nameId,
+                            'size_translate_id' => $this->_sizeTranslateId,
+                            'store_id'          => $this->_websiteStoreView['dk'],
+                            'entity_id'         => $sProductId,
+                            'short_description' => $productShortDescriptionn['da'],
+                            'description'       => $productData['DescriptionCatalogues']['value']['da'],
+                            'meta_description'  => $productShortDescriptionn['da'],
+                            'meta_title'        => $productData['HeaderWebs']['value']['da'],
+                            'name'              => $productData['HeaderWebs']['value']['da'],
+                            'size_translate'    => $productSize
+                        );
+                        $connW->query($sql, $binds);
+                    }
 
-                    $binds = array(
-                        'entity_type_id'    => $this->_productEntityTypeId,
-                        'short_descr_id'    => $this->_shortDescriptionId,
-                        'descr_id'          => $this->_descriptionId,
-                        'meta_descr_id'     => $this->_metaDescriptionId,
-                        'meta_title_id'     => $this->_metaTitleId,
-                        'name_id'           => $this->_nameId,
-                        'size_translate_id' => $this->_sizeTranslateId,
-                        'store_id'          => $this->_websiteStoreView['de'],
-                        'entity_id'         => $sProductId,
-                        'short_description' => $productShortDescriptionn['de'],
-                        'description'       => $productData['DescriptionCatalogues']['value']['de'],
-                        'meta_description'  => $productShortDescriptionn['de'],
-                        'meta_title'        => $productData['HeaderWebs']['value']['de'],
-                        'name'              => $productData['HeaderWebs']['value']['de'],
-                        'size_translate'    => $productSize
-                    );
-                    $connW->query($sql, $binds);
+                    if($this->_websiteStoreView['ch']) {
+                        $binds = array(
+                            'entity_type_id'    => $this->_productEntityTypeId,
+                            'short_descr_id'    => $this->_shortDescriptionId,
+                            'descr_id'          => $this->_descriptionId,
+                            'meta_descr_id'     => $this->_metaDescriptionId,
+                            'meta_title_id'     => $this->_metaTitleId,
+                            'name_id'           => $this->_nameId,
+                            'size_translate_id' => $this->_sizeTranslateId,
+                            'store_id'          => $this->_websiteStoreView['ch'],
+                            'entity_id'         => $sProductId,
+                            'short_description' => $productShortDescriptionn['de_CH'],
+                            'description'       => $productData['DescriptionCatalogues']['value']['de_CH'],
+                            'meta_description'  => $productShortDescriptionn['de_CH'],
+                            'meta_title'        => $productData['HeaderWebs']['value']['de_CH'],
+                            'name'              => $productData['HeaderWebs']['value']['de_CH'],
+                            'size_translate'    => $productSize
+                        );
+                        $connW->query($sql, $binds);
+                    }
 
-                    $binds = array(
-                        'entity_type_id'    => $this->_productEntityTypeId,
-                        'short_descr_id'    => $this->_shortDescriptionId,
-                        'descr_id'          => $this->_descriptionId,
-                        'meta_descr_id'     => $this->_metaDescriptionId,
-                        'meta_title_id'     => $this->_metaTitleId,
-                        'name_id'           => $this->_nameId,
-                        'size_translate_id' => $this->_sizeTranslateId,
-                        'store_id'          => $this->_websiteStoreView['nl'],
-                        'entity_id'         => $sProductId,
-                        'short_description' => $productShortDescriptionn['nl'],
-                        'description'       => $productData['DescriptionCatalogues']['value']['nl'],
-                        'meta_description'  => $productShortDescriptionn['nl'],
-                        'meta_title'        => $productData['HeaderWebs']['value']['nl'],
-                        'name'              => $productData['HeaderWebs']['value']['nl'],
-                        'size_translate'    => $productSize
-                    );
-                    $connW->query($sql, $binds);
+                    if($this->_websiteStoreView['de']) {
+                        $binds = array(
+                            'entity_type_id'    => $this->_productEntityTypeId,
+                            'short_descr_id'    => $this->_shortDescriptionId,
+                            'descr_id'          => $this->_descriptionId,
+                            'meta_descr_id'     => $this->_metaDescriptionId,
+                            'meta_title_id'     => $this->_metaTitleId,
+                            'name_id'           => $this->_nameId,
+                            'size_translate_id' => $this->_sizeTranslateId,
+                            'store_id'          => $this->_websiteStoreView['de'],
+                            'entity_id'         => $sProductId,
+                            'short_description' => $productShortDescriptionn['de'],
+                            'description'       => $productData['DescriptionCatalogues']['value']['de'],
+                            'meta_description'  => $productShortDescriptionn['de'],
+                            'meta_title'        => $productData['HeaderWebs']['value']['de'],
+                            'name'              => $productData['HeaderWebs']['value']['de'],
+                            'size_translate'    => $productSize
+                        );
+                        $connW->query($sql, $binds);
+                    }
 
-                    $binds = array(
-                        'entity_type_id'    => $this->_productEntityTypeId,
-                        'short_descr_id'    => $this->_shortDescriptionId,
-                        'descr_id'          => $this->_descriptionId,
-                        'meta_descr_id'     => $this->_metaDescriptionId,
-                        'meta_title_id'     => $this->_metaTitleId,
-                        'name_id'           => $this->_nameId,
-                        'size_translate_id' => $this->_sizeTranslateId,
-                        'store_id'          => $this->_websiteStoreView['se'],
-                        'entity_id'         => $sProductId,
-                        'short_description' => $productShortDescriptionn['sv'],
-                        'description'       => $productData['DescriptionCatalogues']['value']['sv'],
-                        'meta_description'  => $productShortDescriptionn['sv'],
-                        'meta_title'        => $productData['HeaderWebs']['value']['sv'],
-                        'name'              => $productData['HeaderWebs']['value']['sv'],
-                        'size_translate'    => $productSize
-                    );
-                    $connW->query($sql, $binds);
+                    if($this->_websiteStoreView['nl']) {
+                        $binds = array(
+                            'entity_type_id'    => $this->_productEntityTypeId,
+                            'short_descr_id'    => $this->_shortDescriptionId,
+                            'descr_id'          => $this->_descriptionId,
+                            'meta_descr_id'     => $this->_metaDescriptionId,
+                            'meta_title_id'     => $this->_metaTitleId,
+                            'name_id'           => $this->_nameId,
+                            'size_translate_id' => $this->_sizeTranslateId,
+                            'store_id'          => $this->_websiteStoreView['nl'],
+                            'entity_id'         => $sProductId,
+                            'short_description' => $productShortDescriptionn['nl'],
+                            'description'       => $productData['DescriptionCatalogues']['value']['nl'],
+                            'meta_description'  => $productShortDescriptionn['nl'],
+                            'meta_title'        => $productData['HeaderWebs']['value']['nl'],
+                            'name'              => $productData['HeaderWebs']['value']['nl'],
+                            'size_translate'    => $productSize
+                        );
+                        $connW->query($sql, $binds);
+                    }
+
+                    if($this->_websiteStoreView['se']) {
+                        $binds = array(
+                            'entity_type_id'    => $this->_productEntityTypeId,
+                            'short_descr_id'    => $this->_shortDescriptionId,
+                            'descr_id'          => $this->_descriptionId,
+                            'meta_descr_id'     => $this->_metaDescriptionId,
+                            'meta_title_id'     => $this->_metaTitleId,
+                            'name_id'           => $this->_nameId,
+                            'size_translate_id' => $this->_sizeTranslateId,
+                            'store_id'          => $this->_websiteStoreView['se'],
+                            'entity_id'         => $sProductId,
+                            'short_description' => $productShortDescriptionn['sv'],
+                            'description'       => $productData['DescriptionCatalogues']['value']['sv'],
+                            'meta_description'  => $productShortDescriptionn['sv'],
+                            'meta_title'        => $productData['HeaderWebs']['value']['sv'],
+                            'name'              => $productData['HeaderWebs']['value']['sv'],
+                            'size_translate'    => $productSize
+                        );
+                        $connW->query($sql, $binds);
+                    }
 
                     $sProduct->clearInstance();
 
@@ -1063,6 +1082,17 @@ class Bonaparte_ImportExport_Model_Custom_Import_Products extends Bonaparte_Impo
                 ));
             };
 
+            // add stylenbr to select options
+            $bnpStylenbrAttributeOptionId = $this->_addAttributeOptionsForBnpStylenbr(array(
+                'option' => array(
+                    'value' => array(
+                        'option0' => array(
+                            0 => $productData['StyleNbr']['value']
+                        )
+                    )
+                )
+            ));
+
             $cProduct
 
                 ->setName($productData['HeaderWebs']['value']['en'])
@@ -1075,6 +1105,7 @@ class Bonaparte_ImportExport_Model_Custom_Import_Products extends Bonaparte_Impo
 
                 ->setCategoryIds($category_idss)
 
+                ->setBnpStylenbr($bnpStylenbrAttributeOptionId)
                 ->setBnpColor($externalIdToInternalId[$productItem['Color']['value'] . '_' . Bonaparte_ImportExport_Model_Custom_Import_Attributes::CUSTOM_ATTRIBUTE_CODE_COLOR])
                 ->setBnpFitting($externalIdToInternalId[$productData['Fitting']['value'] . '_' . Bonaparte_ImportExport_Model_Custom_Import_Attributes::CUSTOM_ATTRIBUTE_CODE_FITTING])
                 ->setBnpCatalogue(implode(',', $bnpCatalogueLabelIds))
@@ -1278,107 +1309,120 @@ class Bonaparte_ImportExport_Model_Custom_Import_Products extends Bonaparte_Impo
                            INSERT INTO catalog_product_entity_varchar (entity_type_id, attribute_id, store_id, entity_id, value) VALUES (:entity_type_id,:meta_title_id,:store_id,:entity_id,:meta_title)ON DUPLICATE KEY UPDATE `value` = :meta_title;
                            INSERT INTO catalog_product_entity_varchar (entity_type_id, attribute_id, store_id, entity_id, value) VALUES (:entity_type_id,:name_id,:store_id,:entity_id,:short_description)ON DUPLICATE KEY UPDATE `value` = :name;
                             ";
-                $binds = array(
-                    'entity_type_id'    => $this->_productEntityTypeId,
-                    'short_descr_id'    => $this->_shortDescriptionId,
-                    'descr_id'          => $this->_descriptionId,
-                    'meta_descr_id'     => $this->_metaDescriptionId,
-                    'meta_title_id'     => $this->_metaTitleId,
-                    'name_id'           => $this->_nameId,
-                    'store_id'          => $this->_websiteStoreView['uk'],
-                    'entity_id'         => $cProductId,
-                    'short_description' => $productShortDescriptionn['en'],
-                    'description'       => $productData['DescriptionCatalogues']['value']['en'],
-                    'meta_description'  => $productShortDescriptionn['en'],
-                    'meta_title'        => $productData['HeaderWebs']['value']['en'],
-                    'name'              => $productData['HeaderWebs']['value']['en'],
-                     );
-                $connW->query($sql, $binds);
 
-                $binds = array(
-                    'entity_type_id'    => $this->_productEntityTypeId,
-                    'short_descr_id'    => $this->_shortDescriptionId,
-                    'descr_id'          => $this->_descriptionId,
-                    'meta_descr_id'     => $this->_metaDescriptionId,
-                    'meta_title_id'     => $this->_metaTitleId,
-                    'name_id'           => $this->_nameId,
-                    'store_id'          => $this->_websiteStoreView['dk'],
-                    'entity_id'         => $cProductId,
-                    'short_description' => $productShortDescriptionn['da'],
-                    'description'       => $productData['DescriptionCatalogues']['value']['da'],
-                    'meta_description'  => $productShortDescriptionn['da'],
-                    'meta_title'        => $productData['HeaderWebs']['value']['da'],
-                    'name'              => $productData['HeaderWebs']['value']['da'],
-                );
-                $connW->query($sql, $binds);
+                if($this->_websiteStoreView['uk']) {
+                    $binds = array(
+                        'entity_type_id'    => $this->_productEntityTypeId,
+                        'short_descr_id'    => $this->_shortDescriptionId,
+                        'descr_id'          => $this->_descriptionId,
+                        'meta_descr_id'     => $this->_metaDescriptionId,
+                        'meta_title_id'     => $this->_metaTitleId,
+                        'name_id'           => $this->_nameId,
+                        'store_id'          => $this->_websiteStoreView['uk'],
+                        'entity_id'         => $cProductId,
+                        'short_description' => $productShortDescriptionn['en'],
+                        'description'       => $productData['DescriptionCatalogues']['value']['en'],
+                        'meta_description'  => $productShortDescriptionn['en'],
+                        'meta_title'        => $productData['HeaderWebs']['value']['en'],
+                        'name'              => $productData['HeaderWebs']['value']['en'],
+                         );
+                    $connW->query($sql, $binds);
+                }
 
-                $binds = array(
-                    'entity_type_id'    => $this->_productEntityTypeId,
-                    'short_descr_id'    => $this->_shortDescriptionId,
-                    'descr_id'          => $this->_descriptionId,
-                    'meta_descr_id'     => $this->_metaDescriptionId,
-                    'meta_title_id'     => $this->_metaTitleId,
-                    'name_id'           => $this->_nameId,
-                    'store_id'          => $this->_websiteStoreView['ch'],
-                    'entity_id'         => $cProductId,
-                    'short_description' => $productShortDescriptionn['de_CH'],
-                    'description'       => $productData['DescriptionCatalogues']['value']['de_CH'],
-                    'meta_description'  => $productShortDescriptionn['de_CH'],
-                    'meta_title'        => $productData['HeaderWebs']['value']['de_CH'],
-                    'name'              => $productData['HeaderWebs']['value']['de_CH'],
-                );
-                $connW->query($sql, $binds);
+                if($this->_websiteStoreView['dk']) {
+                    $binds = array(
+                        'entity_type_id'    => $this->_productEntityTypeId,
+                        'short_descr_id'    => $this->_shortDescriptionId,
+                        'descr_id'          => $this->_descriptionId,
+                        'meta_descr_id'     => $this->_metaDescriptionId,
+                        'meta_title_id'     => $this->_metaTitleId,
+                        'name_id'           => $this->_nameId,
+                        'store_id'          => $this->_websiteStoreView['dk'],
+                        'entity_id'         => $cProductId,
+                        'short_description' => $productShortDescriptionn['da'],
+                        'description'       => $productData['DescriptionCatalogues']['value']['da'],
+                        'meta_description'  => $productShortDescriptionn['da'],
+                        'meta_title'        => $productData['HeaderWebs']['value']['da'],
+                        'name'              => $productData['HeaderWebs']['value']['da'],
+                    );
+                    $connW->query($sql, $binds);
+                }
 
-                $binds = array(
-                    'entity_type_id'    => $this->_productEntityTypeId,
-                    'short_descr_id'    => $this->_shortDescriptionId,
-                    'descr_id'          => $this->_descriptionId,
-                    'meta_descr_id'     => $this->_metaDescriptionId,
-                    'meta_title_id'     => $this->_metaTitleId,
-                    'name_id'           => $this->_nameId,
-                    'store_id'          => $this->_websiteStoreView['de'],
-                    'entity_id'         => $cProductId,
-                    'short_description' => $productShortDescriptionn['de'],
-                    'description'       => $productData['DescriptionCatalogues']['value']['de'],
-                    'meta_description'  => $productShortDescriptionn['de'],
-                    'meta_title'        => $productData['HeaderWebs']['value']['de'],
-                    'name'              => $productData['HeaderWebs']['value']['de'],
-                );
-                $connW->query($sql, $binds);
+                if($this->_websiteStoreView['ch']) {
+                    $binds = array(
+                        'entity_type_id'    => $this->_productEntityTypeId,
+                        'short_descr_id'    => $this->_shortDescriptionId,
+                        'descr_id'          => $this->_descriptionId,
+                        'meta_descr_id'     => $this->_metaDescriptionId,
+                        'meta_title_id'     => $this->_metaTitleId,
+                        'name_id'           => $this->_nameId,
+                        'store_id'          => $this->_websiteStoreView['ch'],
+                        'entity_id'         => $cProductId,
+                        'short_description' => $productShortDescriptionn['de_CH'],
+                        'description'       => $productData['DescriptionCatalogues']['value']['de_CH'],
+                        'meta_description'  => $productShortDescriptionn['de_CH'],
+                        'meta_title'        => $productData['HeaderWebs']['value']['de_CH'],
+                        'name'              => $productData['HeaderWebs']['value']['de_CH'],
+                    );
+                    $connW->query($sql, $binds);
+                }
 
-                $binds = array(
-                    'entity_type_id'    => $this->_productEntityTypeId,
-                    'short_descr_id'    => $this->_shortDescriptionId,
-                    'descr_id'          => $this->_descriptionId,
-                    'meta_descr_id'     => $this->_metaDescriptionId,
-                    'meta_title_id'     => $this->_metaTitleId,
-                    'name_id'           => $this->_nameId,
-                    'store_id'          => $this->_websiteStoreView['nl'],
-                    'entity_id'         => $cProductId,
-                    'short_description' => $productShortDescriptionn['nl'],
-                    'description'       => $productData['DescriptionCatalogues']['value']['nl'],
-                    'meta_description'  => $productShortDescriptionn['nl'],
-                    'meta_title'        => $productData['HeaderWebs']['value']['nl'],
-                    'name'              => $productData['HeaderWebs']['value']['nl'],
-                );
-                $connW->query($sql, $binds);
+                if($this->_websiteStoreView['de']) {
+                    $binds = array(
+                        'entity_type_id'    => $this->_productEntityTypeId,
+                        'short_descr_id'    => $this->_shortDescriptionId,
+                        'descr_id'          => $this->_descriptionId,
+                        'meta_descr_id'     => $this->_metaDescriptionId,
+                        'meta_title_id'     => $this->_metaTitleId,
+                        'name_id'           => $this->_nameId,
+                        'store_id'          => $this->_websiteStoreView['de'],
+                        'entity_id'         => $cProductId,
+                        'short_description' => $productShortDescriptionn['de'],
+                        'description'       => $productData['DescriptionCatalogues']['value']['de'],
+                        'meta_description'  => $productShortDescriptionn['de'],
+                        'meta_title'        => $productData['HeaderWebs']['value']['de'],
+                        'name'              => $productData['HeaderWebs']['value']['de'],
+                    );
+                    $connW->query($sql, $binds);
+                }
 
-                $binds = array(
-                    'entity_type_id'    => $this->_productEntityTypeId,
-                    'short_descr_id'    => $this->_shortDescriptionId,
-                    'descr_id'          => $this->_descriptionId,
-                    'meta_descr_id'     => $this->_metaDescriptionId,
-                    'meta_title_id'     => $this->_metaTitleId,
-                    'name_id'           => $this->_nameId,
-                    'store_id'          => $this->_websiteStoreView['se'],
-                    'entity_id'         => $cProductId,
-                    'short_description' => $productShortDescriptionn['sv'],
-                    'description'       => $productData['DescriptionCatalogues']['value']['sv'],
-                    'meta_description'  => $productShortDescriptionn['sv'],
-                    'meta_title'        => $productData['HeaderWebs']['value']['sv'],
-                    'name'              => $productData['HeaderWebs']['value']['sv'],
-                );
-                $connW->query($sql, $binds);
+                if($this->_websiteStoreView['nl']) {
+                    $binds = array(
+                        'entity_type_id'    => $this->_productEntityTypeId,
+                        'short_descr_id'    => $this->_shortDescriptionId,
+                        'descr_id'          => $this->_descriptionId,
+                        'meta_descr_id'     => $this->_metaDescriptionId,
+                        'meta_title_id'     => $this->_metaTitleId,
+                        'name_id'           => $this->_nameId,
+                        'store_id'          => $this->_websiteStoreView['nl'],
+                        'entity_id'         => $cProductId,
+                        'short_description' => $productShortDescriptionn['nl'],
+                        'description'       => $productData['DescriptionCatalogues']['value']['nl'],
+                        'meta_description'  => $productShortDescriptionn['nl'],
+                        'meta_title'        => $productData['HeaderWebs']['value']['nl'],
+                        'name'              => $productData['HeaderWebs']['value']['nl'],
+                    );
+                    $connW->query($sql, $binds);
+                }
+
+                if($this->_websiteStoreView['nl']) {
+                    $binds = array(
+                        'entity_type_id'    => $this->_productEntityTypeId,
+                        'short_descr_id'    => $this->_shortDescriptionId,
+                        'descr_id'          => $this->_descriptionId,
+                        'meta_descr_id'     => $this->_metaDescriptionId,
+                        'meta_title_id'     => $this->_metaTitleId,
+                        'name_id'           => $this->_nameId,
+                        'store_id'          => $this->_websiteStoreView['se'],
+                        'entity_id'         => $cProductId,
+                        'short_description' => $productShortDescriptionn['sv'],
+                        'description'       => $productData['DescriptionCatalogues']['value']['sv'],
+                        'meta_description'  => $productShortDescriptionn['sv'],
+                        'meta_title'        => $productData['HeaderWebs']['value']['sv'],
+                        'name'              => $productData['HeaderWebs']['value']['sv'],
+                    );
+                    $connW->query($sql, $binds);
+                }
 
                 $cProduct->clearInstance();
             } catch (Exception $e) {
