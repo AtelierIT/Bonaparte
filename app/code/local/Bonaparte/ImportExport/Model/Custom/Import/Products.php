@@ -126,7 +126,7 @@ class Bonaparte_ImportExport_Model_Custom_Import_Products extends Bonaparte_Impo
     private $_nameId = 0;
     private $_metaTitleId = 0;
     private $_metaDescriptionId = 0;
-
+    private $_sizeTranslateId = 0;
 
 
     /**
@@ -190,6 +190,7 @@ class Bonaparte_ImportExport_Model_Custom_Import_Products extends Bonaparte_Impo
         $this->_nameId = $this->_getAttributeID('name');
         $this->_metaTitleId = $this->_getAttributeID('meta_title');
         $this->_metaDescriptionId = $this->_getAttributeID('meta_description');
+        $this->_sizeTranslateId = $this->_getAttributeID('bnp_sizetranslate');
 
         foreach(Mage::app()->getWebsites() as $website) {
             $this->_websiteStoreView[strtolower($website->getCode())] = array_pop($website->getStoreIds());
@@ -592,7 +593,7 @@ class Bonaparte_ImportExport_Model_Custom_Import_Products extends Bonaparte_Impo
             $productOneSize = (count($productSizes) == 1)? 1 : 0;
 
             $sizeCounter = 0;
-            $simpleProductEntityIds = array();
+            $simpleProductData = array();
 
             foreach ($productSizes as $productSize) {
                 $this->_logMessage('.', false);
@@ -740,10 +741,13 @@ class Bonaparte_ImportExport_Model_Custom_Import_Products extends Bonaparte_Impo
                 $sProduct -> setWebsiteIds($this->_allWebsiteIDs);
 
                 //UK size translation
-                $sProduct -> setBnpSizetranslate($productSize);
+                //$sProduct -> setBnpSizetranslate($productSize);
+                $uksize = $productSize;
                 foreach ($category_ids as $category_id){
-                    if ($this->_sizeTranslate[$category_id]){
-                        $sProduct -> setBnpSizetranslate($this->_sizeTranslate[$category_id][$productSize]);
+                    if ($this->_sizeTranslate[$category_id][$productSize]){
+                        //$sProduct -> setBnpSizetranslate($this->_sizeTranslate[$category_id][$productSize]);
+                        $uksize = $this->_sizeTranslate[$category_id][$productSize];
+                        $simpleProductData[$sizeCounter]['uk_sku'] = $productItem['CinoNumber']['value'] . '-' . $this->_sizeTranslate[$category_id][$productSize];
                     }
                 }
 
@@ -807,7 +811,9 @@ class Bonaparte_ImportExport_Model_Custom_Import_Products extends Bonaparte_Impo
                             "label" => $attr_value
                         )
                     );
-                    $simpleProductEntityIds[] = $sProductId;
+                    $simpleProductData[$sizeCounter]['entity_id'] = $sProductId;
+                    $simpleProductData[$sizeCounter]['sku'] = $productSKU;
+
 
                     // adding the item images
 
@@ -864,6 +870,8 @@ class Bonaparte_ImportExport_Model_Custom_Import_Products extends Bonaparte_Impo
                            INSERT INTO catalog_product_entity_varchar (entity_type_id, attribute_id, store_id, entity_id, value) VALUES (:entity_type_id,:meta_descr_id,:store_id,:entity_id,:meta_description)ON DUPLICATE KEY UPDATE `value` = :meta_description;
                            INSERT INTO catalog_product_entity_varchar (entity_type_id, attribute_id, store_id, entity_id, value) VALUES (:entity_type_id,:meta_title_id,:store_id,:entity_id,:meta_title)ON DUPLICATE KEY UPDATE `value` = :meta_title;
                            INSERT INTO catalog_product_entity_varchar (entity_type_id, attribute_id, store_id, entity_id, value) VALUES (:entity_type_id,:name_id,:store_id,:entity_id,:short_description)ON DUPLICATE KEY UPDATE `value` = :name;
+                           INSERT INTO catalog_product_entity_varchar (entity_type_id, attribute_id, store_id, entity_id, value) VALUES (:entity_type_id,:size_translate_id,:store_id,:entity_id,:size_translate)ON DUPLICATE KEY UPDATE `value` = :size_translate;
+
                             ";
                     $binds = array(
                         'entity_type_id'    => $this->_productEntityTypeId,
@@ -872,6 +880,7 @@ class Bonaparte_ImportExport_Model_Custom_Import_Products extends Bonaparte_Impo
                         'meta_descr_id'     => $this->_metaDescriptionId,
                         'meta_title_id'     => $this->_metaTitleId,
                         'name_id'           => $this->_nameId,
+                        'size_translate_id' => $this->_sizeTranslateId,
                         'store_id'          => $this->_websiteStoreView['uk'],
                         'entity_id'         => $sProductId,
                         'short_description' => $productShortDescriptionn['en'],
@@ -879,6 +888,8 @@ class Bonaparte_ImportExport_Model_Custom_Import_Products extends Bonaparte_Impo
                         'meta_description'  => $productShortDescriptionn['en'],
                         'meta_title'        => $productData['HeaderWebs']['value']['en'],
                         'name'              => $productData['HeaderWebs']['value']['en'],
+                        'size_translate'    => $uksize
+
                     );
                     $connW->query($sql, $binds);
 
@@ -889,6 +900,7 @@ class Bonaparte_ImportExport_Model_Custom_Import_Products extends Bonaparte_Impo
                         'meta_descr_id'     => $this->_metaDescriptionId,
                         'meta_title_id'     => $this->_metaTitleId,
                         'name_id'           => $this->_nameId,
+                        'size_translate_id' => $this->_sizeTranslateId,
                         'store_id'          => $this->_websiteStoreView['dk'],
                         'entity_id'         => $sProductId,
                         'short_description' => $productShortDescriptionn['da'],
@@ -896,6 +908,7 @@ class Bonaparte_ImportExport_Model_Custom_Import_Products extends Bonaparte_Impo
                         'meta_description'  => $productShortDescriptionn['da'],
                         'meta_title'        => $productData['HeaderWebs']['value']['da'],
                         'name'              => $productData['HeaderWebs']['value']['da'],
+                        'size_translate'    => $productSize
                     );
                     $connW->query($sql, $binds);
 
@@ -906,6 +919,7 @@ class Bonaparte_ImportExport_Model_Custom_Import_Products extends Bonaparte_Impo
                         'meta_descr_id'     => $this->_metaDescriptionId,
                         'meta_title_id'     => $this->_metaTitleId,
                         'name_id'           => $this->_nameId,
+                        'size_translate_id' => $this->_sizeTranslateId,
                         'store_id'          => $this->_websiteStoreView['ch'],
                         'entity_id'         => $sProductId,
                         'short_description' => $productShortDescriptionn['de_CH'],
@@ -913,6 +927,7 @@ class Bonaparte_ImportExport_Model_Custom_Import_Products extends Bonaparte_Impo
                         'meta_description'  => $productShortDescriptionn['de_CH'],
                         'meta_title'        => $productData['HeaderWebs']['value']['de_CH'],
                         'name'              => $productData['HeaderWebs']['value']['de_CH'],
+                        'size_translate'    => $productSize
                     );
                     $connW->query($sql, $binds);
 
@@ -923,6 +938,7 @@ class Bonaparte_ImportExport_Model_Custom_Import_Products extends Bonaparte_Impo
                         'meta_descr_id'     => $this->_metaDescriptionId,
                         'meta_title_id'     => $this->_metaTitleId,
                         'name_id'           => $this->_nameId,
+                        'size_translate_id' => $this->_sizeTranslateId,
                         'store_id'          => $this->_websiteStoreView['de'],
                         'entity_id'         => $sProductId,
                         'short_description' => $productShortDescriptionn['de'],
@@ -930,6 +946,7 @@ class Bonaparte_ImportExport_Model_Custom_Import_Products extends Bonaparte_Impo
                         'meta_description'  => $productShortDescriptionn['de'],
                         'meta_title'        => $productData['HeaderWebs']['value']['de'],
                         'name'              => $productData['HeaderWebs']['value']['de'],
+                        'size_translate'    => $productSize
                     );
                     $connW->query($sql, $binds);
 
@@ -940,6 +957,7 @@ class Bonaparte_ImportExport_Model_Custom_Import_Products extends Bonaparte_Impo
                         'meta_descr_id'     => $this->_metaDescriptionId,
                         'meta_title_id'     => $this->_metaTitleId,
                         'name_id'           => $this->_nameId,
+                        'size_translate_id' => $this->_sizeTranslateId,
                         'store_id'          => $this->_websiteStoreView['nl'],
                         'entity_id'         => $sProductId,
                         'short_description' => $productShortDescriptionn['nl'],
@@ -947,6 +965,7 @@ class Bonaparte_ImportExport_Model_Custom_Import_Products extends Bonaparte_Impo
                         'meta_description'  => $productShortDescriptionn['nl'],
                         'meta_title'        => $productData['HeaderWebs']['value']['nl'],
                         'name'              => $productData['HeaderWebs']['value']['nl'],
+                        'size_translate'    => $productSize
                     );
                     $connW->query($sql, $binds);
 
@@ -957,13 +976,15 @@ class Bonaparte_ImportExport_Model_Custom_Import_Products extends Bonaparte_Impo
                         'meta_descr_id'     => $this->_metaDescriptionId,
                         'meta_title_id'     => $this->_metaTitleId,
                         'name_id'           => $this->_nameId,
+                        'size_translate_id' => $this->_sizeTranslateId,
                         'store_id'          => $this->_websiteStoreView['se'],
                         'entity_id'         => $sProductId,
-                        'short_description' => $productShortDescriptionn['se'],
-                        'description'       => $productData['DescriptionCatalogues']['value']['se'],
-                        'meta_description'  => $productShortDescriptionn['se'],
-                        'meta_title'        => $productData['HeaderWebs']['value']['se'],
-                        'name'              => $productData['HeaderWebs']['value']['se'],
+                        'short_description' => $productShortDescriptionn['sv'],
+                        'description'       => $productData['DescriptionCatalogues']['value']['sv'],
+                        'meta_description'  => $productShortDescriptionn['sv'],
+                        'meta_title'        => $productData['HeaderWebs']['value']['sv'],
+                        'name'              => $productData['HeaderWebs']['value']['sv'],
+                        'size_translate'    => $productSize
                     );
                     $connW->query($sql, $binds);
 
@@ -1079,8 +1100,8 @@ class Bonaparte_ImportExport_Model_Custom_Import_Products extends Bonaparte_Impo
                 $cProductId = $cProduct->getId();
 
 
-                foreach ($simpleProductEntityIds as $simpleProductEntityId){
-                    fputcsv($this->_fileHandlerStyles, array($productData['StyleNbr']['value'],$cProductId,$simpleProductEntityId));
+                foreach ($simpleProductData as $simpleProduct){
+                    fputcsv($this->_fileHandlerStyles, array($productData['StyleNbr']['value'],$cProductId,$simpleProduct['entity_id'],$simpleProduct['sku'],$simpleProduct['uk_sku'] ));
                 }
 
                 // adding the images
@@ -1271,7 +1292,7 @@ class Bonaparte_ImportExport_Model_Custom_Import_Products extends Bonaparte_Impo
                     'meta_description'  => $productShortDescriptionn['en'],
                     'meta_title'        => $productData['HeaderWebs']['value']['en'],
                     'name'              => $productData['HeaderWebs']['value']['en'],
-                );
+                     );
                 $connW->query($sql, $binds);
 
                 $binds = array(
@@ -1351,11 +1372,11 @@ class Bonaparte_ImportExport_Model_Custom_Import_Products extends Bonaparte_Impo
                     'name_id'           => $this->_nameId,
                     'store_id'          => $this->_websiteStoreView['se'],
                     'entity_id'         => $cProductId,
-                    'short_description' => $productShortDescriptionn['se'],
-                    'description'       => $productData['DescriptionCatalogues']['value']['se'],
-                    'meta_description'  => $productShortDescriptionn['se'],
-                    'meta_title'        => $productData['HeaderWebs']['value']['se'],
-                    'name'              => $productData['HeaderWebs']['value']['se'],
+                    'short_description' => $productShortDescriptionn['sv'],
+                    'description'       => $productData['DescriptionCatalogues']['value']['sv'],
+                    'meta_description'  => $productShortDescriptionn['sv'],
+                    'meta_title'        => $productData['HeaderWebs']['value']['sv'],
+                    'name'              => $productData['HeaderWebs']['value']['sv'],
                 );
                 $connW->query($sql, $binds);
 
@@ -1550,18 +1571,23 @@ class Bonaparte_ImportExport_Model_Custom_Import_Products extends Bonaparte_Impo
         fclose($this->_fileHandlerResources);
         fclose($this->_fileHandlerStyles);
 
+
+
+
+
+
         $config  = Mage::getConfig()->getResourceConnectionConfig("default_setup");
         $this->_logMessage('Importing resources....');
-        if ($fp = popen("mysql -u ".$config->username." -p".$config->password." ".$config->dbname." -e \"LOAD DATA LOCAL INFILE '".Mage::getBaseDir()."/dump_files/tmp_import_resources.csv' INTO TABLE bonaparte_resources FIELDS TERMINATED BY ',';\";", "r"))  {
+        if ($fp = popen("mysql -u ".$config->username." -p".$config->password." ".$config->dbname." -e \"LOAD DATA LOCAL INFILE '".Mage::getBaseDir()."/dump_files/tmp_import_resources.csv' REPLACE INTO TABLE bonaparte_resources FIELDS TERMINATED BY ',';\";", "r"))  {
             while( !feof($fp) ){
                 echo fread($fp, 1024);
-                flush(); 
+                flush();
             }
             fclose($fp);
             $this->_logMessage('Done!' . "\n");
         }
         $this->_logMessage('Importing styles....');
-        if ($fp = popen("mysql -u ".$config->username." -p".$config->password." ".$config->dbname." -e \"LOAD DATA LOCAL INFILE '".Mage::getBaseDir()."/dump_files/tmp_import_styles.csv' INTO TABLE bonaparte_styles FIELDS TERMINATED BY ',';\";", "r"))  {
+        if ($fp = popen("mysql -u ".$config->username." -p".$config->password." ".$config->dbname." -e \"LOAD DATA LOCAL INFILE '".Mage::getBaseDir()."/dump_files/tmp_import_styles.csv' REPLACE INTO TABLE bonaparte_styles FIELDS TERMINATED BY ',';\";", "r"))  {
             $this->_logMessage('Done!' . "\n");
             while( !feof($fp) ){
                 echo fread($fp, 1024);

@@ -62,6 +62,13 @@ class Bonaparte_ImportExport_Model_Custom_Import_Attributes extends Bonaparte_Im
      * @var string
      */
     const ATTRIBUTE_FRONTEND_INPUT_TEXT = 'text';
+    /**
+     *
+     * Attribute frontend input type integer
+     *
+     * @var string
+     */
+    const ATTRIBUTE_FRONTEND_INPUT_DROPDOWN = 'select';
 
     /**
      * Name of the default attribute set
@@ -123,6 +130,10 @@ class Bonaparte_ImportExport_Model_Custom_Import_Attributes extends Bonaparte_Im
     const CUSTOM_ATTRIBUTE_CODE_WASH_ICON = 'bnp_washicon';
     const CUSTOM_ATTRIBUTE_CODE_STYLE_NBR = 'bnp_stylenbr';
     const CUSTOM_ATTRIBUTE_CODE_SIZE_TRANSLATE = 'bnp_sizetranslate';
+    const CUSTOM_ATTRIBUTE_CODE_PRICE_CATALOGUE = 'bnp_pricecatalogue';
+    const CUSTOM_ATTRIBUTE_CODE_TRAFFIC_LIGHT = 'bnp_trafficlight';
+
+
 
     /**
      * Attributes that have a specific frontend input different than "select"
@@ -132,8 +143,8 @@ class Bonaparte_ImportExport_Model_Custom_Import_Attributes extends Bonaparte_Im
     private $_attributeCodesFrontendInput = array(
         self::ATTRIBUTE_FRONTEND_INPUT_MULTISELECT => array('Catalogue', 'Season', 'WashIcon', 'AdCodes'),
         self::ATTRIBUTE_FRONTEND_INPUT_BOOLEAN => array('AnimalOrigin', 'DisplayComposition'),
-        self::ATTRIBUTE_FRONTEND_INPUT_TEXT => array('MeasurementChart','MeasureChartAbrv','StyleNbr','SizeTranslate')
-    );
+        self::ATTRIBUTE_FRONTEND_INPUT_TEXT => array('MeasurementChart','MeasureChartAbrv','SizeTranslate'),
+        self::ATTRIBUTE_FRONTEND_INPUT_DROPDOWN => array('StyleNbr','TrafficLight'));
 
     /**
      * Maps the website code the its store view id
@@ -155,6 +166,13 @@ class Bonaparte_ImportExport_Model_Custom_Import_Attributes extends Bonaparte_Im
      * @var array
      */
     private $_searchableAttributes = array('ColorGroup');
+
+    /**
+     * Contains all attributes that need to be set as searchable/Use In Layered Navigation
+     *
+     * @var array
+     */
+    private $_websiteAttributes = array('SizeTranslate');
 
     /**
      * Remove previously imported attributes
@@ -237,7 +255,9 @@ class Bonaparte_ImportExport_Model_Custom_Import_Attributes extends Bonaparte_Im
             'MeasurementChart' => array(), // text, needs values
             'MeasureChartAbrv' => array(), // text, needs values
             'Length' => array(), // single value, needs values
-            'WashInstructions' => array() // single value, needs values
+            'WashInstructions' => array(), // single value, needs values
+            'TrafficLight' => array(1,2,3,4), // single value
+            'PriceCatalogue' => array()//single value
         );
 
         foreach($this->_data['CatalogAdcode'] as $catalogAdcode) {
@@ -495,7 +515,7 @@ class Bonaparte_ImportExport_Model_Custom_Import_Attributes extends Bonaparte_Im
 
             $attributeData = array(
                 'attribute_code' => $magentoAttributeCode,
-                'global' => Mage_Catalog_Model_Resource_Eav_Attribute::SCOPE_WEBSITE,
+                'is_global' => (in_array($attributeCode,$this->_websiteAttributes))?Mage_Catalog_Model_Resource_Eav_Attribute::SCOPE_WEBSITE:Mage_Catalog_Model_Resource_Eav_Attribute::SCOPE_GLOBAL,
                 'frontend_input' => $this->_getFrontendInput($attributeCode),
                 'option' => array(
                     'value' => $optionValues
