@@ -477,6 +477,38 @@ class Bonaparte_ImportExport_Model_Custom_Import_Products extends Bonaparte_Impo
         }
     }
 
+    /**
+     * Add new option to the attribute options and return the id
+     *
+     * @param array $attributeData
+     *
+     * @return integer
+     */
+    private function _addAttributeOptionsForBnpStylenbr($attributeData) {
+        $model = Mage::getModel('catalog/resource_eav_attribute')->load('bnp_stylenbr', 'attribute_code');
+
+        $options = $model->getSource()->getAllOptions(false);
+        $optionLabels = array();
+        foreach($options as $option) {
+            $optionLabels[$option['label']] = true;
+        }
+        unset($option);
+
+        if(!isset($optionLabels[$attributeData['option']['value']['option0'][0]])) {
+            $model->addData($attributeData);
+            $model->save();
+        }
+
+        $options = $model->getSource()->getAllOptions(false);
+        foreach($options as $option) {
+            if($option['label'] == $attributeData['option']['value']['option0'][0]) {
+                $attributeOptionId = $option['value'];
+                break;
+            }
+        }
+
+        return $attributeOptionId;
+    }
 
     /**
      * Function build to add product to database
@@ -715,6 +747,17 @@ class Bonaparte_ImportExport_Model_Custom_Import_Products extends Bonaparte_Impo
                     }
                 }
 
+                // add stylenbr to select options
+                $bnpStylenbrAttributeOptionId = $this->_addAttributeOptionsForBnpStylenbr(array(
+                    'option' => array(
+                        'value' => array(
+                            'option0' => array(
+                                0 => $productData['StyleNbr']['value']
+                            )
+                        )
+                    )
+                ));
+
                 $sProduct
                     ->setName($productData['HeaderWebs']['value']['en'])
                     ->setDescription($productData['DescriptionCatalogues']['value']['en'])
@@ -726,6 +769,7 @@ class Bonaparte_ImportExport_Model_Custom_Import_Products extends Bonaparte_Impo
 
                     ->setCategoryIds($category_idss)
 
+                    //->setBnpStylenbr($bnpStylenbrAttributeOptionId)
                     ->setBnpColor($externalIdToInternalId[$productItem['Color']['value'] . '_' . Bonaparte_ImportExport_Model_Custom_Import_Attributes::CUSTOM_ATTRIBUTE_CODE_COLOR])
                     ->setBnpFitting($externalIdToInternalId[$productData['Fitting']['value'] . '_' . Bonaparte_ImportExport_Model_Custom_Import_Attributes::CUSTOM_ATTRIBUTE_CODE_FITTING])
                     ->setBnpCatalogue(implode(',', $bnpCatalogueLabelIds))
