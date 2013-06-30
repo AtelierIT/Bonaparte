@@ -18,6 +18,7 @@
             <catalog>
                 <rewrite>
                     <product_view>Bonaparte_Catalog_Block_Product_View</product_view>
+                    <product_view_type_configurable>Bonaparte_Catalog_Block_Product_View_Type_Configurable</product_view_type_configurable>
                 </rewrite>
             </catalog>
         </blocks>
