@@ -104,7 +104,8 @@ class Bonaparte_ImportExport_Model_Custom_Import_Prices extends Bonaparte_Import
                     }
                     $this->_data[$currentSKU] = array(
                         'regular' => $data['reg_price']?$data['reg_price']:$lowestPrice,
-                        'special' => $lowestPrice
+                        'special' => $lowestPrice,
+                        'traffic_light' => $data['traffic_light']
                     );
                     unset($data, $lowestPrice);
                 }
@@ -154,7 +155,10 @@ class Bonaparte_ImportExport_Model_Custom_Import_Prices extends Bonaparte_Import
 		$attr_id_special_from  = $eavAttribute->getIdByCode('catalog_product', 'special_from_date');
 		$attr_id_special_to    = $eavAttribute->getIdByCode('catalog_product', 'special_to_date');
 		$attr_id_status        = $eavAttribute->getIdByCode('catalog_product', 'status');
-		
+        $attr_id_traffic_light = $eavAttribute->getIdByCode('catalog_product', 'bnp_trafficlight');
+        $attr_id_pricecat      = $eavAttribute->getIdByCode('catalog_product', 'bnp_pricecatalogue');
+
+        // get the entity type id for product
 		$entityType = Mage::getModel('eav/entity_type')->loadByCode('catalog_product');
 		$entityTypeId = $entityType->getEntityTypeId();
 		
@@ -171,6 +175,10 @@ class Bonaparte_ImportExport_Model_Custom_Import_Prices extends Bonaparte_Import
         $row = 0;
         foreach($this->_data as $sku => $price) {
 			if ($row == 0) { $row++; continue;}
+            $row++;
+
+            #print_r($this->_skuAdCodes);
+
             //$this->_logMemoryUsage();
             $countrySku = $sku;
             $sku = explode('-', $sku);
@@ -214,13 +222,13 @@ class Bonaparte_ImportExport_Model_Custom_Import_Prices extends Bonaparte_Import
                     ->save();
             $model->clearInstance(); */
             
-            fputcsv($fileHandler2,array($sku, $price['regular']/100, $price['special']/100, date('Y-m-d'), date('Y-m-d', strtotime('now + 1 month')), $storeViews[$countryCode], $v_BnpAdcodes, 0, $configurableProductSKU, 0));
-            
+            fputcsv($fileHandler2,array($sku, $price['regular']/100, $price['special']/100, date('Y-m-d'), date('Y-m-d', strtotime('now + 1 month')), $storeViews[$countryCode], $v_BnpAdcodes, 0, $configurableProductSKU, 0, $price['traffic_light'], $this->_skuAdCodes[$countrySku]));
+
             #$relationModel->clearInstance();
             #unset($relationCollection);
             
         }
-        fclose($fileHandler);
+        fclose($fileHandler2);
         
         $this->_logMessage('Finished insert temp' . "\n" );
         
@@ -239,6 +247,11 @@ class Bonaparte_ImportExport_Model_Custom_Import_Prices extends Bonaparte_Import
 		}
         
         $sql = "UPDATE bonaparte_tmp_import_prices bt SET entity_id = (SELECT entity_id FROM catalog_product_entity WHERE sku = bt.sku), entity_id_c = (SELECT entity_id FROM catalog_product_entity WHERE sku = bt.skuc)";
+        $this->_logMessage($sql . "\n" );
+        $connW->query($sql);
+
+        //update entity id for uk sku (sizes)
+        $sql = "UPDATE bonaparte_tmp_import_prices bt SET entity_id = (SELECT DISTINCT simple_entity_id FROM bonaparte_styles bs WHERE uk_sku = bt.sku AND uk_sku <> '') WHERE IFNULL(entity_id,0) = 0 AND EXISTS (SELECT 1 FROM bonaparte_styles bs2 WHERE bs2.uk_sku <> '' AND bs2.uk_sku = bt.sku )";
         $this->_logMessage($sql . "\n" );
         $connW->query($sql);
         
@@ -262,7 +275,27 @@ class Bonaparte_ImportExport_Model_Custom_Import_Prices extends Bonaparte_Import
 		//update special_to_date
         $sql = "UPDATE catalog_product_entity_datetime e SET value = (SELECT special_to_date FROM bonaparte_tmp_import_prices WHERE entity_id = e.entity_id AND store_id = e.store_id) WHERE (attribute_id, store_id, entity_id) IN (SELECT $attr_id_special_to, store_id, entity_id FROM bonaparte_tmp_import_prices) ";
         $this->_logMessage($sql . "\n" );
-        $connW->query($sql);  
+        $connW->query($sql);
+
+        //update bnp_trafficlight
+        /*
+        $sql = "UPDATE catalog_product_entity_int e SET value = (SELECT bnp_trafficlight FROM bonaparte_tmp_import_prices WHERE entity_id = e.entity_id AND store_id = e.store_id) WHERE (attribute_id, store_id, entity_id) IN (SELECT $attr_id_traffic_light, store_id, entity_id FROM bonaparte_tmp_import_prices) ";
+        $this->_logMessage("Sql bnp_trafficlight: " . $sql . "\n" );
+        $connW->query($sql); */
+
+        $sql = "INSERT INTO catalog_product_entity_int (entity_type_id, attribute_id, store_id, entity_id, value) SELECT $entityTypeId, $attr_id_traffic_light, store_id, entity_id, bnp_trafficlight FROM bonaparte_tmp_import_prices b WHERE IFNULL(b.entity_id,0) <> 0 ON DUPLICATE KEY UPDATE value = b.bnp_trafficlight";
+        $this->_logMessage("Sql bnp_trafficlight: " . $sql . "\n" );
+        $connW->query($sql);
+
+        //update bnp_pricecatalogue
+        /*
+        $sql = "UPDATE catalog_product_entity_int e SET value = (SELECT bnp_pricecat FROM bonaparte_tmp_import_prices WHERE entity_id = e.entity_id AND store_id = e.store_id) WHERE (attribute_id, store_id, entity_id) IN (SELECT $attr_id_pricecat, store_id, entity_id FROM bonaparte_tmp_import_prices) ";
+        $this->_logMessage("Sql bnp_trafficlight: " . $sql . "\n" );
+        $connW->query($sql); */
+
+        $sql = "INSERT INTO catalog_product_entity_int (entity_type_id, attribute_id, store_id, entity_id, value) SELECT $entityTypeId, $attr_id_pricecat, store_id, entity_id, bnp_pricecat FROM bonaparte_tmp_import_prices b WHERE IFNULL(b.entity_id,0) <> 0 ON DUPLICATE KEY UPDATE value = b.bnp_pricecat";
+        $this->_logMessage("Sql bnp_trafficlight: " . $sql . "\n" );
+        $connW->query($sql);
 		
 		##################################
 		        
@@ -304,8 +337,20 @@ class Bonaparte_ImportExport_Model_Custom_Import_Prices extends Bonaparte_Import
 		
 		$sql = "DELETE FROM catalog_product_entity_datetime WHERE entity_type_id = $entityTypeId AND attribute_id = $attr_id_special_to AND (store_id, entity_id) IN (SELECT store_id, entity_id_c FROM bonaparte_tmp_import_prices b WHERE b.entity_id_c IS NOT NULL AND price = special_price)";
         $this->_logMessage($sql . "\n" );
-        $connW->query($sql); 
-		
+        $connW->query($sql);
+
+
+        //update bnp_trafficlight
+        $sql = "INSERT INTO catalog_product_entity_int (entity_type_id, attribute_id, store_id, entity_id, value) SELECT $entityTypeId, $attr_id_traffic_light, store_id, entity_id_c, bnp_trafficlight FROM bonaparte_tmp_import_prices b WHERE IFNULL(b.entity_id_c,0) <> 0 ON DUPLICATE KEY UPDATE value = b.bnp_trafficlight";
+        $this->_logMessage("Sql bnp_trafficlight: " . $sql . "\n" );
+        $connW->query($sql);
+
+        //update bnp_pricecatalogue
+        $sql = "INSERT INTO catalog_product_entity_int (entity_type_id, attribute_id, store_id, entity_id, value) SELECT $entityTypeId, $attr_id_pricecat, store_id, entity_id_c, bnp_pricecat FROM bonaparte_tmp_import_prices b WHERE IFNULL(b.entity_id_c,0) <> 0 ON DUPLICATE KEY UPDATE value = b.bnp_pricecat";
+        $this->_logMessage("Sql bnp_pricecat: " . $sql . "\n" );
+        $connW->query($sql);
+
+
 		#################################
 
 		//activate products

@@ -529,6 +529,7 @@ class Bonaparte_ImportExport_Model_Custom_Import_Products extends Bonaparte_Impo
 
         $this->_logMessage('Editing ' . count($productData['Items']['value']) . ' from this file');
         $productCounter = 1;
+        $productItemIDs = array();
         foreach ($productData['Items']['value'] as $productItem) {
 
             $simpleProducts = array();
@@ -797,7 +798,6 @@ class Bonaparte_ImportExport_Model_Custom_Import_Products extends Bonaparte_Impo
 
 
                     ->setUrlKey($productData['HeaderWebs']['value']['en'] . '_' . $productItem['CinoNumber']['value'] . '_' . $productSize)
-
                     ->setData($configurable_attribute, $configurableAttributeOptionId);
 
 
@@ -822,18 +822,18 @@ class Bonaparte_ImportExport_Model_Custom_Import_Products extends Bonaparte_Impo
 
 
                     // adding the item images
-
+                    $itemLeadPicture = 0;
                     foreach ($productItem['Resources']['value'] as $resource) {
                         $isLeadPicture = 0;
                         if (count($productItem['LeadPicture']['value'])==2 && $resource['ImageType']['value']=="packshots")
                         {
                             if ($productItem['LeadPicture']['value'][0]['id']==$resource['id'])
                                 {
-                                $isLeadPicture = 1;
+                                $isLeadPicture = 1; $itemLeadPicture=1;
                             } elseif ($productItem['LeadPicture']['value'][1]['id']==$resource['id']) {
-                                $isLeadPicture = 1;
+                                $isLeadPicture = 1; $itemLeadPicture=1;
                             }
-                        }elseif (count($productItem['LeadPicture']['value'])==1 && $productItem['LeadPicture']['value'][0]['id']==$resource['id']) $isLeadPicture = 1;
+                        }elseif (count($productItem['LeadPicture']['value'])==1 && $productItem['LeadPicture']['value'][0]['id']==$resource['id']){ $isLeadPicture = 1;$itemLeadPicture=1;};
                         $picturePath = $pictureBasePath . $resource['OriginalFilename']['value'];
                         if (file_exists($picturePath) && ($resource['OriginalFilename']['value'] != '')) {
                             try {
@@ -846,6 +846,38 @@ class Bonaparte_ImportExport_Model_Custom_Import_Products extends Bonaparte_Impo
                             }
                         } else {
                             $this->_logMessage('X', false);
+                        }
+                    }
+                    if (!$itemLeadPicture){
+                        foreach ($productData['Resources']['value'] as $resource) {
+
+
+                            $isLeadPicture = 0;
+                            if (count($productItem['LeadPicture']['value'])==2 && $resource['ImageType']['value']=="packshots")
+                            {
+                                if ($productItem['LeadPicture']['value'][0]['id']==$resource['id'])
+                                {
+                                    $isLeadPicture = 1;
+                                } elseif ($productItem['LeadPicture']['value'][1]['id']==$resource['id']) {
+                                    $isLeadPicture = 1;
+                                }
+                            }elseif (count($productItem['LeadPicture']['value'])==1 && $productItem['LeadPicture']['value'][0]['id']==$resource['id']){ $isLeadPicture = 1;};
+                            $picturePath = $pictureBasePath . $resource['OriginalFilename']['value'];
+                            if ($isLeadPicture && file_exists($picturePath) && ($resource['OriginalFilename']['value'] != '')) {
+                                try {
+                                    $this->_addProductImage($sProductId, $resource['OriginalFilename']['value'], $isLeadPicture);
+                                    $this->_logMessage('O', false);
+                                    fputcsv($this->_fileHandlerResources,array($sProductId, $resource['ResourceFileId']['value'], $resource['OriginalFilename']['value'], 0,$resource['ImageType']['value'], $isLeadPicture));
+
+                                } catch (Exception $e) {
+                                    echo $e->getMessage();
+                                }
+                            } else {
+                                $this->_logMessage('X', false);
+                            }
+
+
+
                         }
                     }
                     // adding the BNP 'style' images
@@ -875,7 +907,7 @@ class Bonaparte_ImportExport_Model_Custom_Import_Products extends Bonaparte_Impo
                             INSERT INTO catalog_product_entity_text (entity_type_id, attribute_id, store_id, entity_id, value) VALUES (:entity_type_id,:descr_id,:store_id,:entity_id,:description)ON DUPLICATE KEY UPDATE `value` = :description;
                            INSERT INTO catalog_product_entity_varchar (entity_type_id, attribute_id, store_id, entity_id, value) VALUES (:entity_type_id,:meta_descr_id,:store_id,:entity_id,:meta_description)ON DUPLICATE KEY UPDATE `value` = :meta_description;
                            INSERT INTO catalog_product_entity_varchar (entity_type_id, attribute_id, store_id, entity_id, value) VALUES (:entity_type_id,:meta_title_id,:store_id,:entity_id,:meta_title)ON DUPLICATE KEY UPDATE `value` = :meta_title;
-                           INSERT INTO catalog_product_entity_varchar (entity_type_id, attribute_id, store_id, entity_id, value) VALUES (:entity_type_id,:name_id,:store_id,:entity_id,:short_description)ON DUPLICATE KEY UPDATE `value` = :name;
+                           INSERT INTO catalog_product_entity_varchar (entity_type_id, attribute_id, store_id, entity_id, value) VALUES (:entity_type_id,:name_id,:store_id,:entity_id,:name)ON DUPLICATE KEY UPDATE `value` = :name;
                            INSERT INTO catalog_product_entity_varchar (entity_type_id, attribute_id, store_id, entity_id, value) VALUES (:entity_type_id,:size_translate_id,:store_id,:entity_id,:size_translate)ON DUPLICATE KEY UPDATE `value` = :size_translate;
 
                             ";
@@ -1129,7 +1161,7 @@ class Bonaparte_ImportExport_Model_Custom_Import_Products extends Bonaparte_Impo
             try {
                 $cProduct->save();
                 $cProductId = $cProduct->getId();
-
+                $productItemIDs[]=$cProductId;
 
                 foreach ($simpleProductData as $simpleProduct){
                     fputcsv($this->_fileHandlerStyles, array($productData['StyleNbr']['value'],$cProductId,$simpleProduct['entity_id'],$simpleProduct['sku'],$simpleProduct['uk_sku'] ));
@@ -1138,18 +1170,18 @@ class Bonaparte_ImportExport_Model_Custom_Import_Products extends Bonaparte_Impo
                 // adding the images
                 $resourceList = array();
 
-
+                $itemLeadPicture = 0;
                 foreach ($productItem['Resources']['value'] as $resource) {
                     $isLeadPicture = 0;
                     if (count($productItem['LeadPicture']['value'])==2 && $resource['ImageType']['value']=="packshots")
                     {
                         if ($productItem['LeadPicture']['value'][0]['id']==$resource['id'])
                         {
-                            $isLeadPicture = 1;
+                            $isLeadPicture = 1;$itemLeadPicture = 1;
                         } elseif ($productItem['LeadPicture']['value'][1]['id']==$resource['id']) {
-                            $isLeadPicture = 1;
+                            $isLeadPicture = 1;$itemLeadPicture = 1;
                         }
-                    }elseif (count($productItem['LeadPicture']['value'])==1 && $productItem['LeadPicture']['value'][0]['id']==$resource['id']) $isLeadPicture = 1;
+                    }elseif (count($productItem['LeadPicture']['value'])==1 && $productItem['LeadPicture']['value'][0]['id']==$resource['id']) {$isLeadPicture = 1;$itemLeadPicture = 1;}
                     $picturePath = $pictureBasePath . $resource['OriginalFilename']['value'];
                     if (file_exists($picturePath) && ($resource['OriginalFilename']['value'] != '')) {
                         try {
@@ -1165,6 +1197,36 @@ class Bonaparte_ImportExport_Model_Custom_Import_Products extends Bonaparte_Impo
                         fputcsv($this->_fileHandlerPictures,array($productData['StyleNbr']['value'],$productItem['CinoNumber']['value'],$resource['OriginalFilename']['value']?$resource['OriginalFilename']['value']:'empty OriginalFilename tag'));
                     }
                     $resourceList[$resource['id']] = $resource['OriginalFilename']['value'];
+                }
+                if (!$itemLeadPicture){
+                    foreach ($productData['Resources']['value'] as $resource) {
+                        $isLeadPicture = 0;
+                        if (count($productItem['LeadPicture']['value'])==2 && $resource['ImageType']['value']=="packshots")
+                        {
+                            if ($productItem['LeadPicture']['value'][0]['id']==$resource['id'])
+                            {
+                                $isLeadPicture = 1;
+                            } elseif ($productItem['LeadPicture']['value'][1]['id']==$resource['id']) {
+                                $isLeadPicture = 1;
+                            }
+                        }elseif (count($productItem['LeadPicture']['value'])==1 && $productItem['LeadPicture']['value'][0]['id']==$resource['id']) {$isLeadPicture = 1;}
+                        $picturePath = $pictureBasePath . $resource['OriginalFilename']['value'];
+                        if ($isLeadPicture) {
+                        if (file_exists($picturePath) && ($resource['OriginalFilename']['value'] != '')) {
+                            try {
+                                $this->_addProductImage($cProductId, $resource['OriginalFilename']['value'], $isLeadPicture);
+                                $this->_logMessage('O', false);
+                                fputcsv($this->_fileHandlerResources,array($cProductId, $resource['ResourceFileId']['value'], $resource['OriginalFilename']['value'], 1,$resource['ImageType']['value'], $isLeadPicture));
+
+                            } catch (Exception $e) {
+                                echo $e->getMessage();
+                            }
+                        } else {
+                            $this->_logMessage('X', false);
+                            fputcsv($this->_fileHandlerPictures,array($productData['StyleNbr']['value'],$productItem['CinoNumber']['value'],$resource['OriginalFilename']['value']?$resource['OriginalFilename']['value']:'empty OriginalFilename tag'));
+                        }}
+                        $resourceList[$resource['id']] = $resource['OriginalFilename']['value'];
+                    }
                 }
 
 
@@ -1307,7 +1369,7 @@ class Bonaparte_ImportExport_Model_Custom_Import_Products extends Bonaparte_Impo
                             INSERT INTO catalog_product_entity_text (entity_type_id, attribute_id, store_id, entity_id, value) VALUES (:entity_type_id,:descr_id,:store_id,:entity_id,:description)ON DUPLICATE KEY UPDATE `value` = :description;
                            INSERT INTO catalog_product_entity_varchar (entity_type_id, attribute_id, store_id, entity_id, value) VALUES (:entity_type_id,:meta_descr_id,:store_id,:entity_id,:meta_description)ON DUPLICATE KEY UPDATE `value` = :meta_description;
                            INSERT INTO catalog_product_entity_varchar (entity_type_id, attribute_id, store_id, entity_id, value) VALUES (:entity_type_id,:meta_title_id,:store_id,:entity_id,:meta_title)ON DUPLICATE KEY UPDATE `value` = :meta_title;
-                           INSERT INTO catalog_product_entity_varchar (entity_type_id, attribute_id, store_id, entity_id, value) VALUES (:entity_type_id,:name_id,:store_id,:entity_id,:short_description)ON DUPLICATE KEY UPDATE `value` = :name;
+                           INSERT INTO catalog_product_entity_varchar (entity_type_id, attribute_id, store_id, entity_id, value) VALUES (:entity_type_id,:name_id,:store_id,:entity_id,:name)ON DUPLICATE KEY UPDATE `value` = :name;
                             ";
 
                 if($this->_websiteStoreView['uk']) {
@@ -1429,7 +1491,42 @@ class Bonaparte_ImportExport_Model_Custom_Import_Products extends Bonaparte_Impo
                 echo "item " . $productData['HeaderWebs']['value']['en'] . " not added\n";
                 echo "exception:$e";
             }
+        // adding style related products
+            $no_products = count($productItemIDs);
+        if ($no_products>1){
+            for ($i=0;$i<$no_products;$i++) {
 
+                $main_product_id = $productItemIDs[$i];
+
+                //get related products
+                $prod = Mage::getModel('catalog/product');
+                $prod->load($main_product_id);
+
+                $related_prods = $prod->getRelatedProductIds();
+                $related_news  = array(); // store new related prods
+
+                for ($j=0;$j<$no_products;$j++) {
+                    if ($i == $j) continue;
+
+                    if (!in_array($productItemIDs[$j], $related_prods)) {
+                        //Not related
+                        //echo "Add to related \n";
+                        $related_news[$productItemIDs[$j]] = array( "position"=> 0);
+                    }
+                }
+
+                if (count($related_news)) {
+                    //Add related products and save
+                    $prod->setRelatedLinkData($related_news);
+                    #$prod->setUpSellLinkData($param);
+                    #$prod->setCrossSellLinkData($param);
+                    $prod->save();
+                }
+
+            }
+
+
+        }
 
         }
 

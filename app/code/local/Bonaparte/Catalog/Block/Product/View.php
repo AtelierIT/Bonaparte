@@ -27,7 +27,8 @@ class Bonaparte_Catalog_Block_Product_View extends Mage_Catalog_Block_Product_Vi
 
         $collection = Mage::getModel('catalog/product')->getCollection()
                         ->addAttributeToFilter('bnp_stylenbr', array('eq' => $currentProduct->getBnpStylenbr()))
-                        ->addAttributeToFilter('type_id', array('eq' => self::PRODUCT_TYPE_ID));
+                        ->addAttributeToFilter('type_id', array('eq' => self::PRODUCT_TYPE_ID))
+                        ->addAttributeToFilter('status',array('eq' => Mage_Catalog_Model_Product_Status::STATUS_ENABLED));
 
         if($exceptCurrentProduct) {
             $collection->addAttributeToFilter('entity_id', array('neq' => $currentProduct->getId()));

@@ -25,13 +25,36 @@
  */
 ?>
 <div class="product-options" id="product-options-wrapper">
-    <?php echo $this->getChildHtml('', true, true);?>
     <?php
         $styleProducts = $this->getStyleProducts();
-        foreach($styleProducts as $styleProduct) {
-            echo "<a href=\"" . $styleProduct->getProductUrl() . "\">" . $styleProduct->getSku() . "</a><br />";
-        }
+        //check if there are more than 1 product in current Style --> create the dropdown
+        if (count($styleProducts)>1){
+        echo "
+                <dl class=\"last\">
+                    <dt>
+                        <label >Color</label>
+                    </dt>
+                    <dd class=\"last\">
+                        <div class=\"input-box\">";
+
+        echo  "<select name=\"color\" id=\"cross_select\" onchange=\"switchColor(this);\">";
+        //current product
+        $currentProduct = $this->getProduct();
+        echo "<option value=\"" . $currentProduct->getProductUrl() . "\" selected=\"selected\">" . $currentProduct->getAttributeText('bnp_color') . ' - ' . substr($currentProduct->getSku(),0,5) . "</option>";
+            // all other products with this <StyleNBR>
+            foreach($styleProducts as $styleProduct) {
+                $styleProduct->load();
+                $isSale = $styleProduct->getSpecialPrice()?" - SALE":"";
+                echo "<option value=\"" . $styleProduct->getProductUrl() . "\">" . $styleProduct->getAttributeText('bnp_color') . ' - ' . substr($styleProduct->getSku(),0,5) . $isSale . "</option>";
+            }
+        echo "</select>
+            </div>
+          </dd>
+        </dl>";}
     ?>
+
+    <?php echo $this->getChildHtml('', true, true);?>
+
     <?php if ($this->hasRequiredOptions()):?>
         
     <?php endif;?>
