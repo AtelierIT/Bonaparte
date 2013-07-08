@@ -16,7 +16,7 @@ class Bonaparte_ImportExport_Model_Custom_Import_Stockincr extends Bonaparte_Imp
      * @var string
      */
     //const CONFIGURATION_FILE_PATH = '/dump_files/csv/Pulsen_incremental_inventory.TXT';
-    const CONFIGURATION_FILE_PATH = '/dump_files/csv/WBN2435';
+    const CONFIGURATION_FILE_PATH = '/dump_files/WBN2435';
 
     /**
      * Construct import model
@@ -96,7 +96,7 @@ class Bonaparte_ImportExport_Model_Custom_Import_Stockincr extends Bonaparte_Imp
 				$product->setStockData($item);
 				try {
 					$product->save();
-					echo "Product stock updated for sku ".$key;
+					echo "Product stock updated for sku " . $key . "\n";
 				}
 				catch (Exception $ex) {
 					echo $ex->getMessage();

@@ -14,7 +14,7 @@ class Bonaparte_ImportExport_Model_Custom_Import_Prices extends Bonaparte_Import
      *
      * @var string
      */
-    const CONFIGURATION_FILE_PATH = '/dump_files/ARTIKLAR.TXT';
+    const CONFIGURATION_FILE_PATH = '/dump_files/WBN240S';
     const CONFIGURATION_FILE_PATH_TMP = '/dump_files/bonaparte_tmp_import_prices.csv';
 
     /**
@@ -142,7 +142,10 @@ class Bonaparte_ImportExport_Model_Custom_Import_Prices extends Bonaparte_Import
             $storeIds = $website->getStoreIds();
             $storeViews[strtolower($website->getCode())] = array_pop($storeIds);
         }
-		
+
+        print_r($storeViews);
+        echo "\n";
+
 		$eavAttribute = new Mage_Eav_Model_Mysql4_Entity_Attribute();
 		$conn = Mage::getSingleton('core/resource')->getConnection('core_read');
         $connW = Mage::getSingleton('core/resource')->getConnection('core_write');
@@ -157,6 +160,7 @@ class Bonaparte_ImportExport_Model_Custom_Import_Prices extends Bonaparte_Import
 		$attr_id_status        = $eavAttribute->getIdByCode('catalog_product', 'status');
         $attr_id_traffic_light = $eavAttribute->getIdByCode('catalog_product', 'bnp_trafficlight');
         $attr_id_pricecat      = $eavAttribute->getIdByCode('catalog_product', 'bnp_pricecatalogue');
+        $attr_id_bnp_adcodes   = $eavAttribute->getIdByCode('catalog_product', 'bnp_adcodes');
 
         // get the entity type id for product
 		$entityType = Mage::getModel('eav/entity_type')->loadByCode('catalog_product');
@@ -256,24 +260,27 @@ class Bonaparte_ImportExport_Model_Custom_Import_Prices extends Bonaparte_Import
         $connW->query($sql);
         
 		//update price
-        $sql = "UPDATE catalog_product_entity_decimal e SET value = (SELECT price FROM bonaparte_tmp_import_prices WHERE entity_id = e.entity_id AND store_id = e.store_id) WHERE (attribute_id, store_id, entity_id) IN (SELECT $attr_id_price, store_id, entity_id FROM bonaparte_tmp_import_prices) ";
+        #$sql = "UPDATE catalog_product_entity_decimal e SET value = (SELECT b.price FROM bonaparte_tmp_import_prices b WHERE b.entity_id = e.entity_id AND b.store_id = e.store_id) WHERE (attribute_id, store_id, entity_id) IN (SELECT $attr_id_price, store_id, entity_id FROM bonaparte_tmp_import_prices) ";
+        $sql = "INSERT INTO catalog_product_entity_decimal (entity_type_id, attribute_id, store_id, entity_id, value) SELECT $entityTypeId, $attr_id_price, store_id, entity_id, price FROM bonaparte_tmp_import_prices b WHERE IFNULL(b.entity_id,0) <> 0 ON DUPLICATE KEY UPDATE value = b.price";
         $this->_logMessage($sql . "\n" );
         $connW->query($sql);   
         
 		//update special_price
-        $sql = "UPDATE catalog_product_entity_decimal e SET value = (SELECT special_price FROM bonaparte_tmp_import_prices WHERE entity_id = e.entity_id AND store_id = e.store_id) WHERE (attribute_id, store_id, entity_id) IN (SELECT $attr_id_special_price, store_id, entity_id_c FROM bonaparte_tmp_import_prices) ";
-        #$sql = "INSERT INTO catalog_product_entity_decimal (entity_type_id, attribute_id, store_id, entity_id, value) SELECT $entityTypeId, $attr_id_special_price, store_id, entity_id_c, special_price FROM bonaparte_tmp_import_prices b ON DUPLICATE KEY UPDATE value = b.special_price";
+        #$sql = "UPDATE catalog_product_entity_decimal e SET value = (SELECT special_price FROM bonaparte_tmp_import_prices WHERE entity_id = e.entity_id AND store_id = e.store_id) WHERE (attribute_id, store_id, entity_id) IN (SELECT $attr_id_special_price, store_id, entity_id_c FROM bonaparte_tmp_import_prices) ";
+        $sql = "INSERT INTO catalog_product_entity_decimal (entity_type_id, attribute_id, store_id, entity_id, value) SELECT $entityTypeId, $attr_id_special_price, store_id, entity_id, special_price FROM bonaparte_tmp_import_prices b WHERE IFNULL(b.entity_id,0) <> 0 ON DUPLICATE KEY UPDATE value = b.special_price";
 
         $this->_logMessage($sql . "\n" );
         $connW->query($sql);    
         
 		//update special_from_date
-        $sql = "UPDATE catalog_product_entity_datetime e SET value = (SELECT special_from_date FROM bonaparte_tmp_import_prices WHERE entity_id = e.entity_id AND store_id = e.store_id) WHERE (attribute_id, store_id, entity_id) IN (SELECT $attr_id_special_from, store_id, entity_id FROM bonaparte_tmp_import_prices) ";
+        #$sql = "UPDATE catalog_product_entity_datetime e SET value = (SELECT special_from_date FROM bonaparte_tmp_import_prices WHERE entity_id = e.entity_id AND store_id = e.store_id) WHERE (attribute_id, store_id, entity_id) IN (SELECT $attr_id_special_from, store_id, entity_id FROM bonaparte_tmp_import_prices) ";
+        $sql = "INSERT INTO catalog_product_entity_datetime (entity_type_id, attribute_id, store_id, entity_id, value) SELECT $entityTypeId, $attr_id_special_from, store_id, entity_id, special_from_date FROM bonaparte_tmp_import_prices b  WHERE IFNULL(b.entity_id,0) <> 0 ON DUPLICATE KEY UPDATE value = b.special_from_date";
         $this->_logMessage($sql . "\n" );
         $connW->query($sql);    
         
 		//update special_to_date
-        $sql = "UPDATE catalog_product_entity_datetime e SET value = (SELECT special_to_date FROM bonaparte_tmp_import_prices WHERE entity_id = e.entity_id AND store_id = e.store_id) WHERE (attribute_id, store_id, entity_id) IN (SELECT $attr_id_special_to, store_id, entity_id FROM bonaparte_tmp_import_prices) ";
+        #$sql = "UPDATE catalog_product_entity_datetime e SET value = (SELECT special_to_date FROM bonaparte_tmp_import_prices WHERE entity_id = e.entity_id AND store_id = e.store_id) WHERE (attribute_id, store_id, entity_id) IN (SELECT $attr_id_special_to, store_id, entity_id FROM bonaparte_tmp_import_prices) ";
+        $sql = "INSERT INTO catalog_product_entity_datetime (entity_type_id, attribute_id, store_id, entity_id, value) SELECT $entityTypeId, $attr_id_special_to, store_id, entity_id, special_to_date FROM bonaparte_tmp_import_prices b WHERE IFNULL(b.entity_id,0) <> 0  ON DUPLICATE KEY UPDATE value = b.special_to_date";
         $this->_logMessage($sql . "\n" );
         $connW->query($sql);
 
@@ -293,7 +300,7 @@ class Bonaparte_ImportExport_Model_Custom_Import_Prices extends Bonaparte_Import
         $this->_logMessage("Sql bnp_trafficlight: " . $sql . "\n" );
         $connW->query($sql); */
 
-        $sql = "INSERT INTO catalog_product_entity_int (entity_type_id, attribute_id, store_id, entity_id, value) SELECT $entityTypeId, $attr_id_pricecat, store_id, entity_id, bnp_pricecat FROM bonaparte_tmp_import_prices b WHERE IFNULL(b.entity_id,0) <> 0 ON DUPLICATE KEY UPDATE value = b.bnp_pricecat";
+        $sql = "INSERT INTO catalog_product_entity_int (entity_type_id, attribute_id, store_id, entity_id, value) SELECT $entityTypeId, $attr_id_bnp_adcodes, store_id, entity_id, bnp_adcodes FROM bonaparte_tmp_import_prices b WHERE IFNULL(b.entity_id,0) <> 0 ON DUPLICATE KEY UPDATE value = b.bnp_adcodes";
         $this->_logMessage("Sql bnp_trafficlight: " . $sql . "\n" );
         $connW->query($sql);
 		
@@ -310,7 +317,7 @@ class Bonaparte_ImportExport_Model_Custom_Import_Prices extends Bonaparte_Import
 		######### should delete also the special prices that are equal  #######
 		
         #$sql = "UPDATE catalog_product_entity_decimal e SET value = (SELECT min(special_price) FROM bonaparte_tmp_import_prices WHERE entity_id_c = e.entity_id AND store_id = e.store_id) WHERE (attribute_id, store_id, entity_id) IN (SELECT $attr_id_special_price, store_id, entity_id_c FROM bonaparte_tmp_import_prices)";
-        $sql = "INSERT INTO catalog_product_entity_decimal (entity_type_id, attribute_id, store_id, entity_id, value) SELECT $entityTypeId, $attr_id_special_price, store_id, entity_id_c, special_price FROM bonaparte_tmp_import_prices b WHERE b.entity_id_c IS NOT NULL AND price <> special_price ON DUPLICATE KEY UPDATE value = b.special_price";
+        $sql = "INSERT INTO catalog_product_entity_decimal (entity_type_id, attribute_id, store_id, entity_id, value) SELECT $entityTypeId, $attr_id_special_price, store_id, entity_id_c, special_price FROM bonaparte_tmp_import_prices b WHERE b.entity_id_c IS NOT NULL ON DUPLICATE KEY UPDATE value = b.special_price";
         $this->_logMessage($sql . "\n" );
         $connW->query($sql);    
         
