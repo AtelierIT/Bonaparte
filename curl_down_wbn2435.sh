@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 date
 curl -o /chroot/home/stagebon/stage.bonaparteshop.com/html/dump_files/WBN2435 -u bapweb:PTG433 ftp://ftp1.pulsen.se/KUND/WBN/WBN2435
 date
