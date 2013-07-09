@@ -29,16 +29,16 @@ class Bonaparte_ImportExport_Model_Custom_Import_Products extends Bonaparte_Impo
      *
      * @var string
      */
-    const CONFIGURATION_FILE_PATH = '/chroot/home/stagebon/upload/xml/product';       // server configuration
-//    const CONFIGURATION_FILE_PATH = '/var/www/bonaparte/magento/dump_files/xml/test6'; // local developer station
+//    const CONFIGURATION_FILE_PATH = '/chroot/home/stagebon/upload/xml/product';       // server configuration
+    const CONFIGURATION_FILE_PATH = '/var/www/bonaparte/magento/dump_files/xml/test7'; // local developer station
 
     /**
      * Path to the product pictures source files
      *
      * @var string
      */
-    const PICTURE_BASE_PATH = '/chroot/home/stagebon/upload/pictures/';
-//    const PICTURE_BASE_PATH = '/var/www/bonaparte/magento/dump_files/pictures/';
+//    const PICTURE_BASE_PATH = '/chroot/home/stagebon/upload/pictures/';
+    const PICTURE_BASE_PATH = '/var/www/bonaparte/magento/dump_files/pictures/';
 
     /**
      * Path to the missing pictures file
@@ -690,6 +690,12 @@ class Bonaparte_ImportExport_Model_Custom_Import_Products extends Bonaparte_Impo
                         $uksize = $this->_sizeTranslate[$category_id][$productSize];
                         $simpleProductData[$sizeCounter]['uk_sku'] = $productItem['CinoNumber']['value'] . '-' . $this->_sizeTranslate[$category_id][$productSize];
                     }
+                }
+                $ukSizeCategory = $productData['Program']['value'] . '_' . $productData['ProductMainGroup']['value'];
+                if ($this->_sizeTranslate[$ukSizeCategory][$productSize]){
+                    //$sProduct -> setBnpSizetranslate($this->_sizeTranslate[$ukSizeCategory][$productSize]);
+                    $uksize = $this->_sizeTranslate[$ukSizeCategory][$productSize];
+                    $simpleProductData[$sizeCounter]['uk_sku'] = $productItem['CinoNumber']['value'] . '-' . $this->_sizeTranslate[$ukSizeCategory][$productSize];
                 }
 
                 // add stylenbr to select options
