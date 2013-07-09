@@ -54,9 +54,23 @@ class Bonaparte_ImportExport_Model_Custom_Import_Related extends Bonaparte_Impor
         $config  = Mage::getConfig()->getResourceConnectionConfig("default_setup");
 
 
+        $sql ="INSERT IGNORE INTO `catalog_product_link` (`product_id`, `linked_product_id`, `link_type_id`)
+                    SELECT
+                        T1.`entity_id`, T2.`entity_id`, C1.`link_type_id`
+                    FROM
+                        (SELECT DISTINCT `picture_name`,`entity_id` FROM `bonaparte_resources` WHERE product_type = 1) T1,
+                        (SELECT DISTINCT `picture_name`,`entity_id` FROM `bonaparte_resources` WHERE product_type = 1) T2,
+                        (SELECT `link_type_id` FROM `catalog_product_link_type` WHERE `code`='relation') C1
+                    WHERE
+                        T1.PICTURE_NAME=T2.PICTURE_NAME AND
+                        T1.entity_id<>T2.entity_id;";
+        $connW->query($sql);
+        $this->_logMessage('Done!' . "\n");
+
         //Read data from bonaparte_sources
-        $sql = "SELECT DISTINCT picture_name FROM bonaparte_resources";
-        $results = $conn->fetchAll($sql);
+        /*$sql = "SELECT DISTINCT picture_name FROM bonaparte_resources";
+        #$results = $conn->fetchAll($sql);
+
 
         if ($results) {
             foreach ($results as $res) {
@@ -72,7 +86,7 @@ class Bonaparte_ImportExport_Model_Custom_Import_Related extends Bonaparte_Impor
                     echo $res['picture_name']."\n";
                     $no_products = count($results2);
 
-                    /*
+
                     $main_product_id = $results2[0]['entity_id'];
 
                     //get related products
@@ -106,7 +120,7 @@ class Bonaparte_ImportExport_Model_Custom_Import_Related extends Bonaparte_Impor
                         $prod->save();
                     }
 
-                    */
+
 
                     for ($i=0;$i<$no_products;$i++) {
 
@@ -137,12 +151,15 @@ class Bonaparte_ImportExport_Model_Custom_Import_Related extends Bonaparte_Impor
                             $prod->save();
                         }
 
-                    }
+                    } //end for products
 
                 }
+
             }
+
         }
 
+        */
 
 		
         $this->_logMessage('Finished relate products' . "\n" );

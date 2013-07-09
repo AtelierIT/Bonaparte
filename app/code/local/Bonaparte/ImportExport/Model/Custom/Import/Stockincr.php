@@ -157,10 +157,10 @@ class Bonaparte_ImportExport_Model_Custom_Import_Stockincr extends Bonaparte_Imp
         $connW->query($sql);
 
         //update stock
-        $sql = "UPDATE cataloginventory_stock_item e SET e.qty = (SELECT b.qty FROM bonaparte_tmp_import_stock b WHERE b.entity_id = e.product_id), e.is_in_stock = (SELECT b.is_in_stock FROM bonaparte_tmp_import_stock b WHERE b.entity_id = e.product_id) WHERE EXISTS (SELECT 1 FROM bonaparte_tmp_import_prices b2 WHERE b2.entity_id = e.product_id) ";
+        $sql = "UPDATE cataloginventory_stock_item e SET e.qty = (SELECT b.qty FROM bonaparte_tmp_import_stock b WHERE b.entity_id = e.product_id), e.is_in_stock = (SELECT b.is_in_stock FROM bonaparte_tmp_import_stock b WHERE b.entity_id = e.product_id) WHERE EXISTS (SELECT 1 FROM bonaparte_tmp_import_stock b2 WHERE b2.entity_id = e.product_id) ";
         $connW->query($sql);
 
-        $sql = "UPDATE cataloginventory_stock_status e SET e.qty = (SELECT b.qty FROM bonaparte_tmp_import_stock b WHERE b.entity_id = e.product_id), e.stock_status = (SELECT b.is_in_stock FROM bonaparte_tmp_import_stock b WHERE b.entity_id = e.product_id) WHERE EXISTS (SELECT 1 FROM bonaparte_tmp_import_prices b2 WHERE b2.entity_id = e.product_id) ";
+        $sql = "UPDATE cataloginventory_stock_status e SET e.qty = (SELECT b.qty FROM bonaparte_tmp_import_stock b WHERE b.entity_id = e.product_id), e.stock_status = (SELECT b.is_in_stock FROM bonaparte_tmp_import_stock b WHERE b.entity_id = e.product_id) WHERE EXISTS (SELECT 1 FROM bonaparte_tmp_import_stock b2 WHERE b2.entity_id = e.product_id) ";
         $connW->query($sql);
 
 
