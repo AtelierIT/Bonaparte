@@ -29,16 +29,16 @@ class Bonaparte_ImportExport_Model_Custom_Import_Products extends Bonaparte_Impo
      *
      * @var string
      */
-//    const CONFIGURATION_FILE_PATH = '/chroot/home/stagebon/upload/xml/product';       // server configuration
-    const CONFIGURATION_FILE_PATH = '/var/www/bonaparte/magento/dump_files/xml/test6'; // local developer station
+    const CONFIGURATION_FILE_PATH = '/chroot/home/stagebon/upload/xml/product';       // server configuration
+//    const CONFIGURATION_FILE_PATH = '/var/www/bonaparte/magento/dump_files/xml/test6'; // local developer station
 
     /**
      * Path to the product pictures source files
      *
      * @var string
      */
-//    const PICTURE_BASE_PATH = '/chroot/home/stagebon/upload/pictures/';
-    const PICTURE_BASE_PATH = '/var/www/bonaparte/magento/dump_files/pictures/';
+    const PICTURE_BASE_PATH = '/chroot/home/stagebon/upload/pictures/';
+//    const PICTURE_BASE_PATH = '/var/www/bonaparte/magento/dump_files/pictures/';
 
     /**
      * Path to the missing pictures file
@@ -537,34 +537,6 @@ class Bonaparte_ImportExport_Model_Custom_Import_Products extends Bonaparte_Impo
 
             $productSizes = array();
 
-            // first step is to check if the size is custom or not
-            //if (in_array($productItem['Sizess']['value']['en'], array('50X100', '70X140', 'ne size', 'one size', 'One size', 'One Size', 'ONE SIZE', 'onesize', 'Onesize', 'ONESIZE'))) {
-            //    $productSizes = array('cst_' . $productItem['Sizess']['value']['en']);
-            //} elseif (!$this->_customSizes[$productItem['Sizess']['value']['en']]) {
-            //    $productItemSizess = $productItem['Sizess']['value']['en'] == $productItem['Sizess']['value']['de'] ? $productItem['Sizess']['value']['en'] : $productItem['Sizess']['value']['en'] . '-' . $productItem['Sizess']['value']['de'];
-            //    $productSizesTemp = explode("-", $productItemSizess);
-            //    foreach ($productSizesTemp as $productSizeTemp)
-            //        if (!$this->_customSizes[$productSizeTemp]) {
-            //            $productSizes[] = $productSizeTemp;
-            //        } else {
-            //            $productSizes[] = $this->_customSizes[$productSizeTemp];
-            //        }
-            //
-            //} else {
-            //    $productSizes = array($this->_customSizes[$productItem['Sizess']['value']['en']]);
-            //}
-
-            //take the sizes from the <Price> tag
-            //foreach ($productItem['Prices']['value']['Catalogue'][0]['value'] as $productSizeTemp => $sizeCountry)
-            //    if (!$this->_customSizes[$productSizeTemp]) {
-            //        $productSizes[] = $productSizeTemp;
-            //    } else {
-            //        if (in_array($productSizeTemp, array('50X100', '70X140', 'ne size', 'one size', 'One size', 'One Size', 'ONE SIZE', 'onesize', 'Onesize', 'ONESIZE'))) {
-            //               $productSizes = array('cst_' . $productSizeTemp);
-            //        } else {
-            //           $productSizes[] = $this->_customSizes[$productSizeTemp];
-            //        }
-            //    }
 
             //all products have EU sizes and frontend custom size
             if (in_array($productItem['Sizess']['value']['da'], array('50X100', '70X140', 'ne size', 'one size', 'One size', 'One Size', 'ONE SIZE', 'onesize', 'Onesize', 'ONESIZE'))) {
@@ -582,13 +554,6 @@ class Bonaparte_ImportExport_Model_Custom_Import_Products extends Bonaparte_Impo
                 } else {
                     $productSizes = array($this->_customSizes[$productItem['Sizess']['value']['da']]);
             }
-
-
-
-
-
-            //$justUK = 0;
-            //if ($productItem['Sizess']['value']['en'] != $productItem['Sizess']['value']['de']) $justUK = 1;
 
             $this->_logMessage('Editing ' . count($productSizes) . ' simple products');
             $productOneSize = (count($productSizes) == 1)? 1 : 0;
@@ -608,16 +573,6 @@ class Bonaparte_ImportExport_Model_Custom_Import_Products extends Bonaparte_Impo
                 //create each simple product
                 $category_ids = array();
                 $category_idss = array();
-
-                // $prefix_main_group = "";
-                // $prefix_sub_group = "";
-                // if ($productData['Program']['value'] != '') $category_ids[] = $productData['Program']['value'];
-                // if ($productData['ProductMainGroup']['value'] != '') {
-                //     $prefix_main_group = $productData['Program']['value'] ? $productData['Program']['value'] . "_" : "";
-                //     $category_ids[] = $prefix_main_group . $productData['ProductMainGroup']['value']; //tmunteanu add Program to product main group. Ex: M_001 where M = Program and 001 = Main Group
-                //     $prefix_sub_group = $prefix_main_group . $productData['ProductMainGroup']['value'] . "_";
-                // }
-                // if ($productData['ProductGroup']['value'] != '') $category_ids[] = $prefix_sub_group . $productData['ProductGroup']['value'];
 
                 $category_ids = $this->_productStructure[$productData['StyleNbr']['value']];
                 foreach ($category_ids as $category_id) {
@@ -717,27 +672,6 @@ class Bonaparte_ImportExport_Model_Custom_Import_Products extends Bonaparte_Impo
                         'qty' => $productQTY
                     ));
                 };
-
-
-                //switch (count($productItem['Prices']['value']['Catalogue'][0]['value'][$productSize])) {
-                //    case '6':
-                //        $sProduct -> setWebsiteIds($this->_allWebsiteIDs);
-                 //       break;
-                //    case '5':
-                //        $sProduct -> setWebsiteIds(array($this->_allWebsiteIDs['base'],$this->_allWebsiteIDs['dk'],$this->_allWebsiteIDs['ch'],$this->_allWebsiteIDs['de'],$this->_allWebsiteIDs['nl'],$this->_allWebsiteIDs['se']));
-                //        break;
-                 //   case '1':
-                 //       $sProduct -> setWebsiteIds(array($this->_allWebsiteIDs['base'],$this->_allWebsiteIDs['uk']));
-                 //       break;
-                //}
-
-                //if (!$justUK) {....
-                //    $sProduct -> setWebsiteIds($this->_allWebsiteIDs);
-                //}elseif($sizeCounter<=($productSizes)/2)){
-                //    $sProduct -> setWebsiteIds(array($this->_allWebsiteIDs['base'],$this->_allWebsiteIDs['uk']));
-                //}else{
-                //    $sProduct -> setWebsiteIds(array($this->_allWebsiteIDs['base'],$this->_allWebsiteIDs['dk'],$this->_allWebsiteIDs['ch'],$this->_allWebsiteIDs['de'],$this->_allWebsiteIDs['nl'],$this->_allWebsiteIDs['se']));
-                //}
 
                 foreach($this->_allWebsiteIDs as $code => $websiteId) {
                     if(!$websiteId) {
@@ -880,22 +814,6 @@ class Bonaparte_ImportExport_Model_Custom_Import_Products extends Bonaparte_Impo
 
                         }
                     }
-                    // adding the BNP 'style' images
-//                    foreach ($productData['Resources']['value'] as $resource) {
-//                        $isLeadPicture = 0;
-//                        if ($productItem['LeadPicture']['value'][0]['id']==$resource['id']) $isLeadPicture = 1;
-//                        $picturePath = $pictureBasePath . $resource['OriginalFilename']['value'];
-//                        if (file_exists($picturePath) && ($resource['OriginalFilename']['value'] != '')) {
-//                            try {
-//                                $this->_addProductImage($sProductId, $resource['OriginalFilename']['value'], $isLeadPicture);
-//                                $this->_logMessage('O', false);
-//                            } catch (Exception $e) {
-//                                echo $e->getMessage();
-//                            }
-//                        } else {
-//                            $this->_logMessage('X', false);
-//                        }
-//                    }
 
                     // adding the different attribute values per store view
                     $productShortDescriptionn = array();
@@ -903,6 +821,7 @@ class Bonaparte_ImportExport_Model_Custom_Import_Products extends Bonaparte_Impo
                         $temp = explode('.',$description);
                         $productShortDescriptionn [$key] = $temp[0].'.';
                     }
+
                     $sql = "INSERT INTO catalog_product_entity_text (entity_type_id, attribute_id, store_id, entity_id, value) VALUES (:entity_type_id,:short_descr_id,:store_id,:entity_id,:short_description)ON DUPLICATE KEY UPDATE `value` = :short_description;
                             INSERT INTO catalog_product_entity_text (entity_type_id, attribute_id, store_id, entity_id, value) VALUES (:entity_type_id,:descr_id,:store_id,:entity_id,:description)ON DUPLICATE KEY UPDATE `value` = :description;
                            INSERT INTO catalog_product_entity_varchar (entity_type_id, attribute_id, store_id, entity_id, value) VALUES (:entity_type_id,:meta_descr_id,:store_id,:entity_id,:meta_description)ON DUPLICATE KEY UPDATE `value` = :meta_description;
@@ -1230,26 +1149,6 @@ class Bonaparte_ImportExport_Model_Custom_Import_Products extends Bonaparte_Impo
                 }
 
 
-
-//                foreach ($productItem['Resources']['value'] as $resource) {
-//                    $isLeadPicture = 0;
-//                    if ($productItem['LeadPicture']['value'][0]['id']==$resource['id']) $isLeadPicture = 1;
-//                    $picturePath = $pictureBasePath . $resource['OriginalFilename']['value'];
-//                    if (file_exists($picturePath) && ($resource['OriginalFilename']['value'] != '')) {
-//                        try {
-//                            $this->_addProductImage($cProductId, $resource['OriginalFilename']['value'], $isLeadPicture);
-////                              $cProduct->addImageToMediaGallery($picturePath,$mediaAttributes, false, false);
-//                            $this->_logMessage('O', false);
-//                        } catch (Exception $e) {
-//                            echo $e->getMessage();
-//                        }
-//                    } else {
-//                        $this->_logMessage('X', false);
-//                        fputcsv($this->_fileHandlerPictures,array($productData['StyleNbr']['value'],$productItem['CinoNumber']['value'],$resource['OriginalFilename']['value']?$resource['OriginalFilename']['value']:'empty OriginalFilename tag'));
-//                    }
-//                    $resourceList[$resource['id']] = $resource['OriginalFilename']['value'];
-//                }
-
                 // create cino pictures
                 $this->_logMessage('Creating lead pictures files ');
                 if (count($productItem['LeadPicture']['value']) == 2) {
@@ -1291,24 +1190,6 @@ class Bonaparte_ImportExport_Model_Custom_Import_Products extends Bonaparte_Impo
 
                 // end create cino picture
 
-
-                // adding the BNP 'style' images
-//                foreach ($productData['Resources']['value'] as $resource) {
-//                    $picturePath = $pictureBasePath . $resource['OriginalFilename']['value'];
-//                    if (file_exists($picturePath) && ($resource['OriginalFilename']['value'] != '')) {
-//                        try {
-//                            $this->_addProductImage($cProductId, $resource['OriginalFilename']['value'], 0);
-////                              $cProduct->addImageToMediaGallery($picturePath,$mediaAttributes, false, false);
-//                            $this->_logMessage('O', false);
-//                        } catch (Exception $e) {
-//                            echo $e->getMessage();
-//                        }
-//                    } else {
-//                        $this->_logMessage('X', false);
-//                    }
-//                }
-
-
                 // adding the different attribute values per store view
                 $productShortDescriptionn = array();
                 foreach ($productData['DescriptionCatalogues']['value'] as $key => $description){
@@ -1316,54 +1197,6 @@ class Bonaparte_ImportExport_Model_Custom_Import_Products extends Bonaparte_Impo
                     $productShortDescriptionn [$key] = $temp[0].'.';
                 }
 
-//                $sql = "INSERT INTO catalog_product_entity_text (entity_type_id, attribute_id, store_id, entity_id, value) VALUES (" . $this->_productEntityTypeId . "," . $this->_shortDescriptionId . "," . $this->_websiteStoreView['uk'] . "," . $cProductId . ",'" . mysql_real_escape_string($productShortDescriptionn['en']) . "')ON DUPLICATE KEY UPDATE `value` = '". mysql_real_escape_string($productShortDescriptionn['en']) ."';
-//                            INSERT INTO catalog_product_entity_text (entity_type_id, attribute_id, store_id, entity_id, value) VALUES (" . $this->_productEntityTypeId . "," . $this->_descriptionId . "," . $this->_websiteStoreView['uk'] . "," . $cProductId . ",'" . mysql_real_escape_string($productData['DescriptionCatalogues']['value']['en']) . "')ON DUPLICATE KEY UPDATE `value` = '". mysql_real_escape_string($productData['DescriptionCatalogues']['value']['en']) ."';
-//                           INSERT INTO catalog_product_entity_varchar (entity_type_id, attribute_id, store_id, entity_id, value) VALUES (" . $this->_productEntityTypeId . "," . $this->_metaDescriptionId . "," . $this->_websiteStoreView['uk'] . "," . $cProductId . ",'" . mysql_real_escape_string($productShortDescriptionn['en']) . "')ON DUPLICATE KEY UPDATE `value` = '". mysql_real_escape_string($productShortDescriptionn['en']) ."';
-//                           INSERT INTO catalog_product_entity_varchar (entity_type_id, attribute_id, store_id, entity_id, value) VALUES (" . $this->_productEntityTypeId . "," . $this->_metaTitleId . "," . $this->_websiteStoreView['uk'] . "," . $cProductId . ",'" . mysql_real_escape_string($productData['HeaderWebs']['value']['en']) . "')ON DUPLICATE KEY UPDATE `value` = '". mysql_real_escape_string($productData['HeaderWebs']['value']['en']) ."';
-//                           INSERT INTO catalog_product_entity_varchar (entity_type_id, attribute_id, store_id, entity_id, value) VALUES (" . $this->_productEntityTypeId . "," . $this->_nameId . "," . $this->_websiteStoreView['uk'] . "," . $cProductId . ",'" . mysql_real_escape_string($productData['HeaderWebs']['value']['en']) . "')ON DUPLICATE KEY UPDATE `value` = '". mysql_real_escape_string($productData['HeaderWebs']['value']['en']) ."';
-//                            ";
-//                $connW->query($sql);
-//
-//                $sql = "INSERT INTO catalog_product_entity_text (entity_type_id, attribute_id, store_id, entity_id, value) VALUES (" . $this->_productEntityTypeId . "," . $this->_shortDescriptionId . "," . $this->_websiteStoreView['dk'] . "," . $cProductId . ",'" . mysql_real_escape_string($productShortDescriptionn['da']) . "')ON DUPLICATE KEY UPDATE `value` = '". mysql_real_escape_string($productShortDescriptionn['da']) ."';
-//                            INSERT INTO catalog_product_entity_text (entity_type_id, attribute_id, store_id, entity_id, value) VALUES (" . $this->_productEntityTypeId . "," . $this->_descriptionId . "," . $this->_websiteStoreView['dk'] . "," . $cProductId . ",'" . mysql_real_escape_string($productData['DescriptionCatalogues']['value']['da']) . "')ON DUPLICATE KEY UPDATE `value` = '". mysql_real_escape_string($productData['DescriptionCatalogues']['value']['da']) ."';
-//                           INSERT INTO catalog_product_entity_varchar (entity_type_id, attribute_id, store_id, entity_id, value) VALUES (" . $this->_productEntityTypeId . "," . $this->_metaDescriptionId . "," . $this->_websiteStoreView['dk'] . "," . $cProductId . ",'" . mysql_real_escape_string($productShortDescriptionn['da']) . "')ON DUPLICATE KEY UPDATE `value` = '". mysql_real_escape_string($productShortDescriptionn['da']) ."';
-//                           INSERT INTO catalog_product_entity_varchar (entity_type_id, attribute_id, store_id, entity_id, value) VALUES (" . $this->_productEntityTypeId . "," . $this->_metaTitleId . "," . $this->_websiteStoreView['dk'] . "," . $cProductId . ",'" . mysql_real_escape_string($productData['HeaderWebs']['value']['da']) . "')ON DUPLICATE KEY UPDATE `value` = '". mysql_real_escape_string($productData['HeaderWebs']['value']['da']) ."';
-//                           INSERT INTO catalog_product_entity_varchar (entity_type_id, attribute_id, store_id, entity_id, value) VALUES (" . $this->_productEntityTypeId . "," . $this->_nameId . "," . $this->_websiteStoreView['dk'] . "," . $cProductId . ",'" . mysql_real_escape_string($productData['HeaderWebs']['value']['da']) . "')ON DUPLICATE KEY UPDATE `value` = '". mysql_real_escape_string($productData['HeaderWebs']['value']['da']) ."';
-//                            ";
-//                $connW->query($sql);
-//
-//                $sql = "INSERT INTO catalog_product_entity_text (entity_type_id, attribute_id, store_id, entity_id, value) VALUES (" . $this->_productEntityTypeId . "," . $this->_shortDescriptionId . "," . $this->_websiteStoreView['ch'] . "," . $cProductId . ",'" . mysql_real_escape_string($productShortDescriptionn['de_CH']) . "')ON DUPLICATE KEY UPDATE `value` = '". mysql_real_escape_string($productShortDescriptionn['de_CH']) ."';
-//                            INSERT INTO catalog_product_entity_text (entity_type_id, attribute_id, store_id, entity_id, value) VALUES (" . $this->_productEntityTypeId . "," . $this->_descriptionId . "," . $this->_websiteStoreView['ch'] . "," . $cProductId . ",'" . mysql_real_escape_string($productData['DescriptionCatalogues']['value']['de_CH']) . "')ON DUPLICATE KEY UPDATE `value` = '". mysql_real_escape_string($productData['DescriptionCatalogues']['value']['de_CH']) ."';
-//                           INSERT INTO catalog_product_entity_varchar (entity_type_id, attribute_id, store_id, entity_id, value) VALUES (" . $this->_productEntityTypeId . "," . $this->_metaDescriptionId . "," . $this->_websiteStoreView['ch'] . "," . $cProductId . ",'" . mysql_real_escape_string($productShortDescriptionn['de_CH']) . "')ON DUPLICATE KEY UPDATE `value` = '". mysql_real_escape_string($productShortDescriptionn['de_CH']) ."';
-//                           INSERT INTO catalog_product_entity_varchar (entity_type_id, attribute_id, store_id, entity_id, value) VALUES (" . $this->_productEntityTypeId . "," . $this->_metaTitleId . "," . $this->_websiteStoreView['ch'] . "," . $cProductId . ",'" . mysql_real_escape_string($productData['HeaderWebs']['value']['de_CH']) . "')ON DUPLICATE KEY UPDATE `value` = '". mysql_real_escape_string($productData['HeaderWebs']['value']['de_CH']) ."';
-//                           INSERT INTO catalog_product_entity_varchar (entity_type_id, attribute_id, store_id, entity_id, value) VALUES (" . $this->_productEntityTypeId . "," . $this->_nameId . "," . $this->_websiteStoreView['ch'] . "," . $cProductId . ",'" . mysql_real_escape_string($productData['HeaderWebs']['value']['de_CH']) . "')ON DUPLICATE KEY UPDATE `value` = '". mysql_real_escape_string($productData['HeaderWebs']['value']['de_CH']) ."';
-//                            ";
-//                $connW->query($sql);
-//
-//                $sql = "INSERT INTO catalog_product_entity_text (entity_type_id, attribute_id, store_id, entity_id, value) VALUES (" . $this->_productEntityTypeId . "," . $this->_shortDescriptionId . "," . $this->_websiteStoreView['de'] . "," . $cProductId . ",'" . mysql_real_escape_string($productShortDescriptionn['de']) . "')ON DUPLICATE KEY UPDATE `value` = '". mysql_real_escape_string($productShortDescriptionn['de']) ."';
-//                            INSERT INTO catalog_product_entity_text (entity_type_id, attribute_id, store_id, entity_id, value) VALUES (" . $this->_productEntityTypeId . "," . $this->_descriptionId . "," . $this->_websiteStoreView['de'] . "," . $cProductId . ",'" . mysql_real_escape_string($productData['DescriptionCatalogues']['value']['de']) . "')ON DUPLICATE KEY UPDATE `value` = '". mysql_real_escape_string($productData['DescriptionCatalogues']['value']['de']) ."';
-//                           INSERT INTO catalog_product_entity_varchar (entity_type_id, attribute_id, store_id, entity_id, value) VALUES (" . $this->_productEntityTypeId . "," . $this->_metaDescriptionId . "," . $this->_websiteStoreView['de'] . "," . $cProductId . ",'" . mysql_real_escape_string($productShortDescriptionn['de']) . "')ON DUPLICATE KEY UPDATE `value` = '". mysql_real_escape_string($productShortDescriptionn['de']) ."';
-//                           INSERT INTO catalog_product_entity_varchar (entity_type_id, attribute_id, store_id, entity_id, value) VALUES (" . $this->_productEntityTypeId . "," . $this->_metaTitleId . "," . $this->_websiteStoreView['de'] . "," . $cProductId . ",'" . mysql_real_escape_string($productData['HeaderWebs']['value']['de']) . "')ON DUPLICATE KEY UPDATE `value` = '". mysql_real_escape_string($productData['HeaderWebs']['value']['de']) ."';
-//                           INSERT INTO catalog_product_entity_varchar (entity_type_id, attribute_id, store_id, entity_id, value) VALUES (" . $this->_productEntityTypeId . "," . $this->_nameId . "," . $this->_websiteStoreView['de'] . "," . $cProductId . ",'" . mysql_real_escape_string($productData['HeaderWebs']['value']['de']) . "')ON DUPLICATE KEY UPDATE `value` = '". mysql_real_escape_string($productData['HeaderWebs']['value']['de']) ."';
-//                            ";
-//                $connW->query($sql);
-//
-//                $sql = "INSERT INTO catalog_product_entity_text (entity_type_id, attribute_id, store_id, entity_id, value) VALUES (" . $this->_productEntityTypeId . "," . $this->_shortDescriptionId . "," . $this->_websiteStoreView['nl'] . "," . $cProductId . ",'" . mysql_real_escape_string($productShortDescriptionn['nl']) . "')ON DUPLICATE KEY UPDATE `value` = '". mysql_real_escape_string($productShortDescriptionn['nl']) ."';
-//                            INSERT INTO catalog_product_entity_text (entity_type_id, attribute_id, store_id, entity_id, value) VALUES (" . $this->_productEntityTypeId . "," . $this->_descriptionId . "," . $this->_websiteStoreView['nl'] . "," . $cProductId . ",'" . mysql_real_escape_string($productData['DescriptionCatalogues']['value']['nl']) . "')ON DUPLICATE KEY UPDATE `value` = '". mysql_real_escape_string($productData['DescriptionCatalogues']['value']['nl']) ."';
-//                           INSERT INTO catalog_product_entity_varchar (entity_type_id, attribute_id, store_id, entity_id, value) VALUES (" . $this->_productEntityTypeId . "," . $this->_metaDescriptionId . "," . $this->_websiteStoreView['nl'] . "," . $cProductId . ",'" . mysql_real_escape_string($productShortDescriptionn['nl']) . "')ON DUPLICATE KEY UPDATE `value` = '". mysql_real_escape_string($productShortDescriptionn['nl']) ."';
-//                           INSERT INTO catalog_product_entity_varchar (entity_type_id, attribute_id, store_id, entity_id, value) VALUES (" . $this->_productEntityTypeId . "," . $this->_metaTitleId . "," . $this->_websiteStoreView['nl'] . "," . $cProductId . ",'" . mysql_real_escape_string($productData['HeaderWebs']['value']['nl']) . "')ON DUPLICATE KEY UPDATE `value` = '". mysql_real_escape_string($productData['HeaderWebs']['value']['nl']) ."';
-//                           INSERT INTO catalog_product_entity_varchar (entity_type_id, attribute_id, store_id, entity_id, value) VALUES (" . $this->_productEntityTypeId . "," . $this->_nameId . "," . $this->_websiteStoreView['nl'] . "," . $cProductId . ",'" . mysql_real_escape_string($productData['HeaderWebs']['value']['nl']) . "')ON DUPLICATE KEY UPDATE `value` = '". mysql_real_escape_string($productData['HeaderWebs']['value']['nl']) ."';
-//                            ";
-//                $connW->query($sql);
-//
-//                $sql = "INSERT INTO catalog_product_entity_text (entity_type_id, attribute_id, store_id, entity_id, value) VALUES (" . $this->_productEntityTypeId . "," . $this->_shortDescriptionId . "," . $this->_websiteStoreView['se'] . "," . $cProductId . ",'" . mysql_real_escape_string($productShortDescriptionn['sv']) . "')ON DUPLICATE KEY UPDATE `value` = '". mysql_real_escape_string($productShortDescriptionn['sv']) ."';
-//                            INSERT INTO catalog_product_entity_text (entity_type_id, attribute_id, store_id, entity_id, value) VALUES (" . $this->_productEntityTypeId . "," . $this->_descriptionId . "," . $this->_websiteStoreView['se'] . "," . $cProductId . ",'" . mysql_real_escape_string($productData['DescriptionCatalogues']['value']['sv']) . "')ON DUPLICATE KEY UPDATE `value` = '". mysql_real_escape_string($productData['DescriptionCatalogues']['value']['sv']) ."';
-//                           INSERT INTO catalog_product_entity_varchar (entity_type_id, attribute_id, store_id, entity_id, value) VALUES (" . $this->_productEntityTypeId . "," . $this->_metaDescriptionId . "," . $this->_websiteStoreView['se'] . "," . $cProductId . ",'" . mysql_real_escape_string($productShortDescriptionn['sv']) . "')ON DUPLICATE KEY UPDATE `value` = '". mysql_real_escape_string($productShortDescriptionn['sv']) ."';
-//                           INSERT INTO catalog_product_entity_varchar (entity_type_id, attribute_id, store_id, entity_id, value) VALUES (" . $this->_productEntityTypeId . "," . $this->_metaTitleId . "," . $this->_websiteStoreView['se'] . "," . $cProductId . ",'" . mysql_real_escape_string($productData['HeaderWebs']['value']['sv']) . "')ON DUPLICATE KEY UPDATE `value` = '". mysql_real_escape_string($productData['HeaderWebs']['value']['sv']) ."';
-//                           INSERT INTO catalog_product_entity_varchar (entity_type_id, attribute_id, store_id, entity_id, value) VALUES (" . $this->_productEntityTypeId . "," . $this->_nameId . "," . $this->_websiteStoreView['se'] . "," . $cProductId . ",'" . mysql_real_escape_string($productData['HeaderWebs']['value']['sv']) . "')ON DUPLICATE KEY UPDATE `value` = '". mysql_real_escape_string($productData['HeaderWebs']['value']['sv']) ."';
-//
-//                    ";
-//                $connW->query($sql);
 
                 $sql = "INSERT INTO catalog_product_entity_text (entity_type_id, attribute_id, store_id, entity_id, value) VALUES (:entity_type_id,:short_descr_id,:store_id,:entity_id,:short_description)ON DUPLICATE KEY UPDATE `value` = :short_description;
                             INSERT INTO catalog_product_entity_text (entity_type_id, attribute_id, store_id, entity_id, value) VALUES (:entity_type_id,:descr_id,:store_id,:entity_id,:description)ON DUPLICATE KEY UPDATE `value` = :description;
@@ -1492,45 +1325,40 @@ class Bonaparte_ImportExport_Model_Custom_Import_Products extends Bonaparte_Impo
                 echo "exception:$e";
             }
         // adding style related products
-            $no_products = count($productItemIDs);
-        if ($no_products>1){
-            for ($i=0;$i<$no_products;$i++) {
-
-                $main_product_id = $productItemIDs[$i];
-
-                //get related products
-                $prod = Mage::getModel('catalog/product');
-                $prod->load($main_product_id);
-
-                $related_prods = $prod->getRelatedProductIds();
-                $related_news  = array(); // store new related prods
-
-                for ($j=0;$j<$no_products;$j++) {
-                    if ($i == $j) continue;
-
-                    if (!in_array($productItemIDs[$j], $related_prods)) {
-                        //Not related
-                        //echo "Add to related \n";
-                        $related_news[$productItemIDs[$j]] = array( "position"=> 0);
-                    }
-                }
-
-                if (count($related_news)) {
-                    //Add related products and save
-                    $prod->setRelatedLinkData($related_news);
-                    #$prod->setUpSellLinkData($param);
-                    #$prod->setCrossSellLinkData($param);
-                    $prod->save();
-                }
-
-            }
-
-
+            //$no_products = count($productItemIDs);
+            //if ($no_products>1){
+                //for ($i=0;$i<$no_products;$i++) {
+                //
+                //    $main_product_id = $productItemIDs[$i];
+                //
+                //    //get related products
+                //    $prod = Mage::getModel('catalog/product');
+                //    $prod->load($main_product_id);
+                //
+                //    $related_prods = $prod->getRelatedProductIds();
+                //    $related_news  = array(); // store new related prods
+                //
+                //    for ($j=0;$j<$no_products;$j++) {
+                //        if ($i == $j) continue;
+                //
+                //        if (!in_array($productItemIDs[$j], $related_prods)) {
+                //            //Not related
+                //            //echo "Add to related \n";
+                //            $related_news[$productItemIDs[$j]] = array( "position"=> 0);
+                //        }
+                //    }
+                //
+                //    if (count($related_news)) {
+                //        //Add related products and save
+                //        $prod->setRelatedLinkData($related_news);
+                //        #$prod->setUpSellLinkData($param);
+                //        #$prod->setCrossSellLinkData($param);
+                //        $prod->save();
+                //    }
+                //
+                //}
+            //}
         }
-
-        }
-
-
     }
 
 
@@ -1567,11 +1395,11 @@ class Bonaparte_ImportExport_Model_Custom_Import_Products extends Bonaparte_Impo
                             foreach ($stringXML->Catalogue as $subElement) {
                                 $subValue = array();
                                 foreach ($subElement->Country as $country) {
-//                                    $subValue[] = array(
-//                                        'code' => ,
-//                                        'currency' => $country->getAttribute('currency'),
-//                                        'size' => (string)$country->Size
-//                                    );
+                                    //$subValue[] = array(
+                                    //    'code' => ,
+                                    //    'currency' => $country->getAttribute('currency'),
+                                    //    'size' => (string)$country->Size
+                                    //);
                                     foreach ($country->Size as $sizePrice){
                                         $subValue[$sizePrice->getAttribute('name')][]=$country->getAttribute('code');
                                     }
@@ -1691,7 +1519,7 @@ class Bonaparte_ImportExport_Model_Custom_Import_Products extends Bonaparte_Impo
         foreach ($this->_data as $productConfig) {
             $toImport=0;
             $counter++;
-//	    if ($counter<1000) continue;
+            //	    if ($counter<1000) continue;
             $productData = array();
             $this->_extractConfiguration($productConfig->getNode(), $productData);
             //check if the product is in active catalogue
@@ -1736,6 +1564,21 @@ class Bonaparte_ImportExport_Model_Custom_Import_Products extends Bonaparte_Impo
             }
             fclose($fp);
         }
+        $this->_logMessage('Creating STYLE product relations....');
+        $connW = Mage::getSingleton('core/resource')->getConnection('core_write');
+        $sql ="INSERT IGNORE INTO `catalog_product_link` (`product_id`, `linked_product_id`, `link_type_id`)
+                    SELECT
+                        T1.`configurable_entity_id`, T2.`configurable_entity_id`, C1.`link_type_id`
+                    FROM
+                        (SELECT DISTINCT `style`,`configurable_entity_id` FROM `bonaparte_styles` WHERE 1) T1,
+                        (SELECT DISTINCT `style`,`configurable_entity_id` FROM `bonaparte_styles` WHERE 1) T2,
+                        (SELECT `link_type_id` FROM `catalog_product_link_type` WHERE `code`='relation') C1
+                    WHERE
+                        T1.STYLE=T2.STYLE AND
+                        T1.configurable_entity_id<>T2.configurable_entity_id;";
+        $connW->query($sql);
+        $this->_logMessage('Done!' . "\n");
+
 
         $this->_logMessage('ALL DONE!!!' . "\n");
         $this->_logMessage('There were ' . $this->_newProductCounter . ' new products created!' . "\n");
