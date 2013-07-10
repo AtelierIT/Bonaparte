@@ -28,7 +28,7 @@
     <?php
         $styleProducts = $this->getStyleProducts();
         //check if there are more than 1 product in current Style --> create the dropdown
-        if (count($styleProducts)>1){
+        if (count($styleProducts)>=1){
         echo "
                 <dl class=\"last\">
                     <dt>
@@ -51,6 +51,27 @@
             </div>
           </dd>
         </dl>";}
+        elseif (count($styleProducts)==0) {
+
+            echo "
+                <dl class=\"last\">
+                    <dt>
+                        <label >Color</label>
+                    </dt>
+                    <dd class=\"last\">
+                        <div class=\"input-box\">";
+
+            echo  "<select disabled name=\"color\" id=\"cross_select\" onchange=\"switchColor(this);\">";
+            //current product
+            $currentProduct = $this->getProduct();
+            echo "<option value=\"" . $currentProduct->getProductUrl() . "\" selected=\"selected\">" . $currentProduct->getAttributeText('bnp_color') . ' - ' . substr($currentProduct->getSku(),0,5) . "</option>";
+
+            echo "</select>
+            </div>
+          </dd>
+        </dl>";
+
+        }
     ?>
 
     <?php echo $this->getChildHtml('', true, true);?>
