@@ -1,5 +1,5 @@
-#!/bin/sh
-date
+#!/bin/bash
+
 curl -o /chroot/home/stagebon/stage.bonaparteshop.com/html/dump_files/WBN2435 -u bapweb:PTG433 ftp://ftp1.pulsen.se/KUND/WBN/WBN2435
 date
 DATE1=`date -r /chroot/home/stagebon/stage.bonaparteshop.com/html/dump_files/WBN2435 +%s`;
@@ -12,6 +12,11 @@ then
 
 php -f /chroot/home/stagebon/stage.bonaparteshop.com/html/shell/bonaparte_import.php -- -type stockincr
 
+date
+
+php -f /chroot/home/stagebon/stage.bonaparteshop.com/html/shell/indexer.php -- -reindex cataloginventory_stock
+
 #php -f /var/www/magento/shell/bonaparte_import.php -- -type stockincr
+echo -e "\n"
 date
 fi

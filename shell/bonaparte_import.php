@@ -17,6 +17,7 @@ class Bonaparte_Shell_Import extends Mage_Shell_Abstract
     const IMPORT_TYPE_PRICES = 'prices';
     const IMPORT_TYPE_STOCK = 'stock';
     const IMPORT_TYPE_STOCKINCR = 'stockincr';
+    const IMPORT_TYPE_RELATED = 'related';
 
 
     public function run() {
@@ -39,6 +40,9 @@ class Bonaparte_Shell_Import extends Mage_Shell_Abstract
             case self::IMPORT_TYPE_STOCKINCR:
                 Mage::getModel('Bonaparte_ImportExport/Custom_Import_Stockincr')->start($this->_args);
                 break;
+            case self::IMPORT_TYPE_RELATED:
+                Mage::getModel('Bonaparte_ImportExport/Custom_Import_Related')->start($this->_args);
+                break;
             default:
                 echo $this->usageHelp();
         }
@@ -55,7 +59,6 @@ Usage:  php -f bonaparte_import.php -- [options]
 
   --type <type>                                         attributes|categories|products|prices
   --remove_attributes_with_identical_attribute_code     only for attributes
-  --remove_categories_with_identical_code               only for categories
 
 USAGE;
     }
