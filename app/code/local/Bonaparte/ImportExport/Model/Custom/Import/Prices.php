@@ -191,7 +191,10 @@ class Bonaparte_ImportExport_Model_Custom_Import_Prices extends Bonaparte_Import
             //if (intval($sku[0])<12000) continue;
             $configurableProductSKU = $sku[0] . 'c';
             $countryCode = strtolower($sku[2]);
-            $sku = $sku[0] . '-' . $sku[1];
+            if ($sku[1] ){
+                $sku = $sku[0] . '-' . $sku[1];
+            }
+            else $sku = $sku[0];
 
 
             #$this->_logMessage('Sku: ' . $sku . "\n" );
@@ -308,7 +311,7 @@ class Bonaparte_ImportExport_Model_Custom_Import_Prices extends Bonaparte_Import
 		        
         //update price for configurable
         #$sql = "UPDATE catalog_product_entity_decimal e SET value = (SELECT min(price) FROM bonaparte_tmp_import_prices WHERE entity_id_c = e.entity_id AND store_id = e.store_id) WHERE (attribute_id, store_id, entity_id) IN (SELECT $attr_id_price, store_id, entity_id_c FROM bonaparte_tmp_import_prices)";
-        $sql = "INSERT INTO catalog_product_entity_decimal (entity_type_id, attribute_id, store_id, entity_id, value) SELECT $entityTypeId, $attr_id_price, store_id, entity_id_c, special_price FROM bonaparte_tmp_import_prices b WHERE b.entity_id_c IS NOT NULL ON DUPLICATE KEY UPDATE value = b.price";
+        $sql = "INSERT INTO catalog_product_entity_decimal (entity_type_id, attribute_id, store_id, entity_id, value) SELECT $entityTypeId, $attr_id_price, store_id, entity_id_c, price FROM bonaparte_tmp_import_prices b WHERE b.entity_id_c IS NOT NULL ON DUPLICATE KEY UPDATE value = b.price";
         $this->_logMessage($sql . "\n" );
         $connW->query($sql);  
         
@@ -362,7 +365,7 @@ class Bonaparte_ImportExport_Model_Custom_Import_Prices extends Bonaparte_Import
 
 		//activate products
 		#$sql = "INSERT INTO catalog_product_entity_int (entity_type_id, attribute_id, store_id, entity_id, value) SELECT $entityTypeId, $attr_id_status, store_id, entity_id, 1 FROM bonaparte_tmp_import_prices ON DUPLICATE KEY UPDATE value = 1";
-		$sql = "UPDATE catalog_product_entity_int e SET value = 1 WHERE attribute_id = $attr_id_status AND store_id = 0 AND  entity_id IN (SELECT entity_id_c FROM bonaparte_tmp_import_prices) AND EXISTS (SELECT 1 FROM catalog_product_entity e1 WHERE e1.entity_id = e.entity_id AND SUBSTR(e1.sku,5,1) = 'c')";
+		$sql = "UPDATE catalog_product_entity_int e SET value = 1 WHERE attribute_id = $attr_id_status AND store_id = 0 AND  entity_id IN (SELECT entity_id_c FROM bonaparte_tmp_import_prices) AND EXISTS (SELECT 1 FROM catalog_product_entity e1 WHERE e1.entity_id = e.entity_id AND SUBSTR(e1.sku,6,1) = 'c')";
         $this->_logMessage($sql . "\n" );
         $connW->query($sql);
         
@@ -371,7 +374,7 @@ class Bonaparte_ImportExport_Model_Custom_Import_Prices extends Bonaparte_Import
         $this->_logMessage($sql . "\n" );
         $connW->query($sql);
 
-		$sql = "UPDATE catalog_product_entity_int e SET value = 2 WHERE attribute_id = $attr_id_status AND store_id = 0 AND NOT EXISTS (SELECT 1 FROM bonaparte_tmp_import_prices b WHERE b.entity_id_c = e.entity_id) AND EXISTS (SELECT 1 FROM catalog_product_entity e1 WHERE e1.entity_id = e.entity_id AND SUBSTR(e1.sku,5,1) = 'c')";
+		$sql = "UPDATE catalog_product_entity_int e SET value = 2 WHERE attribute_id = $attr_id_status AND store_id = 0 AND NOT EXISTS (SELECT 1 FROM bonaparte_tmp_import_prices b WHERE b.entity_id_c = e.entity_id) AND EXISTS (SELECT 1 FROM catalog_product_entity e1 WHERE e1.entity_id = e.entity_id AND SUBSTR(e1.sku,6,1) = 'c')";
         $this->_logMessage($sql . "\n" );
         $connW->query($sql);
 		

@@ -53,7 +53,7 @@ class Bonaparte_ImportExport_Model_Custom_Import_Related extends Bonaparte_Impor
         
         $config  = Mage::getConfig()->getResourceConnectionConfig("default_setup");
 
-
+        #insert relation
         $sql ="INSERT IGNORE INTO `catalog_product_link` (`product_id`, `linked_product_id`, `link_type_id`)
                     SELECT
                         T1.`entity_id`, T2.`entity_id`, C1.`link_type_id`
@@ -66,6 +66,8 @@ class Bonaparte_ImportExport_Model_Custom_Import_Related extends Bonaparte_Impor
                         T1.entity_id<>T2.entity_id;";
         $connW->query($sql);
         $this->_logMessage('Done!' . "\n");
+
+        //insert order relation
 
         //Read data from bonaparte_sources
         /*$sql = "SELECT DISTINCT picture_name FROM bonaparte_resources";
