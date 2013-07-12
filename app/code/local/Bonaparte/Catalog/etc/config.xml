@@ -11,6 +11,15 @@
                 <class>Bonaparte_Catalog_Helper</class>
             </Bonaparte_Catalog>
         </helpers>
+
+        <models>
+            <catalog>
+                <rewrite>
+                    <product_type_configurable_price>Bonaparte_Catalog_Model_Product_Type_Configurable_Price</product_type_configurable_price>
+                </rewrite>
+            </catalog>
+        </models>
+
         <blocks>
             <Bonaparte_Catalog>
                 <class>Bonaparte_Catalog_Block</class>

@@ -17,7 +17,7 @@ class Bonaparte_ImportExport_Model_Custom_Import_Products extends Bonaparte_Impo
      *
      * @var string
      */
-    const CONFIGURATION_FILE_INVENTORY = '/dump_files/ARTIKLAR.TXT';
+    const CONFIGURATION_FILE_INVENTORY = '/dump_files/WBN240S';
     /**
      * Path to
      *
@@ -29,16 +29,16 @@ class Bonaparte_ImportExport_Model_Custom_Import_Products extends Bonaparte_Impo
      *
      * @var string
      */
-    const CONFIGURATION_FILE_PATH = '/chroot/home/stagebon/upload/xml/product';       // server configuration
-//    const CONFIGURATION_FILE_PATH = '/var/www/bonaparte/magento/dump_files/xml/test6'; // local developer station
+//    const CONFIGURATION_FILE_PATH = '/chroot/home/stagebon/upload/xml/product';       // server configuration
+    const CONFIGURATION_FILE_PATH = '/var/www/bonaparte/magento/dump_files/xml/test7'; // local developer station
 
     /**
      * Path to the product pictures source files
      *
      * @var string
      */
-    const PICTURE_BASE_PATH = '/chroot/home/stagebon/upload/pictures/';
-//    const PICTURE_BASE_PATH = '/var/www/bonaparte/magento/dump_files/pictures/';
+//    const PICTURE_BASE_PATH = '/chroot/home/stagebon/upload/pictures/';
+    const PICTURE_BASE_PATH = '/var/www/bonaparte/magento/dump_files/pictures/';
 
     /**
      * Path to the missing pictures file
@@ -644,7 +644,7 @@ class Bonaparte_ImportExport_Model_Custom_Import_Products extends Bonaparte_Impo
                     $bnpWashiconLabelIds[] = $externalIdToInternalId[$externalId . '_' . Bonaparte_ImportExport_Model_Custom_Import_Attributes::CUSTOM_ATTRIBUTE_CODE_WASH_ICON];
                 }
 
-                $productSKU = $productOneSize ? $productItem['CinoNumber']['value'] : $productItem['CinoNumber']['value'] . '-' . $productSize;
+                $productSKU = ($productOneSize && !$this->_customSizes[$productItem['Sizess']['value']['da']]) ? $productItem['CinoNumber']['value'] : $productItem['CinoNumber']['value'] . '-' . $productSize;
 
                //check if the product exists in magento then get product and update else create product
                 //  $sProduct = Mage::getModel('catalog/product')->loadByAttribute('sku',$productSKU);
@@ -690,6 +690,12 @@ class Bonaparte_ImportExport_Model_Custom_Import_Products extends Bonaparte_Impo
                         $uksize = $this->_sizeTranslate[$category_id][$productSize];
                         $simpleProductData[$sizeCounter]['uk_sku'] = $productItem['CinoNumber']['value'] . '-' . $this->_sizeTranslate[$category_id][$productSize];
                     }
+                }
+                $ukSizeCategory = $productData['Program']['value'] . '_' . $productData['ProductMainGroup']['value'];
+                if ($this->_sizeTranslate[$ukSizeCategory][$productSize]){
+                    //$sProduct -> setBnpSizetranslate($this->_sizeTranslate[$ukSizeCategory][$productSize]);
+                    $uksize = $this->_sizeTranslate[$ukSizeCategory][$productSize];
+                    $simpleProductData[$sizeCounter]['uk_sku'] = $productItem['CinoNumber']['value'] . '-' . $this->_sizeTranslate[$ukSizeCategory][$productSize];
                 }
 
                 // add stylenbr to select options
